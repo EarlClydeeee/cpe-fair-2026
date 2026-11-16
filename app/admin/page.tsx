@@ -15,7 +15,10 @@ export default async function AdminOverviewPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-5xl">Workspace Overview</h1>
+          <p className="text-xs tracking-[0.2em] text-accent uppercase">
+            Your court. Your control.
+          </p>
+          <h1 className="mt-2 font-display text-5xl">Workspace Overview</h1>
           <p className="mt-2 text-sm text-muted">
             A clear view of the fair, the teams, and what needs your attention.
           </p>
@@ -29,14 +32,26 @@ export default async function AdminOverviewPage() {
           [
             "Events",
             String(stats.events).padStart(2, "0"),
-            `${stats.upcoming} upcoming, ${stats.inProgress} in progress, ${stats.finals} final`,
+            `${stats.upcoming} upcoming · ${stats.inProgress} in progress · ${stats.finals} final`,
           ],
           ["Published points", formatPoints(stats.publishedPoints), "Current overall standings"],
-          ["Saved draft", String(stats.drafts).padStart(2, "0"), "Score updates ready for review"],
+          [
+            "Saved draft",
+            String(stats.drafts).padStart(2, "0"),
+            stats.drafts
+              ? "Score updates ready for review"
+              : "No drafts waiting",
+          ],
         ].map(([label, value, hint]) => (
-          <div key={label} className="rounded-2xl border border-border bg-surface p-5">
+          <div key={label} className="rounded-xl border border-border bg-surface p-5">
             <p className="text-[10px] tracking-[0.16em] text-muted uppercase">{label}</p>
-            <p className="mt-2 font-display text-4xl">{value}</p>
+            <p
+              className={`mt-2 font-display text-4xl ${
+                label === "Saved draft" && stats.drafts > 0 ? "text-accent" : ""
+              }`}
+            >
+              {value}
+            </p>
             <p className="mt-2 text-xs text-muted">{hint}</p>
           </div>
         ))}
@@ -45,36 +60,48 @@ export default async function AdminOverviewPage() {
       <div className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
         <div className="space-y-4">
           {firstDiff ? (
-            <div className="rounded-2xl border border-accent/40 bg-accent-soft p-5">
-              <p className="text-[10px] tracking-[0.16em] text-accent uppercase">Ready for review</p>
-              <h2 className="mt-2 font-display text-3xl">
-                {firstDiff.team.name} / {firstDiff.category.name}
-              </h2>
-              <p className="mt-2 text-sm">
-                {firstDiff.publishedPoints} → {firstDiff.draft.draft_points}{" "}
-                <span className="text-accent">
-                  ({firstDiff.delta >= 0 ? "+" : ""}
-                  {firstDiff.delta} pts)
-                </span>
+            <div className="rounded-xl border border-accent/40 bg-accent-soft p-5">
+              <p className="text-[10px] tracking-[0.16em] text-accent uppercase">
+                Ready for review
               </p>
+              <p className="mt-1 text-sm text-muted">
+                {diffs.length} saved draft{diffs.length === 1 ? "" : "s"} waiting to go public.
+              </p>
+              <div className="mt-4 rounded-lg border border-accent/30 bg-background/40 p-4">
+                <p className="text-xs tracking-wide text-accent uppercase">
+                  {firstDiff.team.name} / {firstDiff.category.name}
+                </p>
+                <p className="mt-2 font-display text-3xl">
+                  {firstDiff.publishedPoints} → {firstDiff.draft.draft_points}
+                </p>
+                <p className="mt-1 text-sm text-accent">
+                  {firstDiff.delta >= 0 ? "+" : ""}
+                  {firstDiff.delta} pts
+                </p>
+              </div>
               <LinkButton href="/admin/leaderboards/review" className="mt-4">
                 Review & publish ({diffs.length})
               </LinkButton>
+              <p className="mt-3 text-xs text-muted">Public standings are unchanged.</p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
+            <div className="rounded-xl border border-border bg-surface p-5 text-sm text-muted">
               No score drafts waiting for review.
             </div>
           )}
 
-          <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="rounded-xl border border-border bg-surface p-5">
             <p className="text-[10px] tracking-[0.16em] text-muted uppercase">Event activity</p>
+            <p className="mt-1 text-sm text-muted">Current schedule snapshot.</p>
             <ul className="mt-4 space-y-3">
               {activity.map((event) => (
                 <li key={event.id} className="flex items-center justify-between gap-3 text-sm">
                   <span>
                     <span className="text-muted">{formatTime(event.starts_at)}</span>{" "}
                     {event.title}
+                    {event.team_a && event.team_b
+                      ? ` (${event.team_a.name} vs ${event.team_b.name})`
+                      : ""}
                   </span>
                   <Badge
                     tone={
@@ -90,14 +117,17 @@ export default async function AdminOverviewPage() {
                 </li>
               ))}
             </ul>
-            <Link href="/admin/events" className="mt-4 inline-block text-sm text-accent">
+            <Link
+              href="/admin/events"
+              className="mt-4 inline-block text-sm text-accent transition-opacity duration-200 hover:opacity-80"
+            >
               Manage events →
             </Link>
           </div>
         </div>
 
         <aside className="space-y-4">
-          <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="rounded-xl border border-border bg-surface p-5">
             <p className="text-[10px] tracking-[0.16em] text-muted uppercase">Workspace health</p>
             <ul className="mt-4 space-y-2 text-sm">
               <li className="flex justify-between">
@@ -115,20 +145,24 @@ export default async function AdminOverviewPage() {
                 <span>2026</span>
               </li>
             </ul>
+            <p className="mt-4 text-xs text-accent">Preview data · Replace before launch</p>
           </div>
-          <div className="rounded-2xl border border-border bg-surface p-5 space-y-4">
+          <div className="space-y-4 rounded-xl border border-border bg-surface p-5">
             <p className="text-[10px] tracking-[0.16em] text-muted uppercase">Quick actions</p>
-            <Link href="/admin/teams" className="block">
+            <Link href="/admin/teams" className="block transition-opacity duration-200 hover:opacity-80">
               <p className="font-display text-2xl">Manage teams →</p>
-              <p className="text-xs text-muted">Names, affiliations, visibility</p>
+              <p className="text-xs text-muted">Names, affiliations, and team visibility</p>
             </Link>
-            <Link href="/admin/access" className="block">
+            <Link href="/admin/access" className="block transition-opacity duration-200 hover:opacity-80">
               <p className="font-display text-2xl">Admin access →</p>
-              <p className="text-xs text-muted">Invite editors and roles</p>
+              <p className="text-xs text-muted">Invite editors and review roles</p>
             </Link>
-            <Link href="/admin/leaderboards/history" className="block">
+            <Link
+              href="/admin/leaderboards/history"
+              className="block transition-opacity duration-200 hover:opacity-80"
+            >
               <p className="font-display text-2xl">View change history →</p>
-              <p className="text-xs text-muted">Track score edits</p>
+              <p className="text-xs text-muted">Track score edits and publications</p>
             </Link>
           </div>
         </aside>

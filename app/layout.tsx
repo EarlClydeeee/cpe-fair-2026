@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, Figtree } from "next/font/google";
+import { Chakra_Petch, Russo_One } from "next/font/google";
 import "./globals.css";
 
-const display = Bebas_Neue({
+const display = Russo_One({
   variable: "--font-display",
   subsets: ["latin"],
   weight: "400",
 });
 
-const body = Figtree({
+const body = Chakra_Petch({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
