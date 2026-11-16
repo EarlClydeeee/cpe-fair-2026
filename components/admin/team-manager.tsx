@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { archiveTeam, saveTeam } from "@/app/actions/teams";
 import { initialActionState } from "@/lib/action-state";
-import { Placeholder } from "../placeholder";
+import { TeamBanner } from "../team-banner";
 import { FormMessage } from "../ui/form-message";
 import { SelectField, TextField } from "../ui/input";
 import { SubmitButton } from "../submit-button";
@@ -84,10 +84,11 @@ export function TeamManager({
           <p className="text-xs text-muted">
             {selected.name} · {selected.affiliation}
           </p>
-          <Placeholder
-            label={selected.name}
+          <TeamBanner
+            name={selected.name}
+            colorHex={selected.color_hex}
+            artworkUrl={selected.artwork_url}
             ratio="16/9"
-            color={selected.color_hex}
             className="mt-4 rounded-xl"
           />
           <form action={saveAction} className="mt-4 space-y-3">
@@ -100,6 +101,12 @@ export function TeamManager({
               defaultValue={selected.affiliation}
             />
             <TextField label="Team color" name="color_hex" defaultValue={selected.color_hex} />
+            <TextField
+              label="Artwork URL"
+              name="artwork_url"
+              defaultValue={selected.artwork_url ?? ""}
+              placeholder="https://…"
+            />
             <SelectField label="Public visibility" name="visibility" defaultValue={selected.visibility}>
               <option value="active">Active / visible</option>
               <option value="archived">Archived</option>

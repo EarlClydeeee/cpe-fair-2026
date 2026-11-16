@@ -73,6 +73,10 @@ export const teamSchema = z.object({
     .string()
     .trim()
     .regex(/^#[0-9A-Fa-f]{6}$/, { error: "Use a #RRGGBB color." }),
+  artwork_url: z
+    .union([z.literal(""), z.url({ error: "Enter a valid artwork URL." })])
+    .optional()
+    .transform((v) => (v ? v : null)),
   visibility: z.enum(["active", "archived"]),
   sort_order: z.coerce.number().int().default(0),
 });

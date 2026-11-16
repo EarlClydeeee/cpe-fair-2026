@@ -15,14 +15,17 @@ on conflict (season_id, slug) do nothing;
 
 insert into public.competition_teams (id, season_id, name, slug, affiliation, color_hex, sort_order) values
   ('33333333-3333-3333-3333-333333333301', '11111111-1111-1111-1111-111111111111', 'Karasuno', 'karasuno', 'Section 2', '#FF6B21', 1),
-  ('33333333-3333-3333-3333-333333333302', '11111111-1111-1111-1111-111111111111', 'Nekoma', 'nekoma', 'Section 5', '#E11D48', 2),
+  ('33333333-3333-3333-3333-333333333302', '11111111-1111-1111-1111-111111111111', 'Nekoma', 'nekoma', 'Ladderized', '#E11D48', 2),
   ('33333333-3333-3333-3333-333333333303', '11111111-1111-1111-1111-111111111111', 'Aoba Johsai', 'aoba-johsai', 'Section 3', '#14B8A6', 3),
-  ('33333333-3333-3333-3333-333333333304', '11111111-1111-1111-1111-111111111111', 'Inarizaki', 'inarizaki', 'Section 4', '#EAB308', 4),
+  ('33333333-3333-3333-3333-333333333304', '11111111-1111-1111-1111-111111111111', 'Inarizaki', 'inarizaki', 'Transferees', '#EAB308', 4),
   ('33333333-3333-3333-3333-333333333305', '11111111-1111-1111-1111-111111111111', 'Shiratorizawa', 'shiratorizawa', 'Section 1', '#A855F7', 5),
-  ('33333333-3333-3333-3333-333333333306', '11111111-1111-1111-1111-111111111111', 'Kamomedai', 'kamomedai', 'Section 6', '#3B82F6', 6),
+  ('33333333-3333-3333-3333-333333333306', '11111111-1111-1111-1111-111111111111', 'Kamomedai', 'kamomedai', 'Shiftees', '#3B82F6', 6),
   ('33333333-3333-3333-3333-333333333307', '11111111-1111-1111-1111-111111111111', 'Itachiyama Institute', 'itachiyama', 'Section 7', '#84CC16', 7),
   ('33333333-3333-3333-3333-333333333308', '11111111-1111-1111-1111-111111111111', 'Fukurodani', 'fukurodani', 'Section 8', '#94A3B8', 8)
-on conflict (season_id, slug) do nothing;
+on conflict (season_id, slug) do update
+  set affiliation = excluded.affiliation,
+      color_hex = excluded.color_hex,
+      sort_order = excluded.sort_order;
 
 -- Published scores: totals match mock (Karasuno 1280, Nekoma 1150, ...)
 -- Category order: sports, logic, esports, academics, talents, mini

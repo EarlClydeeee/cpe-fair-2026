@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Placeholder } from "@/components/placeholder";
+import { TeamBanner } from "@/components/team-banner";
 import { getStandings } from "@/lib/data/public";
 import { formatPoints } from "@/lib/format";
 
@@ -22,6 +22,10 @@ export default async function TeamsPage({ searchParams }: Props) {
   }
   if (sort === "name") {
     list = [...list].sort((a, b) => a.team.name.localeCompare(b.team.name));
+  } else if (sort === "points" || sort === "rank" || !sort) {
+    list = [...list].sort(
+      (a, b) => b.total - a.total || a.team.sort_order - b.team.sort_order,
+    );
   }
 
   return (
@@ -71,7 +75,8 @@ export default async function TeamsPage({ searchParams }: Props) {
             className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
           >
             <option value="rank">Sort: Overall rank</option>
-            <option value="name">Sort: Name</option>
+            <option value="name">Sort: Alphabetical</option>
+            <option value="points">Sort: Points</option>
           </select>
           <button
             type="submit"
@@ -89,10 +94,11 @@ export default async function TeamsPage({ searchParams }: Props) {
             className="overflow-hidden rounded-xl border border-border bg-surface transition-colors duration-200 hover:border-accent/40"
           >
             <div className="relative">
-              <Placeholder
-                label={row.team.name}
+              <TeamBanner
+                name={row.team.name}
+                colorHex={row.team.color_hex}
+                artworkUrl={row.team.artwork_url}
                 ratio="16/11"
-                color={row.team.color_hex}
                 className="rounded-none border-0"
               />
               <span className="absolute left-3 top-3 rounded-md bg-black/70 px-2 py-1 text-xs">

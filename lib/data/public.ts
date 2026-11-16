@@ -152,6 +152,18 @@ export async function getEvent(id: string): Promise<FairEvent | null> {
   return events.find((e) => e.id === id) ?? null;
 }
 
+export async function getEventsForTeam(teamId: string): Promise<FairEvent[]> {
+  const events = await getEvents();
+  return events
+    .filter(
+      (event) =>
+        event.team_a_id === teamId ||
+        event.team_b_id === teamId ||
+        (!event.team_a_id && !event.team_b_id),
+    )
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+}
+
 export async function getStandings(categorySlug?: string): Promise<{
   categories: Category[];
   rows: StandingRow[];
