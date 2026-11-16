@@ -3,7 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { canManageEvents, requireStaff } from "@/lib/auth";
-import { getActiveSeason } from "@/lib/data/public";
+import { ensureActiveSeason } from "@/lib/data/season";
 import { tags } from "@/lib/data/tags";
 import { createClient } from "@/lib/supabase/server";
 import { deleteByIdSchema, eventSchema } from "@/lib/validation/access";
@@ -21,8 +21,14 @@ export async function saveEvent(_prev: ActionState, formData: FormData): Promise
   const parsed = eventSchema.safeParse(formObject(formData));
   if (!parsed.success) return fieldErrors(parsed.error);
 
-  const season = await getActiveSeason();
-  if (!season) return { ok: false, message: "No active season." };
+  const supabase = await createClient();
+  const season = await ensureActiveSeason(supabase);
+  if (!season) {
+    return {
+      ok: false,
+      message: "Could not create an active season. Check seasons write permissions.",
+    };
+  }
 
   let starts_at: string;
   try {
@@ -33,7 +39,6 @@ export async function saveEvent(_prev: ActionState, formData: FormData): Promise
 
   const { id, ...rest } = parsed.data;
   const row = { ...rest, starts_at, season_id: season.id };
-  const supabase = await createClient();
 
   const { error } = id
     ? await supabase.from("events").update(row).eq("id", id)

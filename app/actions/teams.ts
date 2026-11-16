@@ -3,8 +3,9 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { canManageContent, requireStaff } from "@/lib/auth";
-import { getActiveSeason } from "@/lib/data/public";
+import { ensureActiveSeason } from "@/lib/data/season";
 import { tags } from "@/lib/data/tags";
+import { isArtworkFile, uploadTeamArtwork } from "@/lib/storage/team-artwork";
 import { createClient } from "@/lib/supabase/server";
 import { deleteByIdSchema, teamSchema } from "@/lib/validation/access";
 
@@ -12,15 +13,31 @@ export async function saveTeam(_prev: ActionState, formData: FormData): Promise<
   const user = await requireStaff("/admin/teams");
   if (!canManageContent(user.role)) return { ok: false, message: "Content role required." };
 
+  const artworkFile = formData.get("artwork");
+  formData.delete("artwork");
+
   const parsed = teamSchema.safeParse(formObject(formData));
   if (!parsed.success) return fieldErrors(parsed.error);
 
-  const season = await getActiveSeason();
-  if (!season) return { ok: false, message: "No active season." };
+  const supabase = await createClient();
+  const season = await ensureActiveSeason(supabase);
+  if (!season) {
+    return {
+      ok: false,
+      message: "Could not create an active season. Check seasons write permissions.",
+    };
+  }
 
   const { id, ...rest } = parsed.data;
-  const row = { ...rest, season_id: season.id };
-  const supabase = await createClient();
+  let artwork_url = rest.artwork_url;
+
+  if (isArtworkFile(artworkFile)) {
+    const uploaded = await uploadTeamArtwork(supabase, artworkFile, rest.slug);
+    if ("error" in uploaded) return { ok: false, message: uploaded.error };
+    artwork_url = uploaded.url;
+  }
+
+  const row = { ...rest, artwork_url, season_id: season.id };
 
   let entityId = id ?? null;
   if (id) {

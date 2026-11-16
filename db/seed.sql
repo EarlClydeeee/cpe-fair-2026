@@ -2,7 +2,10 @@
 
 insert into public.seasons (id, slug, name, year, is_active)
 values ('11111111-1111-1111-1111-111111111111', 'cpe-fair-2026', 'CPE Fair 2026', 2026, true)
-on conflict (slug) do nothing;
+on conflict (slug) do update
+  set name = excluded.name,
+      year = excluded.year,
+      is_active = true;
 
 insert into public.categories (id, season_id, slug, name, sort_order) values
   ('22222222-2222-2222-2222-222222222201', '11111111-1111-1111-1111-111111111111', 'sports', 'Sports', 1),
