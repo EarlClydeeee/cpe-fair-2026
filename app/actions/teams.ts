@@ -42,6 +42,7 @@ export async function saveTeam(_prev: ActionState, formData: FormData): Promise<
   updateTag(tags.audit);
   revalidatePath("/admin/teams");
   revalidatePath("/teams");
+  revalidatePath(`/teams/${parsed.data.slug}`);
   revalidatePath("/leaderboard");
   return { ok: true, message: "Team saved." };
 }
