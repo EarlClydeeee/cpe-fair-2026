@@ -41,7 +41,7 @@ async function query<T>(label: string, fallback: T, run: () => PromiseLike<Resul
 
 export async function getActiveSeason(): Promise<Season | null> {
   "use cache";
-  cacheLife("hours");
+  cacheLife({ stale: 60, revalidate: 60, expire: 300 });
   cacheTag(tags.season);
 
   return query("getActiveSeason", null, () =>
@@ -74,7 +74,7 @@ export async function getCategories(seasonId?: string): Promise<Category[]> {
 
 export async function getTeams(seasonId?: string): Promise<CompetitionTeam[]> {
   "use cache";
-  cacheLife("minutes");
+  cacheLife({ stale: 60, revalidate: 60, expire: 300 });
   cacheTag(tags.teams);
 
   const season = seasonId ? { id: seasonId } : await getActiveSeason();
@@ -169,7 +169,7 @@ export async function getStandings(categorySlug?: string): Promise<{
   rows: StandingRow[];
 }> {
   "use cache";
-  cacheLife("minutes");
+  cacheLife({ stale: 60, revalidate: 60, expire: 300 });
   cacheTag(tags.scores, tags.teams);
 
   const [categories, teams] = await Promise.all([getCategories(), getTeams()]);

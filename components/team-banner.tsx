@@ -5,6 +5,8 @@ type TeamBannerProps = {
   colorHex: string;
   artworkUrl?: string | null;
   ratio?: string;
+  /** Stretch to parent bounds instead of locking an aspect ratio. */
+  fill?: boolean;
   className?: string;
 };
 
@@ -13,19 +15,26 @@ export function TeamBanner({
   colorHex,
   artworkUrl,
   ratio = "16/9",
+  fill = false,
   className = "",
 }: TeamBannerProps) {
   if (!artworkUrl) {
     return (
-      <Placeholder label={name} ratio={ratio} color={colorHex} className={className} />
+      <Placeholder
+        label={name}
+        ratio={fill ? "" : ratio}
+        color={colorHex}
+        quiet={fill}
+        className={`${fill ? "size-full border-0 border-solid" : ""} ${className}`}
+      />
     );
   }
 
   return (
     <div
-      className={`relative overflow-hidden border border-border bg-surface-2 ${className}`}
+      className={`relative overflow-hidden border border-border bg-surface-2 ${fill ? "size-full" : ""} ${className}`}
       style={{
-        aspectRatio: ratio,
+        ...(fill ? {} : { aspectRatio: ratio }),
         background: `radial-gradient(circle at 50% 40%, ${colorHex}33, transparent 55%), #151515`,
       }}
     >

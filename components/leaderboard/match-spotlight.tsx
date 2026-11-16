@@ -25,12 +25,17 @@ export function MatchSpotlight({ event }: { event: FairEvent }) {
   return (
     <div className="rounded-xl bg-accent p-5 text-black">
       <p className="text-[10px] font-semibold tracking-[0.18em] uppercase">
-        {live ? "Live now" : "Up next"}
-        {event.categories?.name ? ` / ${event.categories.name}` : ""}
+        Match spotlight · {live ? "Live now" : "Up next"}
       </p>
-      <h3 className="mt-3 font-display text-3xl leading-none">{event.title}</h3>
-      {matchup ? <p className="mt-2 font-display text-xl">{matchup}</p> : null}
-      <p className="mt-3 text-sm">
+      <h3 className="mt-3 font-display text-4xl leading-none uppercase">
+        {event.categories?.name || event.title}
+      </h3>
+      {matchup ? (
+        <p className="mt-2 text-sm font-medium">{matchup}</p>
+      ) : (
+        <p className="mt-2 text-sm font-medium">{event.title}</p>
+      )}
+      <p className="mt-3 text-sm opacity-80">
         {event.venue} · {formatTime(event.starts_at)}
       </p>
       <Link

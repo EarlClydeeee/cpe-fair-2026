@@ -7,6 +7,7 @@ import { TitleRace } from "@/components/leaderboard/title-race";
 import { getEvents, getStandings } from "@/lib/data/public";
 
 export const metadata: Metadata = { title: "Leaderboard" };
+export const instant = false;
 
 type Props = { searchParams: Promise<{ category?: string }> };
 
@@ -57,7 +58,12 @@ export default async function LeaderboardPage({ searchParams }: Props) {
               <StandingsTable rows={rows} />
             </>
           ) : (
-            <p className="text-muted">Standings appear after the database is seeded.</p>
+            <div className="rounded-xl border border-dashed border-border bg-surface p-8">
+              <p className="font-display text-2xl tracking-wide uppercase">No standings yet</p>
+              <p className="mt-2 max-w-md text-sm leading-6 text-muted">
+                Add teams and publish scores for the active season to fill the podium and table.
+              </p>
+            </div>
           )}
         </div>
 
