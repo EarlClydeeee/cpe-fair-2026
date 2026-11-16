@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -5,7 +6,8 @@ type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
   primary: "bg-accent text-black hover:brightness-110 font-semibold",
-  secondary: "bg-surface-2 text-foreground border border-border hover:border-accent/50",
+  secondary:
+    "bg-surface-2 text-foreground border border-border hover:border-accent/50 hover:text-accent",
   ghost: "bg-transparent text-muted hover:text-foreground hover:bg-surface-2",
   danger: "bg-danger/15 text-danger hover:bg-danger/25",
 };
@@ -29,7 +31,7 @@ export function Button({
 }) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-lg transition disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {children}
@@ -50,12 +52,17 @@ export function LinkButton({
   className?: string;
   children: ReactNode;
 }) {
+  const classes = `inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg transition-colors duration-200 ${variants[variant]} ${sizes[size]} ${className}`;
+  if (href.startsWith("http") || href.startsWith("/api/")) {
+    return (
+      <a href={href} className={classes}>
+        {children}
+      </a>
+    );
+  }
   return (
-    <a
-      href={href}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg transition ${variants[variant]} ${sizes[size]} ${className}`}
-    >
+    <Link href={href} className={classes}>
       {children}
-    </a>
+    </Link>
   );
 }

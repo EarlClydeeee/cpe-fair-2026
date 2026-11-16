@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { signOut } from "@/app/actions/auth";
 import { roleLabel, type AdminRole } from "@/lib/roles";
 import { Button } from "./ui/button";
@@ -14,6 +15,15 @@ const links = [
   { href: "/admin/access", label: "Admin access", n: "05" },
 ];
 
+function useClientPathname() {
+  const pathname = usePathname();
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    setReady(true);
+  }, []);
+  return ready ? pathname : "";
+}
+
 export function AdminSidebar({
   role,
   seasonName,
@@ -21,12 +31,12 @@ export function AdminSidebar({
   role: AdminRole;
   seasonName: string;
 }) {
-  const pathname = usePathname();
+  const pathname = useClientPathname();
 
   return (
     <aside className="flex h-full min-h-screen w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-6">
-      <Link href="/admin" className="mb-8 flex items-center gap-3 px-2">
-        <span className="grid size-9 place-items-center rounded-full bg-accent font-display text-lg text-black">
+      <Link href="/admin" className="mb-8 flex items-center gap-3 px-2 transition-opacity duration-200 hover:opacity-90">
+        <span className="grid size-9 place-items-center rounded-md bg-accent font-display text-lg text-black">
           A
         </span>
         <span>
@@ -48,7 +58,7 @@ export function AdminSidebar({
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors duration-200 ${
                 isActive
                   ? "border border-accent/40 bg-accent-soft text-accent"
                   : "text-muted hover:bg-surface-2 hover:text-foreground"
@@ -67,7 +77,7 @@ export function AdminSidebar({
       </div>
 
       <div className="mt-auto space-y-3 pt-8">
-        <div className="rounded-xl border border-border bg-surface-2 p-3">
+        <div className="rounded-xl border border-accent/20 bg-[#2a1a12] p-3">
           <p className="text-[10px] tracking-[0.16em] text-muted uppercase">Preview workspace</p>
           <p className="mt-1 text-xs leading-5 text-muted">
             Sample scores and fixtures for UI preview.
@@ -99,7 +109,7 @@ export function AdminTopBar({
       <div className="flex items-center gap-2">
         <Link
           href="/leaderboard"
-          className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted hover:text-foreground"
+          className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition-colors duration-200 hover:text-foreground"
         >
           View public site
         </Link>

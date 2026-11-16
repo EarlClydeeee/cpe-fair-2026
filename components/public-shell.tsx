@@ -8,31 +8,38 @@ export function PublicHeader() {
 export function PublicFooter() {
   return (
     <footer className="mt-auto border-t border-border bg-surface">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-[1.3fr_1fr_1fr] sm:px-6">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-[1.4fr_1fr_1fr] sm:px-6">
         <div>
-          <p className="font-display text-2xl">ACCESS CPE Fair 2026</p>
-          <p className="mt-2 text-sm tracking-wide text-accent uppercase">Fly high. Play as one.</p>
-          <p className="mt-3 max-w-sm text-sm leading-6 text-muted">
-            Eight teams. Six categories. One champion.
+          <div className="mb-4 flex items-center gap-3">
+            <span className="grid size-8 place-items-center rounded-md bg-accent font-display text-base text-black">
+              A
+            </span>
+            <span className="font-display text-lg tracking-wide">Access</span>
+          </div>
+          <p className="font-display text-3xl leading-none tracking-wide">
+            Fly high. Play as one.
+          </p>
+          <p className="mt-4 max-w-sm text-sm leading-6 text-muted">
+            ACCESS CPE Fair 2026 — eight teams, six categories, one champion.
           </p>
         </div>
         <div className="space-y-2 text-sm">
-          <p className="font-medium">Explore</p>
-          <Link href="/leaderboard" className="block text-muted hover:text-foreground">
+          <p className="text-[10px] tracking-[0.18em] text-muted uppercase">Explore</p>
+          <Link href="/leaderboard" className="block text-foreground/90 transition-colors hover:text-accent">
             Leaderboard
           </Link>
-          <Link href="/events" className="block text-muted hover:text-foreground">
+          <Link href="/events" className="block text-foreground/90 transition-colors hover:text-accent">
             Events
           </Link>
-          <Link href="/teams" className="block text-muted hover:text-foreground">
+          <Link href="/teams" className="block text-foreground/90 transition-colors hover:text-accent">
             Teams
           </Link>
-          <Link href="/login" className="block text-accent hover:underline">
+          <Link href="/login" className="block text-accent transition-colors hover:brightness-110">
             Admin sign in →
           </Link>
         </div>
         <div className="space-y-2 text-sm">
-          <p className="font-medium">The competition</p>
+          <p className="text-[10px] tracking-[0.18em] text-muted uppercase">The competition</p>
           {["Sports", "Logic & Board", "Esports", "Academics", "Talents", "Mini Games"].map((c) => (
             <p key={c} className="text-muted">
               {c}
@@ -41,9 +48,10 @@ export function PublicFooter() {
         </div>
       </div>
       <div className="border-t border-border px-4 py-4 text-xs text-muted sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-2">
-          <span>© 2026 ACCESS — CPE Fair</span>
-          <span>8 teams / 6 categories / one champion</span>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
+          <span>© 2026 ACCESS · CPE Fair</span>
+          <span className="tracking-[0.12em] uppercase">8 teams / 6 categories / one champion</span>
+          <span>Sample content · For UI preview only</span>
         </div>
       </div>
     </footer>
