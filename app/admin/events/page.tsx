@@ -1,0 +1,30 @@
+import type { Metadata } from "next";
+import { EventManager } from "@/components/admin/event-manager";
+import { getAdminEvents } from "@/lib/data/admin";
+import { getCategories, getTeams } from "@/lib/data/public";
+
+export const metadata: Metadata = { title: "Event management" };
+
+export default async function AdminEventsPage() {
+  const [events, categories, teams] = await Promise.all([
+    getAdminEvents(),
+    getCategories(),
+    getTeams(),
+  ]);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-5xl">Event Management</h1>
+        <p className="mt-2 text-sm text-muted">
+          Organize fixtures, update venues, and keep the public schedule in sync.
+        </p>
+      </div>
+      <EventManager
+        events={events as never}
+        categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+        teams={teams.map((t) => ({ id: t.id, name: t.name }))}
+      />
+    </div>
+  );
+}
