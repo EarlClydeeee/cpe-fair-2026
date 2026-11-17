@@ -13,21 +13,37 @@ export type EventStatusInput = {
   is_highlighted?: boolean;
 };
 
+/**
+ * Status is admin-controlled (upcoming / ongoing / ended).
+ * The only schedule rule: an Upcoming (or legacy Auto) event whose end
+ * window has passed is treated as Ended so it cannot stay public forever.
+ */
 export function getComputedEventStatus(
   event: EventStatusInput,
   now: Date,
 ): ComputedEventStatus {
-  if (event.status_override !== "auto") {
-    return event.status_override;
-  }
+  if (event.status_override === "ended") return "ended";
+  if (event.status_override === "ongoing") return "ongoing";
 
-  const start = new Date(event.start_at).getTime();
   const end = new Date(event.end_at).getTime();
-  const t = now.getTime();
+  if (Number.isFinite(end) && now.getTime() >= end) return "ended";
 
-  if (t < start) return "upcoming";
-  if (t >= start && t < end) return "ongoing";
-  return "ended";
+  // upcoming + legacy auto both read as upcoming until the admin flips mode
+  return "upcoming";
+}
+
+/** Persist overdue Upcoming/Auto as Ended when saving. */
+export function resolveStatusOverrideForSave(
+  statusOverride: EventStatusOverride,
+  endAt: string,
+  now: Date = new Date(),
+): EventStatusOverride {
+  if (statusOverride === "ongoing" || statusOverride === "ended") {
+    return statusOverride;
+  }
+  const end = new Date(endAt).getTime();
+  if (Number.isFinite(end) && now.getTime() >= end) return "ended";
+  return statusOverride === "auto" ? "upcoming" : statusOverride;
 }
 
 export function pickFeaturedEvent(
@@ -97,9 +113,13 @@ export function eventPreviewStatusDisplay(
 export function eventPreviewStatusCopy(
   status: ComputedEventStatus,
 ): string {
-  if (status === "upcoming") return "The event has not started yet.";
-  if (status === "ongoing") return "Start time reached. The event is now ongoing.";
-  return "End time reached. The event is now final.";
+  if (status === "upcoming") {
+    return "Admin set Upcoming. After the scheduled end time, this becomes Final automatically.";
+  }
+  if (status === "ongoing") {
+    return "Admin set Ongoing. Flip Status mode to Ended when the match is finished.";
+  }
+  return "Final — winner assignment is unlocked.";
 }
 
 export function eventPrimaryCta(status: ComputedEventStatus | string): {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { archiveEvent, saveEvent } from "@/app/actions/events";
 import { EventStatusPreview } from "@/components/admin/event-status-preview";
@@ -97,6 +98,7 @@ export function EventManager({
   categories: CategoryOption[];
   teams: TeamOption[];
 }) {
+  const router = useRouter();
   const now = useNow(30_000);
   const [selectedId, setSelectedId] = useState<string>(
     events[0]?.id ?? NEW_EVENT,
@@ -117,7 +119,8 @@ export function EventManager({
     [events, selectedId, isCreating],
   );
 
-  const formKey = selected?.id ?? NEW_EVENT;
+  // Remount when saved fields change so defaultValues pick up server refresh.
+  const formKey = `${selected?.id ?? NEW_EVENT}:${selected?.status_override ?? "upcoming"}:${selected?.updated_at ?? selected?.end_at ?? ""}`;
 
   const syncSelection = (event?: FairEvent) => {
     setMatchType(event?.match_type ?? "head_to_head");
@@ -156,6 +159,12 @@ export function EventManager({
     archiveEvent,
     initialActionState,
   );
+
+  useEffect(() => {
+    if (saveState.ok || archiveState.ok) {
+      router.refresh();
+    }
+  }, [saveState.ok, saveState.message, archiveState.ok, archiveState.message, router]);
 
   const startDefaults = selected
     ? manilaTwelveHour(selected.start_at)
@@ -443,13 +452,29 @@ export function EventManager({
             <SelectField
               label="Status mode"
               name="status_override"
-              defaultValue={selected?.status_override ?? "auto"}
+              defaultValue={
+                selected?.status_override && selected.status_override !== "auto"
+                  ? selected.status_override
+                  : "upcoming"
+              }
+              hint="You set the mode. Upcoming events past their end time become Ended automatically."
             >
-              <option value="auto">Auto (Time-based)</option>
               <option value="upcoming">Upcoming</option>
               <option value="ongoing">Ongoing</option>
               <option value="ended">Ended</option>
             </SelectField>
+            {selectedStatus ? (
+              <p className="text-xs text-muted">
+                Public badge now:{" "}
+                <span className="font-semibold text-foreground">
+                  {eventAdminStatusDisplay(selectedStatus)}
+                </span>
+                {selected?.status_override === "upcoming" &&
+                selectedStatus === "ended"
+                  ? " · schedule ended, saved as Final on next save"
+                  : null}
+              </p>
+            ) : null}
           </section>
 
           <section className="space-y-3">
@@ -462,9 +487,9 @@ export function EventManager({
                 {selected?.winner_team?.name ?? "Not assigned"}
               </p>
               <p className="mt-2 text-xs text-muted">
-                Winner selection unlocks in Status Preview when the event is
-                Final. Assigning a winner does not publish team points —
-                update scores in Leaderboard Control.
+                {selectedStatus === "ended"
+                  ? "Open Status Preview to assign or change the winner. Points still publish from Leaderboard Control."
+                  : "Set Status mode to Ended (or wait until an Upcoming event’s end time passes), then assign the winner in Status Preview."}
               </p>
             </div>
             <TextField
@@ -506,6 +531,10 @@ export function EventManager({
           teams={teams}
           open={previewOpen}
           onClose={() => setPreviewOpen(false)}
+          onWinnerSaved={() => {
+            setPreviewOpen(false);
+            router.refresh();
+          }}
         />
       ) : null}
     </div>

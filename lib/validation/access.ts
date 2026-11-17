@@ -74,6 +74,7 @@ export const eventSchema = z
       .union([z.literal("on"), z.literal("true"), z.literal("false"), z.literal("")])
       .optional()
       .transform((v) => v === "on" || v === "true"),
+    // Legacy "auto" still accepted from older rows; UI no longer offers it.
     status_override: z.enum(["auto", "upcoming", "ongoing", "ended"]),
     result_note: z.string().trim().max(500).default(""),
   })

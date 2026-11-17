@@ -48,6 +48,7 @@ export function SelectField({
   label,
   name,
   error,
+  hint,
   children,
   className = "",
   ...props
@@ -58,6 +59,7 @@ export function SelectField({
       <select id={name} name={name} className={field} {...props}>
         {children}
       </select>
+      {hint && !error ? <span className="block text-xs text-muted">{hint}</span> : null}
       {error ? <span className="block text-xs text-danger">{error}</span> : null}
     </label>
   );

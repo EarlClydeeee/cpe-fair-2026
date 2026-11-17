@@ -5,7 +5,10 @@ import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { canManageEvents, requireStaff } from "@/lib/auth";
 import { ensureActiveSeason } from "@/lib/data/season";
 import { tags } from "@/lib/data/tags";
-import { getComputedEventStatus } from "@/lib/events";
+import {
+  getComputedEventStatus,
+  resolveStatusOverrideForSave,
+} from "@/lib/events";
 import { manilaIsoFromParts } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -72,6 +75,10 @@ export async function saveEvent(
   const match_type = data.match_type;
   const team_a_id = match_type === "all_teams" ? null : data.team_a_id;
   const team_b_id = match_type === "all_teams" ? null : data.team_b_id;
+  const status_override = resolveStatusOverrideForSave(
+    data.status_override,
+    end_at,
+  );
 
   const row = {
     season_id: season.id,
@@ -86,7 +93,7 @@ export async function saveEvent(
     match_format: data.match_format,
     result_note: data.result_note,
     is_highlighted: data.is_highlighted,
-    status_override: data.status_override,
+    status_override,
     is_archived: false,
   };
 
@@ -198,13 +205,12 @@ export async function assignEventWinner(
   }
 
   const status = getComputedEventStatus(existing, new Date());
-  const isFinal =
-    status === "ended" || existing.status_override === "ended";
+  const isFinal = status === "ended";
   if (!isFinal && !parsed.data.force_final) {
     return {
       ok: false,
       message:
-        "Winner assignment is available only after the event becomes Final.",
+        "Winner assignment is available only after the event is Final. Set Status mode to Ended, or wait until an Upcoming event’s end time passes.",
     };
   }
 

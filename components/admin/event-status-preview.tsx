@@ -11,29 +11,12 @@ import {
   getComputedEventStatus,
   type ComputedEventStatus,
 } from "@/lib/events";
-import {
-  formatDateManila,
-  formatTime,
-  formatTimeRange,
-} from "@/lib/format";
+import { formatDateManila, formatTimeRange } from "@/lib/format";
+import { useNow } from "@/lib/hooks/use-now";
 import { FormMessage } from "../ui/form-message";
 
 type TeamOption = { id: string; name: string };
-
-type PreviewStep = "upcoming" | "ongoing" | "final" | "confirm" | "saved";
-
-const STEP_MS = 4_000;
-
-function simulatedNowForStep(
-  event: FairEvent,
-  step: "upcoming" | "ongoing" | "final",
-): Date {
-  const start = new Date(event.start_at).getTime();
-  const end = new Date(event.end_at).getTime();
-  if (step === "upcoming") return new Date(start - 60_000);
-  if (step === "ongoing") return new Date(start);
-  return new Date(end);
-}
+type PreviewStep = "status" | "confirm" | "saved";
 
 function statusClass(status: ComputedEventStatus) {
   if (status === "upcoming") {
@@ -58,33 +41,18 @@ export function EventStatusPreview({
   onClose: () => void;
   onWinnerSaved?: (winnerTeamId: string) => void;
 }) {
-  const [step, setStep] = useState<PreviewStep>("upcoming");
+  const now = useNow(30_000);
+  const [step, setStep] = useState<PreviewStep>("status");
   const [selectedWinnerId, setSelectedWinnerId] = useState<string | null>(null);
   const [savedWinnerName, setSavedWinnerName] = useState("");
-  const [autoPlay, setAutoPlay] = useState(true);
   const [saveState, setSaveState] = useState<ActionState>(initialActionState);
   const [isSaving, startSave] = useTransition();
 
-  const clockStep: "upcoming" | "ongoing" | "final" =
-    step === "confirm" || step === "saved" ? "final" : step;
-
-  const simulatedNow = useMemo(
-    () => simulatedNowForStep(event, clockStep),
-    [event, clockStep],
-  );
-
   const status = useMemo(
-    () =>
-      getComputedEventStatus(
-        {
-          start_at: event.start_at,
-          end_at: event.end_at,
-          status_override: "auto",
-        },
-        simulatedNow,
-      ),
-    [event.start_at, event.end_at, simulatedNow],
+    () => getComputedEventStatus(event, now),
+    [event, now],
   );
+  const isFinal = status === "ended";
 
   const matchup = eventMatchupLabel(event);
   const categoryVenue = [
@@ -111,48 +79,11 @@ export function EventStatusPreview({
 
   useEffect(() => {
     if (!open) return;
-    setStep("upcoming");
+    setStep("status");
     setSelectedWinnerId(null);
     setSavedWinnerName("");
-    setAutoPlay(true);
     setSaveState(initialActionState);
   }, [open, event.id]);
-
-  useEffect(() => {
-    if (!open || !autoPlay) return;
-    if (step !== "upcoming" && step !== "ongoing") return;
-
-    const id = window.setTimeout(() => {
-      setStep((prev) => {
-        if (prev === "upcoming") return "ongoing";
-        if (prev === "ongoing") return "final";
-        return prev;
-      });
-    }, STEP_MS);
-
-    return () => window.clearTimeout(id);
-  }, [open, autoPlay, step]);
-
-  useEffect(() => {
-    if (step === "final") setAutoPlay(false);
-  }, [step]);
-
-  function saveWinner() {
-    if (!selectedWinner) return;
-    const formData = new FormData();
-    formData.set("id", event.id);
-    formData.set("winner_team_id", selectedWinner.id);
-    formData.set("force_final", "on");
-    startSave(async () => {
-      const result = await assignEventWinner(initialActionState, formData);
-      setSaveState(result);
-      if (result.ok) {
-        setSavedWinnerName(selectedWinner.name);
-        setStep("saved");
-        onWinnerSaved?.(selectedWinner.id);
-      }
-    });
-  }
 
   useEffect(() => {
     if (!open) return;
@@ -170,11 +101,21 @@ export function EventStatusPreview({
 
   if (!open) return null;
 
-  function replay() {
-    setStep("upcoming");
-    setSelectedWinnerId(null);
-    setSavedWinnerName("");
-    setAutoPlay(true);
+  function saveWinner() {
+    if (!selectedWinner) return;
+    const formData = new FormData();
+    formData.set("id", event.id);
+    formData.set("winner_team_id", selectedWinner.id);
+    if (isFinal) formData.set("force_final", "on");
+    startSave(async () => {
+      const result = await assignEventWinner(initialActionState, formData);
+      setSaveState(result);
+      if (result.ok) {
+        setSavedWinnerName(selectedWinner.name);
+        setStep("saved");
+        onWinnerSaved?.(selectedWinner.id);
+      }
+    });
   }
 
   function EventSummary({ showFinalBadge }: { showFinalBadge?: boolean }) {
@@ -214,7 +155,7 @@ export function EventStatusPreview({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 p-4 backdrop-blur-sm">
         <div className="w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-2xl sm:p-8">
           <p className="text-[10px] font-semibold tracking-[0.18em] text-accent uppercase">
-            Schedule automation
+            Match result
           </p>
           <h2 className="mt-2 font-display text-4xl">Confirm Match Winner</h2>
           <div className="mt-6">
@@ -226,8 +167,8 @@ export function EventStatusPreview({
             </p>
             <p className="mt-2 font-display text-4xl">{selectedWinner.name}</p>
             <p className="mt-3 text-sm text-muted">
-              Only the selected team will be assigned as the match winner.
-              Assigning a winner does not automatically publish team points.
+              This writes the winner to the public event page. Team points still
+              publish from Leaderboard Control.
             </p>
           </div>
           <div className="mt-6 space-y-3">
@@ -245,15 +186,12 @@ export function EventStatusPreview({
             type="button"
             onClick={() => {
               setSelectedWinnerId(null);
-              setStep("final");
+              setStep("status");
             }}
             className="mt-3 w-full rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-sm text-foreground transition hover:bg-surface"
           >
             Choose another team
           </button>
-          <p className="mt-4 text-center text-xs text-muted">
-            Winner assignment is available only after the event becomes Final.
-          </p>
         </div>
       </div>
     );
@@ -264,7 +202,7 @@ export function EventStatusPreview({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 p-4 backdrop-blur-sm">
         <div className="w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-2xl sm:p-8">
           <p className="text-[10px] font-semibold tracking-[0.18em] text-accent uppercase">
-            Schedule automation
+            Match result
           </p>
           <h2 className="mt-2 font-display text-4xl">Winner Saved</h2>
           <div className="mt-6">
@@ -278,8 +216,8 @@ export function EventStatusPreview({
               {savedWinnerName || selectedWinner?.name}
             </p>
             <p className="mt-3 text-sm text-muted">
-              You can review or change this result from the completed event.
-              Assigning a winner does not automatically publish team points.
+              Public event pages now show this winner. Publish category points
+              from Leaderboard Control when ready.
             </p>
           </div>
           <button
@@ -287,83 +225,33 @@ export function EventStatusPreview({
             onClick={onClose}
             className="mt-6 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black transition hover:opacity-90"
           >
-            View completed event
+            Back to event
           </button>
         </div>
       </div>
     );
   }
 
-  const primaryLabel =
-    step === "upcoming"
-      ? "Advance to ongoing"
-      : step === "ongoing"
-        ? "Advance to final"
-        : "Replay preview";
-
-  function onPrimary() {
-    if (step === "upcoming") {
-      setAutoPlay(false);
-      setStep("ongoing");
-      return;
-    }
-    if (step === "ongoing") {
-      setAutoPlay(false);
-      setStep("final");
-      return;
-    }
-    replay();
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 p-4 backdrop-blur-sm">
       <div className="w-full max-w-xl rounded-2xl border border-border bg-surface p-6 shadow-2xl sm:p-8">
         <p className="text-[10px] font-semibold tracking-[0.18em] text-accent uppercase">
-          Schedule automation · Prototype
+          Status · Admin controlled
         </p>
         <h2 className="mt-2 font-display text-4xl sm:text-5xl">
-          Event Status Preview
+          Event Status
         </h2>
         <p className="mt-2 text-sm text-muted">
-          {step === "final"
-            ? "Example event · Final status unlocks winner assignment."
-            : "Example date · Each timed step advances after 4 seconds."}
+          Mode comes from Status mode on the event form — not a timed simulation.
         </p>
 
-        <div className="mt-6 rounded-2xl border border-border bg-surface-2 p-5">
-          <p className="text-[10px] font-semibold tracking-[0.18em] text-accent uppercase">
-            {categoryVenue || "EVENT"}
-          </p>
-          <h3 className="mt-2 font-display text-3xl leading-none sm:text-4xl">
-            {event.name}
-          </h3>
-          {matchup ? (
-            <p className="mt-2 text-sm text-muted">{matchup}</p>
-          ) : (
-            <p className="mt-2 text-sm text-muted">
-              {event.match_format || "All eight teams"}
-            </p>
-          )}
-          <p className="mt-4 text-sm text-muted">
-            {formatDateManila(event.start_at)}
-          </p>
-          <p className="text-sm text-muted">
-            {formatTimeRange(event.start_at, event.end_at)}
-          </p>
-
-          <div className="mt-5 rounded-xl bg-background px-4 py-3">
-            <p className="text-[10px] tracking-[0.16em] text-muted uppercase">
-              Simulated local time
-            </p>
-            <p className="mt-1 font-display text-3xl">
-              {formatTime(simulatedNow.toISOString())}
-            </p>
-          </div>
+        <div className="mt-6">
+          <EventSummary showFinalBadge={isFinal} />
         </div>
 
         <div className="mt-6">
           <p className="text-[10px] tracking-[0.16em] text-muted uppercase">
-            Automatic status
+            Public status
           </p>
           <p className={`mt-2 ${statusClass(status)}`}>
             {eventPreviewStatusDisplay(status)}
@@ -377,7 +265,7 @@ export function EventStatusPreview({
           <p className="text-[10px] tracking-[0.16em] text-muted uppercase">
             Match winner · Admin only
           </p>
-          {step === "final" ? (
+          {isFinal ? (
             <>
               <p className="mt-2 text-sm text-muted">
                 Current winner:{" "}
@@ -401,8 +289,8 @@ export function EventStatusPreview({
                 ))}
               </div>
               <p className="mt-3 text-xs text-muted">
-                Choose the winning team, then confirm to save the result. Team
-                points are managed separately in Leaderboards.
+                Choose the winning team, then confirm to publish the result on
+                the public event page.
               </p>
             </>
           ) : (
@@ -411,32 +299,23 @@ export function EventStatusPreview({
                 Assign winner.
               </div>
               <p className="mt-2 text-xs text-muted">
-                Winner selection unlocks when the event is Final.
+                Set Status mode to Ended on the event form first
+                {event.status_override === "upcoming"
+                  ? ", or wait until the scheduled end time passes"
+                  : ""}
+                .
               </p>
             </>
           )}
         </div>
 
-        <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={onPrimary}
-            className="flex-1 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black transition hover:opacity-90"
-          >
-            {primaryLabel}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-sm text-foreground transition hover:bg-surface"
-          >
-            Back to editing
-          </button>
-        </div>
-
-        <p className="mt-4 text-center text-xs text-muted">
-          Upcoming → Ongoing at start time → Final at end time
-        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-6 w-full rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-sm text-foreground transition hover:bg-surface"
+        >
+          Back to editing
+        </button>
       </div>
     </div>
   );
