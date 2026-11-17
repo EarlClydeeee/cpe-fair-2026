@@ -41,6 +41,16 @@ export async function getOverview() {
   const inProgress = events.filter((e) => getComputedEventStatus(e, now) === "ongoing").length;
   const finals = events.filter((e) => getComputedEventStatus(e, now) === "ended").length;
 
+  // Admin marked Ended but has not announced a winner yet.
+  const unannouncedWinners = events
+    .filter(
+      (e) =>
+        !e.is_archived &&
+        e.status_override === "ended" &&
+        !e.winner_team_id,
+    )
+    .sort((a, b) => a.end_at.localeCompare(b.end_at));
+
   return {
     season,
     stats: {
@@ -52,8 +62,10 @@ export async function getOverview() {
       publishedPoints,
       drafts: diffs.length,
       categories: categories.length,
+      unannouncedWinners: unannouncedWinners.length,
     },
     diffs,
+    unannouncedWinners,
     activity: events.slice().sort((a, b) => a.start_at.localeCompare(b.start_at)).slice(0, 6),
   };
 }

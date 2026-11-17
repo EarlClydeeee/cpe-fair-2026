@@ -80,6 +80,19 @@ export async function saveEvent(
     end_at,
   );
 
+  let winner_team_id: string | null = null;
+  if (status_override === "ended") {
+    winner_team_id = data.winner_team_id;
+    if (
+      winner_team_id &&
+      match_type === "head_to_head" &&
+      winner_team_id !== team_a_id &&
+      winner_team_id !== team_b_id
+    ) {
+      return { ok: false, message: "Winner must be Team A or Team B." };
+    }
+  }
+
   const row = {
     season_id: season.id,
     name: data.name,
@@ -94,6 +107,7 @@ export async function saveEvent(
     result_note: data.result_note,
     is_highlighted: data.is_highlighted,
     status_override,
+    winner_team_id,
     is_archived: false,
   };
 
@@ -266,4 +280,48 @@ export async function assignEventWinner(
 
   revalidateEventPaths(existing.id);
   return { ok: true, message: "Winner saved." };
+}
+
+export async function clearEventWinner(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireStaff("/admin/events");
+  if (!canManageEvents(user.role)) {
+    return { ok: false, message: "Events role required." };
+  }
+
+  const parsed = deleteByIdSchema.safeParse(formObject(formData));
+  if (!parsed.success) return fieldErrors(parsed.error);
+
+  const supabase = await createClient();
+  const { data: existing, error: loadError } = await supabase
+    .from("events")
+    .select("id, name, season_id, winner_team_id")
+    .eq("id", parsed.data.id)
+    .maybeSingle();
+  if (loadError) return { ok: false, message: loadError.message };
+  if (!existing) return { ok: false, message: "Event not found." };
+  if (!existing.winner_team_id) {
+    return { ok: true, message: "No winner to clear." };
+  }
+
+  const { error } = await supabase
+    .from("events")
+    .update({ winner_team_id: null })
+    .eq("id", existing.id);
+  if (error) return { ok: false, message: error.message };
+
+  await supabase.from("audit_log").insert({
+    season_id: existing.season_id,
+    actor_id: user.id,
+    action: "event_updated",
+    entity_type: "event",
+    entity_id: existing.id,
+    summary: `Cleared winner for ${existing.name}`,
+    after_json: { winner_team_id: null } as never,
+  });
+
+  revalidateEventPaths(existing.id);
+  return { ok: true, message: "Winner cleared." };
 }

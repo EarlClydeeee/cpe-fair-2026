@@ -2,7 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { archiveEvent, saveEvent } from "@/app/actions/events";
+import {
+  archiveEvent,
+  clearEventWinner,
+  saveEvent,
+} from "@/app/actions/events";
 import { EventStatusPreview } from "@/components/admin/event-status-preview";
 import { initialActionState } from "@/lib/action-state";
 import type { FairEvent } from "@/lib/data/public";
@@ -111,6 +115,9 @@ export function EventManager({
   const [matchType, setMatchType] = useState<"head_to_head" | "all_teams">(
     "head_to_head",
   );
+  const [statusMode, setStatusMode] = useState<"upcoming" | "ongoing" | "ended">(
+    "upcoming",
+  );
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const isCreating = selectedId === NEW_EVENT;
@@ -120,7 +127,7 @@ export function EventManager({
   );
 
   // Remount when saved fields change so defaultValues pick up server refresh.
-  const formKey = `${selected?.id ?? NEW_EVENT}:${selected?.status_override ?? "upcoming"}:${selected?.updated_at ?? selected?.end_at ?? ""}`;
+  const formKey = `${selected?.id ?? NEW_EVENT}:${selected?.status_override ?? "upcoming"}:${selected?.winner_team_id ?? "none"}:${selected?.updated_at ?? selected?.end_at ?? ""}`;
 
   const syncSelection = (event?: FairEvent) => {
     setMatchType(event?.match_type ?? "head_to_head");
@@ -128,7 +135,11 @@ export function EventManager({
 
   useEffect(() => {
     setMatchType(selected?.match_type ?? "head_to_head");
-  }, [formKey, selected?.match_type]);
+    const override = selected?.status_override;
+    setStatusMode(
+      override === "ongoing" || override === "ended" ? override : "upcoming",
+    );
+  }, [formKey, selected?.match_type, selected?.status_override]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -159,12 +170,24 @@ export function EventManager({
     archiveEvent,
     initialActionState,
   );
+  const [clearWinnerState, clearWinnerAction] = useActionState(
+    clearEventWinner,
+    initialActionState,
+  );
 
   useEffect(() => {
-    if (saveState.ok || archiveState.ok) {
+    if (saveState.ok || archiveState.ok || clearWinnerState.ok) {
       router.refresh();
     }
-  }, [saveState.ok, saveState.message, archiveState.ok, archiveState.message, router]);
+  }, [
+    saveState.ok,
+    saveState.message,
+    archiveState.ok,
+    archiveState.message,
+    clearWinnerState.ok,
+    clearWinnerState.message,
+    router,
+  ]);
 
   const startDefaults = selected
     ? manilaTwelveHour(selected.start_at)
@@ -176,6 +199,8 @@ export function EventManager({
   const selectedStatus = selected
     ? getComputedEventStatus(selected, now)
     : null;
+  // Winner is only for admin-set Ended — not for Upcoming (even if schedule is past).
+  const canSetWinner = statusMode === "ended";
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
@@ -278,6 +303,9 @@ export function EventManager({
                     {event.is_highlighted ? (
                       <Badge tone="accent">Spotlight</Badge>
                     ) : null}
+                    {event.status_override === "ended" && !event.winner_team_id ? (
+                      <Badge tone="info">Needs winner</Badge>
+                    ) : null}
                   </span>
                 </button>
               );
@@ -304,6 +332,14 @@ export function EventManager({
               (target.value === "head_to_head" || target.value === "all_teams")
             ) {
               setMatchType(target.value);
+            }
+            if (
+              target.name === "status_override" &&
+              (target.value === "upcoming" ||
+                target.value === "ongoing" ||
+                target.value === "ended")
+            ) {
+              setStatusMode(target.value);
             }
           }}
         >
@@ -457,7 +493,7 @@ export function EventManager({
                   ? selected.status_override
                   : "upcoming"
               }
-              hint="You set the mode. Upcoming events past their end time become Ended automatically."
+              hint="Upcoming / Ongoing have no winner. Switch to Ended when the match is finished, then pick who won."
             >
               <option value="upcoming">Upcoming</option>
               <option value="ongoing">Ongoing</option>
@@ -469,9 +505,8 @@ export function EventManager({
                 <span className="font-semibold text-foreground">
                   {eventAdminStatusDisplay(selectedStatus)}
                 </span>
-                {selected?.status_override === "upcoming" &&
-                selectedStatus === "ended"
-                  ? " · schedule ended, saved as Final on next save"
+                {statusMode !== "ended" && selectedStatus === "ended"
+                  ? " · schedule is past end — set Status to Ended to announce a winner"
                   : null}
               </p>
             ) : null}
@@ -481,22 +516,39 @@ export function EventManager({
             <p className="text-[10px] tracking-[0.16em] text-muted uppercase">
               Match result
             </p>
-            <div className="rounded-lg border border-border bg-surface-2 px-3 py-3 text-sm">
-              <p className="text-xs tracking-wide text-muted uppercase">Winner</p>
-              <p className="mt-1 font-medium">
-                {selected?.winner_team?.name ?? "Not assigned"}
-              </p>
-              <p className="mt-2 text-xs text-muted">
-                {selectedStatus === "ended"
-                  ? "Open Status Preview to assign or change the winner. Points still publish from Leaderboard Control."
-                  : "Set Status mode to Ended (or wait until an Upcoming event’s end time passes), then assign the winner in Status Preview."}
-              </p>
-            </div>
+            {canSetWinner ? (
+              <SelectField
+                label="Winner"
+                name="winner_team_id"
+                defaultValue={selected?.winner_team_id ?? ""}
+                hint="Required to announce on the public event page. Points still publish from Leaderboard Control."
+              >
+                <option value="">Not announced yet</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </SelectField>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border bg-surface-2 px-3 py-3 text-sm">
+                <p className="text-xs tracking-wide text-muted uppercase">Winner</p>
+                <p className="mt-1 text-muted">
+                  No winner while Status is Upcoming or Ongoing.
+                </p>
+                <input type="hidden" name="winner_team_id" value="" />
+              </div>
+            )}
             <TextField
               label="Score / Result note"
               name="result_note"
               defaultValue={selected?.result_note ?? ""}
               placeholder="2-1 or 25-21, 25-19"
+              hint={
+                canSetWinner
+                  ? undefined
+                  : "Optional note. Winner is only set after Status is Ended."
+              }
             />
           </section>
 
@@ -506,13 +558,22 @@ export function EventManager({
 
         {selected ? (
           <div className="mt-3 space-y-2">
+            {canSetWinner && selected.winner_team_id ? (
+              <form action={clearWinnerAction}>
+                <input type="hidden" name="id" value={selected.id} />
+                <FormMessage state={clearWinnerState} />
+                <SubmitButton variant="ghost" className="w-full">
+                  Clear winner
+                </SubmitButton>
+              </form>
+            ) : null}
             <button
               type="button"
               onClick={() => setPreviewOpen(true)}
               className="w-full rounded-lg border border-accent/40 bg-accent-soft px-4 py-2.5 text-sm font-medium text-foreground transition hover:border-accent"
             >
               Preview status
-              {selectedStatus === "ended" ? " · Assign winner" : ""}
+              {canSetWinner ? " · Assign winner" : ""}
             </button>
             <form action={archiveAction}>
               <input type="hidden" name="id" value={selected.id} />

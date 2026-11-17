@@ -14,9 +14,10 @@ import { formatPoints, formatTime } from "@/lib/format";
 export const metadata: Metadata = { title: "Admin overview" };
 
 async function AdminOverviewContent() {
-  const { stats, diffs, activity } = await getOverview();
+  const { stats, diffs, activity, unannouncedWinners } = await getOverview();
   const now = new Date();
   const firstDiff = diffs[0];
+  const firstUnannounced = unannouncedWinners[0];
 
   return (
     <div className="space-y-8">
@@ -68,6 +69,46 @@ async function AdminOverviewContent() {
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_0.9fr]">
         <div className="space-y-4">
+          {firstUnannounced ? (
+            <div className="rounded-xl border border-info/40 bg-info/10 p-5">
+              <p className="text-[10px] tracking-[0.16em] text-info uppercase">
+                Winner unannounced
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                {unannouncedWinners.length} finished event
+                {unannouncedWinners.length === 1 ? "" : "s"} still need a public
+                winner.
+              </p>
+              <ul className="mt-4 space-y-2">
+                {unannouncedWinners.slice(0, 4).map((event) => (
+                  <li
+                    key={event.id}
+                    className="rounded-lg border border-info/25 bg-background/40 px-3 py-3"
+                  >
+                    <p className="font-medium">{event.name}</p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {event.categories?.name ?? "Event"}
+                      {event.team_a && event.team_b
+                        ? ` · ${event.team_a.name} vs ${event.team_b.name}`
+                        : ""}
+                      {" · "}
+                      ended {formatTime(event.end_at)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <LinkButton
+                href={`/admin/events`}
+                className="mt-4"
+              >
+                Announce winners ({unannouncedWinners.length})
+              </LinkButton>
+              <p className="mt-3 text-xs text-muted">
+                Set Status to Ended, pick the winner, then Save event.
+              </p>
+            </div>
+          ) : null}
+
           {firstDiff ? (
             <div className="rounded-xl border border-accent/40 bg-accent-soft p-5">
               <p className="text-[10px] tracking-[0.16em] text-accent uppercase">
@@ -150,6 +191,12 @@ async function AdminOverviewContent() {
               <li className="flex justify-between">
                 <span className="text-muted">Season</span>
                 <span>2026</span>
+              </li>
+              <li className="flex justify-between">
+                <span className="text-muted">Winners unannounced</span>
+                <span className={stats.unannouncedWinners ? "text-info" : ""}>
+                  {String(stats.unannouncedWinners).padStart(2, "0")}
+                </span>
               </li>
             </ul>
             <p className="mt-4 text-xs text-accent">Preview data · Replace before launch</p>

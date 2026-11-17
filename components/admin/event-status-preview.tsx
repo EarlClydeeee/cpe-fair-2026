@@ -52,7 +52,8 @@ export function EventStatusPreview({
     () => getComputedEventStatus(event, now),
     [event, now],
   );
-  const isFinal = status === "ended";
+  // Winner assignment only after admin sets Status mode to Ended.
+  const isFinal = event.status_override === "ended";
 
   const matchup = eventMatchupLabel(event);
   const categoryVenue = [
@@ -299,11 +300,7 @@ export function EventStatusPreview({
                 Assign winner.
               </div>
               <p className="mt-2 text-xs text-muted">
-                Set Status mode to Ended on the event form first
-                {event.status_override === "upcoming"
-                  ? ", or wait until the scheduled end time passes"
-                  : ""}
-                .
+                Set Status mode to Ended on the event form, then pick who won.
               </p>
             </>
           )}

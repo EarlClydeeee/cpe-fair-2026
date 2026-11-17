@@ -76,6 +76,7 @@ export const eventSchema = z
       .transform((v) => v === "on" || v === "true"),
     // Legacy "auto" still accepted from older rows; UI no longer offers it.
     status_override: z.enum(["auto", "upcoming", "ongoing", "ended"]),
+    winner_team_id: optionalUuid,
     result_note: z.string().trim().max(500).default(""),
   })
   .superRefine((data, ctx) => {
@@ -91,6 +92,19 @@ export const eventSchema = z
           code: "custom",
           message: "Team A and Team B must differ.",
           path: ["team_b_id"],
+        });
+      }
+      if (
+        data.winner_team_id &&
+        data.team_a_id &&
+        data.team_b_id &&
+        data.winner_team_id !== data.team_a_id &&
+        data.winner_team_id !== data.team_b_id
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Winner must be Team A or Team B.",
+          path: ["winner_team_id"],
         });
       }
     }

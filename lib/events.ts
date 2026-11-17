@@ -150,6 +150,8 @@ export function eventFormat(event: FairEvent): string | null {
 }
 
 export function eventWinnerLabel(event: FairEvent): string | null {
+  // Only announce when admin has set Status mode to Ended.
+  if (event.status_override !== "ended") return null;
   if (!event.winner_team) return null;
   return `Winner: ${event.winner_team.name}`;
 }
