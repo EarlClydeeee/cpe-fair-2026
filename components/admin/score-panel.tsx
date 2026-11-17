@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { discardDraft, saveScoreDraft } from "@/app/actions/scores";
 import { initialActionState } from "@/lib/action-state";
 import { formatPoints } from "@/lib/format";
@@ -18,7 +18,6 @@ export function ScorePanel({
   teamTotal,
   draftPoints,
   draftId,
-  reason,
 }: {
   teams: { id: string; name: string }[];
   categories: { id: string; name: string }[];
@@ -39,6 +38,10 @@ export function ScorePanel({
   const [accumulated, setAccumulated] = useState(initialAccumulated);
   const [saveState, saveAction] = useActionState(saveScoreDraft, initialActionState);
   const [discardState, discardAction] = useActionState(discardDraft, initialActionState);
+
+  useEffect(() => {
+    setAccumulated(initialAccumulated);
+  }, [cellKey, initialAccumulated]);
 
   const draftScore = publishedPoints + accumulated;
   const previewTotal = useMemo(
@@ -61,12 +64,13 @@ export function ScorePanel({
           {draftId ? "Draft saved — not yet published." : "No draft for this cell."}
         </p>
       </div>
-      <form key={cellKey} action={saveAction} className="space-y-3">
+      <form action={saveAction} className="space-y-3">
         <SelectField
           label="Team"
           name="team_id"
-          defaultValue={selectedTeamId}
+          value={selectedTeamId}
           required
+          error={saveState.errors?.team_id?.[0]}
           onChange={(e) => {
             if (!selectedCategoryId) return;
             navigateSelection(e.target.value, selectedCategoryId);
@@ -81,8 +85,9 @@ export function ScorePanel({
         <SelectField
           label="Category"
           name="category_id"
-          defaultValue={selectedCategoryId}
+          value={selectedCategoryId}
           required
+          error={saveState.errors?.category_id?.[0]}
           onChange={(e) => {
             if (!selectedTeamId) return;
             navigateSelection(selectedTeamId, e.target.value);
@@ -106,9 +111,10 @@ export function ScorePanel({
           type="number"
           min={0}
           step={1}
-          defaultValue={initialAccumulated}
+          value={accumulated}
           required
           hint="Whole numbers only — added to the published score."
+          error={saveState.errors?.draft_points?.[0]}
           onChange={(e) => {
             const next = Number(e.target.value);
             setAccumulated(Number.isFinite(next) ? Math.max(0, Math.trunc(next)) : 0);
@@ -125,7 +131,10 @@ export function ScorePanel({
         <TextAreaField
           label="Reason for change"
           name="reason"
-          defaultValue={reason ?? ""}
+          key={`${cellKey}-reason`}
+          defaultValue=""
+          placeholder="Why is this score changing?"
+          error={saveState.errors?.reason?.[0]}
         />
         <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm">
           <p className="text-[10px] tracking-wide text-muted uppercase">

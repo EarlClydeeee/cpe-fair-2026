@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { ScorePanel } from "@/components/admin/score-panel";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
@@ -11,7 +13,8 @@ export const metadata: Metadata = { title: "Leaderboard control" };
 
 type Props = { searchParams: Promise<{ team?: string; category?: string }> };
 
-export default async function AdminLeaderboardsPage({ searchParams }: Props) {
+async function LeaderboardsContent({ searchParams }: Props) {
+  await connection();
   const { team: teamId, category: categoryId } = await searchParams;
   const { categories, rows, drafts, draftMap } = await getScoreMatrix();
   const recent = await getAuditLog();
@@ -129,7 +132,6 @@ export default async function AdminLeaderboardsPage({ searchParams }: Props) {
             teamTotal={teamTotal}
             draftPoints={draft?.draft_points}
             draftId={draft?.id}
-            reason={draft?.reason}
           />
         ) : null}
       </div>
@@ -156,5 +158,19 @@ export default async function AdminLeaderboardsPage({ searchParams }: Props) {
         </ul>
       </div>
     </div>
+  );
+}
+
+export default function AdminLeaderboardsPage(props: Props) {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
+          Loading leaderboards…
+        </div>
+      }
+    >
+      <LeaderboardsContent {...props} />
+    </Suspense>
   );
 }
