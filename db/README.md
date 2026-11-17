@@ -14,10 +14,10 @@ Run migrations in order, then seed, in the Supabase SQL editor — or copy into 
 
 ## First owner
 
-Sign up at `/login` after creating an auth user, then:
+Create an Auth user with email `admin@gmail.com` (or set `ADMIN_LOGIN_EMAIL`), then apply `migrations/0004_admin.sql` so the profile is `owner`. Login uses access code only; the server supplies that email automatically.
 
 ```sql
-update public.profiles set role = 'owner' where email = 'you@example.com';
+update public.profiles set role = 'owner' where email = 'admin@gmail.com';
 ```
 
 Or insert a pending invitation before signup so `handle_new_user` assigns the role automatically.

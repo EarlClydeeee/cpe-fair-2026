@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
+import { ADMIN_LOGIN_EMAIL } from "@/lib/auth-credentials";
 import { createClient } from "@/lib/supabase/server";
 import { signInSchema } from "@/lib/validation/auth";
 
@@ -15,11 +16,11 @@ export async function signIn(_prev: ActionState, formData: FormData): Promise<Ac
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({
-    email: parsed.data.email,
+    email: ADMIN_LOGIN_EMAIL,
     password: parsed.data.password,
   });
 
-  if (error) return { ok: false, message: error.message };
+  if (error) return { ok: false, message: "Invalid access code." };
 
   const {
     data: { user },

@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { signIn } from "@/app/actions/auth";
 import { initialActionState } from "@/lib/action-state";
 import { FormMessage } from "./ui/form-message";
-import { CheckboxField, TextField } from "./ui/input";
 import { SubmitButton } from "./submit-button";
 
 export function LoginForm() {
@@ -14,114 +13,105 @@ export function LoginForm() {
   const next = searchParams.get("next") ?? "/admin";
   const unauthorized = searchParams.get("error") === "unauthorized";
   const [state, action] = useActionState(signIn, initialActionState);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showCode, setShowCode] = useState(false);
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      <section className="relative flex flex-col justify-between overflow-hidden bg-accent px-8 py-10 text-black sm:px-12">
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-md bg-black font-display text-xl text-accent">
-            A
-          </span>
-          <span>
-            <span className="block font-display text-2xl leading-none">ACCESS</span>
-            <span className="block text-[10px] tracking-[0.18em] uppercase">CPE Fair 2026</span>
-          </span>
-        </div>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-12">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 40% at 50% 0%, #FF6B2133, transparent 70%), radial-gradient(ellipse 50% 35% at 80% 100%, #FF6B2114, transparent 60%)",
+        }}
+        aria-hidden
+      />
 
-        <div className="my-16 max-w-md">
-          <p className="text-xs font-semibold tracking-[0.2em] uppercase">
-            For the crew behind the competition.
-          </p>
-          <h1 className="mt-4 font-display text-6xl leading-[0.9] sm:text-7xl">
-            Keep the fair in flight.
-          </h1>
-          <p className="mt-6 text-sm leading-6 text-black/80">
-            Every fixture. Every point. Every team. One place to keep the fair moving.
-          </p>
-          <div className="mt-8 border-t-2 border-dashed border-black/30" />
-        </div>
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <div className="h-1 bg-accent" aria-hidden />
 
-        <div className="relative z-10 space-y-1">
-          <p className="text-xs tracking-[0.16em] uppercase">Eight teams. One shared ambition.</p>
-          <p className="font-display text-2xl tracking-wide">Fly high. Play as one.</p>
-        </div>
+        <div className="px-8 pt-10 pb-8 sm:px-10">
+          <div className="flex flex-col items-center text-center">
+            <span className="grid size-14 place-items-center rounded-xl bg-accent font-display text-3xl text-black shadow-[0_0_28px_#FF6B2166]">
+              A
+            </span>
+            <h1 className="mt-6 font-display text-4xl tracking-[0.08em] uppercase sm:text-5xl">
+              Umpires Gate
+            </h1>
+            <p className="mt-2 text-xs tracking-[0.14em] text-muted uppercase">
+              Restricted access · ACCESS CPE Fair admins only
+            </p>
+          </div>
 
-        <span className="pointer-events-none absolute bottom-0 right-4 font-display text-[11rem] leading-none text-black/10 sm:text-[14rem]">
-          2026
-        </span>
-      </section>
-
-      <section className="flex flex-col justify-between bg-background px-8 py-12 sm:px-12">
-        <div className="mx-auto w-full max-w-md flex-1">
-          <p className="text-xs tracking-[0.2em] text-accent uppercase">
-            Control room / Authorized access
-          </p>
-          <h2 className="mt-3 font-display text-5xl">Welcome back.</h2>
-          <p className="mt-3 text-sm text-muted">
-            Sign in to manage ACCESS CPE Fair 2026. Your team is counting on you.
-          </p>
           {unauthorized ? (
-            <p className="mt-4 rounded-lg bg-danger/15 px-3 py-2 text-sm text-danger">
+            <p className="mt-6 rounded-lg bg-danger/15 px-3 py-2 text-center text-sm text-danger">
               This account is not authorized for the control room.
             </p>
           ) : null}
 
-          <form action={action} className="mt-8 space-y-4">
+          <form action={action} className="mt-8 space-y-5">
             <input type="hidden" name="next" value={next} />
-            <TextField
-              label="Email address"
-              name="email"
-              type="email"
-              placeholder="you@example.com"
-              required
-              error={state.errors?.email?.[0]}
-            />
-            <div className="relative">
-              <TextField
-                label="Password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                required
-                error={state.errors?.password?.[0]}
-              />
-              <button
-                type="button"
-                className="absolute top-8 right-3 text-xs text-muted transition-colors duration-200 hover:text-accent"
-                onClick={() => setShowPassword((v) => !v)}
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <CheckboxField label="Keep me signed in" name="remember" />
-              <span className="text-xs text-accent">Forgot password?</span>
-            </div>
+
+            <label className="block space-y-1.5">
+              <span className="text-xs font-medium tracking-[0.16em] text-accent uppercase">
+                Access code
+              </span>
+              <div className="relative">
+                <span
+                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
+                  aria-hidden
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                  </svg>
+                </span>
+                <input
+                  id="password"
+                  name="password"
+                  type={showCode ? "text" : "password"}
+                  required
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  aria-invalid={Boolean(state.errors?.password?.[0])}
+                  className="w-full rounded-lg border border-border bg-background py-2.5 pr-16 pl-10 text-sm text-foreground outline-none transition placeholder:text-muted/50 focus:border-accent focus:ring-1 focus:ring-accent/40"
+                />
+                <button
+                  type="button"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-xs tracking-wide text-muted uppercase transition-colors duration-200 hover:text-accent"
+                  onClick={() => setShowCode((v) => !v)}
+                >
+                  {showCode ? "Hide" : "Show"}
+                </button>
+              </div>
+              {state.errors?.password?.[0] ? (
+                <span className="block text-xs text-danger">{state.errors.password[0]}</span>
+              ) : (
+                <span className="block text-xs text-muted">
+                  Use the access code provided by your administrator.
+                </span>
+              )}
+            </label>
+
             <FormMessage state={state} />
-            <SubmitButton className="w-full">Sign in</SubmitButton>
+            <SubmitButton className="w-full tracking-[0.12em] uppercase">
+              Enter terminal →
+            </SubmitButton>
           </form>
 
-          <p className="mt-6 text-xs text-muted">Need access? Contact your workspace owner.</p>
-
-          <div className="mt-6 rounded-xl border border-border bg-surface p-4 text-xs leading-5 text-muted">
-            <p className="font-semibold tracking-wide text-foreground uppercase">
-              Authorized organizers only
-            </p>
-            <p className="mt-2">
-              Your role determines which fair-management tools you can use. Contact your workspace
-              owner if you need additional access.
-            </p>
-          </div>
+          <p className="mt-6 text-center text-xs text-muted">
+            Need access? Contact your workspace owner.
+          </p>
         </div>
 
-        <div className="mx-auto mt-10 flex w-full max-w-md items-center justify-between border-t border-border pt-6 text-xs text-muted">
-          <Link href="/leaderboard" className="transition-colors duration-200 hover:text-accent">
+        <div className="border-t border-border px-8 py-4 text-center sm:px-10">
+          <Link
+            href="/leaderboard"
+            className="text-xs tracking-wide text-muted uppercase transition-colors duration-200 hover:text-accent"
+          >
             ← Back to leaderboard
           </Link>
-          <span>UI preview · Auth required</span>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
