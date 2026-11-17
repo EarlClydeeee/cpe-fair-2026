@@ -10,7 +10,7 @@ import {
   eventWinnerLabel,
   getComputedEventStatus,
 } from "@/lib/events";
-import { formatDateManila, formatEventWindow, formatTime } from "@/lib/format";
+import { formatDate, formatTime } from "@/lib/format";
 
 export function HeroMatchBanner({
   event,
@@ -73,13 +73,7 @@ export function HeroMatchBanner({
       <div className="grid place-items-center bg-surface p-8">
         <div className="text-center">
           <p className="text-xs tracking-[0.18em] text-muted uppercase">
-            {formatDateManila(event.start_at)}
-          </p>
-          <p className="mt-2 font-display text-5xl sm:text-6xl">
-            {formatTime(event.start_at)}
-          </p>
-          <p className="mt-2 text-xs text-muted">
-            {formatEventWindow(event.start_at, event.end_at)}
+            {formatDate(event.starts_at, true)}
           </p>
         </div>
       </div>

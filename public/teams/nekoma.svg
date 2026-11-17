@@ -1,0 +1,21 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'>
+    <defs>
+      <linearGradient id='ng' x1='0%' y1='0%' x2='100%' y2='100%'>
+        <stop offset='0%' stop-color='#ef4444' />
+        <stop offset='100%' stop-color='#b91c1c' />
+      </linearGradient>
+    </defs>
+    <!-- Nekoma Sitting Cat -->
+    <!-- Head & Ears -->
+    <path d='M62,15 L70,26 C72,25 75,25 78,27 L83,18 L83,32 C86,36 87,41 85,46 C83,50 80,53 76,54 C72,54 68,52 65,49 C63,45 63,40 65,35 L62,15 Z' fill='url(#ng)' />
+    <!-- Ears interior -->
+    <polygon points='66,21 69,27 64,26' fill='#fca5a5' />
+    <polygon points='80,23 81,30 76,28' fill='#fca5a5' />
+    <!-- Body & Curved Back -->
+    <path d='M67,46 C67,52 64,58 60,63 C55,70 48,77 40,82 C34,85 27,87 20,87 C22,83 25,80 29,76 C35,70 41,63 45,55 C49,46 51,36 53,26 C57,32 63,38 67,46 Z' fill='url(#ng)' />
+    <path d='M65,49 C68,55 70,63 71,71 C71,76 70,81 68,85 L48,85 C55,81 60,74 62,66 C63,59 63,53 65,49 Z' fill='#dc2626' />
+    <!-- Chest / Front legs -->
+    <path d='M75,54 C78,61 79,70 78,79 C78,82 78,85 77,87 L71,87 C72,82 72,75 70,68 C69,63 67,58 65,53 C69,54 72,54 75,54 Z' fill='#b91c1c' />
+    <!-- Long curled tail -->
+    <path d='M20,87 C16,87 13,85 12,81 C10,75 13,68 18,63 C23,58 30,55 37,54 C35,58 30,62 25,66 C20,70 17,74 18,78 C19,81 22,82 26,82 C32,82 39,78 45,74 C42,79 36,83 30,85 C27,86 23,87 20,87 Z' fill='url(#ng)' />
+  </svg>

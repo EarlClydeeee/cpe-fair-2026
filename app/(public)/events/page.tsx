@@ -3,6 +3,7 @@ import { EventsLineup } from "@/components/events/events-lineup";
 import { getCategories, getEvents } from "@/lib/data/public";
 
 export const metadata: Metadata = { title: "Events" };
+export const instant = false;
 
 type Props = { searchParams: Promise<{ category?: string; day?: string }> };
 
@@ -22,11 +23,6 @@ export default async function EventsPage({ searchParams }: Props) {
           <p className="mt-3 max-w-xl text-sm text-muted">
             Find your next match, follow the action, and catch every result.
           </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs tracking-[0.18em] text-accent uppercase">Fly high</p>
-          <p className="font-display text-6xl text-accent sm:text-7xl">2026</p>
-          <p className="text-xs tracking-[0.18em] text-muted uppercase">The next chapter</p>
         </div>
       </div>
 

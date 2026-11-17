@@ -6,6 +6,7 @@ import { getAuditLog } from "@/lib/data/admin";
 import { formatDateTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Change history" };
+export const instant = false;
 
 type Props = { searchParams: Promise<{ q?: string; action?: string; id?: string }> };
 

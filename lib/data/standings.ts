@@ -72,6 +72,7 @@ export async function getScoreMatrix() {
 
 export async function getDrafts(): Promise<Tables<"score_drafts">[]> {
   await requireStaff();
+  if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("score_drafts")

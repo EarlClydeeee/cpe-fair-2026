@@ -13,7 +13,7 @@ import {
   eventWinnerLabel,
   getComputedEventStatus,
 } from "@/lib/events";
-import { formatEventWindow } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 
 export function MatchDetailsDrawer({
   event,
@@ -133,7 +133,7 @@ export function MatchDetailsDrawer({
             <div className="rounded-xl border border-border bg-background p-4">
               <dt className="text-[10px] tracking-wide text-muted uppercase">When</dt>
               <dd className="mt-1 font-medium">
-                {formatEventWindow(event.start_at, event.end_at)}
+                {formatDateTime(event.starts_at)}
               </dd>
             </div>
             <div className="rounded-xl border border-border bg-background p-4">

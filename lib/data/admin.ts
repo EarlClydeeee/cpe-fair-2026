@@ -94,6 +94,7 @@ export async function getAdminEvents(): Promise<FairEvent[]> {
 
 export async function getAdminTeams() {
   await requireStaff("/admin/teams");
+  if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
   const season = await getActiveSeason();
   if (!season) return [];
@@ -109,6 +110,7 @@ export async function getAdminTeams() {
 
 export async function getAccessDirectory() {
   await requireStaff("/admin/access");
+  if (!isSupabaseConfigured) return { profiles: [], invites: [] };
   const supabase = await createClient();
 
   const [{ data: profiles, error: pErr }, { data: invites, error: iErr }] = await Promise.all([
@@ -128,6 +130,7 @@ export async function getAccessDirectory() {
 
 export async function getAuditLog(filters?: { action?: string; q?: string }) {
   await requireStaff("/admin/leaderboards/history");
+  if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
   let q = supabase.from("audit_log").select("*").order("created_at", { ascending: false }).limit(100);
 

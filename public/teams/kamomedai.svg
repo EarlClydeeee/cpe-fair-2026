@@ -1,0 +1,15 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'>
+    <defs>
+      <linearGradient id='mg' x1='0%' y1='0%' x2='100%' y2='100%'>
+        <stop offset='0%' stop-color='#7dd3fc' />
+        <stop offset='50%' stop-color='#0284c7' />
+        <stop offset='100%' stop-color='#0369a1' />
+      </linearGradient>
+    </defs>
+    <!-- Kamomedai Soaring Seagull -->
+    <path d='M18,12 C22,22 28,34 36,44 C42,50 49,54 56,55 C63,55 70,52 76,46 C83,38 89,28 94,18 C88,27 80,36 71,43 C64,48 57,50 51,48 C46,46 41,40 37,32 C32,23 26,14 18,12 Z' fill='url(#mg)' />
+    <path d='M45,46 C47,52 48,58 48,65 C48,72 46,79 43,86 C46,81 50,75 52,68 C54,61 54,54 52,48 Z' fill='#0284c7' />
+    <!-- Head / beak -->
+    <path d='M49,50 C52,48 56,48 59,51 C63,54 67,56 71,56 C67,58 63,59 59,58 C55,57 52,54 49,50 Z' fill='#bae6fd' />
+    <polygon points='69,55 76,57 70,58' fill='#f59e0b' />
+  </svg>

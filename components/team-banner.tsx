@@ -30,22 +30,29 @@ export function TeamBanner({
     );
   }
 
+  const isTransparentGraphic =
+    artworkUrl.endsWith(".png") || artworkUrl.endsWith(".svg");
+
   return (
     <div
       className={`relative overflow-hidden border border-border bg-surface-2 ${fill ? "size-full" : ""} ${className}`}
       style={{
         ...(fill ? {} : { aspectRatio: ratio }),
-        background: `radial-gradient(circle at 50% 40%, ${colorHex}33, transparent 55%), #151515`,
+        background: `radial-gradient(circle at 50% 45%, ${colorHex}30, transparent 65%), #141416`,
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- admin-supplied remote URLs */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- remote/dynamic URLs */}
       <img
         src={artworkUrl}
         alt={`${name} banner`}
-        className="absolute inset-0 size-full object-cover"
+        className={
+          isTransparentGraphic
+            ? "absolute inset-0 m-auto max-h-[72%] max-w-[72%] object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.65)]"
+            : "absolute inset-0 size-full object-cover"
+        }
       />
       <div
-        className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent"
+        className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/60 to-transparent"
         aria-hidden
       />
     </div>

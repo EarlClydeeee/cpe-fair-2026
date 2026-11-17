@@ -1,0 +1,27 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'>
+    <defs>
+      <linearGradient id='ytg' x1='0%' y1='0%' x2='100%' y2='100%'>
+        <stop offset='0%' stop-color='#bef264' />
+        <stop offset='60%' stop-color='#a3e635' />
+        <stop offset='100%' stop-color='#65a30d' />
+      </linearGradient>
+    </defs>
+    <!-- Itachiyama Running Weasel (NO BACKGROUND) -->
+    <!-- Head -->
+    <path d='M78,38 C82,36 87,35 91,36 C95,37 98,40 99,43 C97,45 93,46 89,46 C85,46 81,44 78,41 Z' fill='url(#ytg)' />
+    <!-- Rounded Ear -->
+    <circle cx='80' cy='36' r='2.5' fill='#bef264' />
+    <circle cx='97' cy='42' r='1.2' fill='#1e293b' />
+    <!-- Long arched acrobatic body -->
+    <path d='M83,41 C76,38 68,34 59,33 C49,32 39,34 30,39 C22,44 16,52 11,60 C7,67 4,75 2,82 C5,76 10,69 16,63 C23,56 31,50 40,46 C50,42 61,41 71,43 C76,44 80,45 83,41 Z' fill='url(#ytg)' />
+    <!-- Tail -->
+    <path d='M15,62 C11,67 7,73 4,79 C2,83 1,86 0,88 C3,86 7,82 12,76 C17,70 21,64 25,58 Z' fill='#a3e635' />
+    <!-- Front Leg extended forward -->
+    <path d='M75,44 L80,56 L86,63 L83,64 L77,58 L72,48 Z' fill='#84cc16' />
+    <!-- Front Leg 2 -->
+    <path d='M70,44 L73,53 L78,59 L75,60 L71,55 L67,46 Z' fill='#65a30d' />
+    <!-- Rear Leg extended backward -->
+    <path d='M35,46 L30,58 L24,66 L22,64 L27,57 L32,48 Z' fill='#84cc16' />
+    <!-- Rear Leg 2 -->
+    <path d='M40,45 L36,54 L32,62 L30,60 L34,54 L38,46 Z' fill='#65a30d' />
+  </svg>

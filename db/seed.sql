@@ -13,7 +13,8 @@ insert into public.categories (id, season_id, slug, name, sort_order) values
   ('22222222-2222-2222-2222-222222222203', '11111111-1111-1111-1111-111111111111', 'esports', 'Esports', 3),
   ('22222222-2222-2222-2222-222222222204', '11111111-1111-1111-1111-111111111111', 'academics', 'Academics', 4),
   ('22222222-2222-2222-2222-222222222205', '11111111-1111-1111-1111-111111111111', 'talents', 'Talents', 5),
-  ('22222222-2222-2222-2222-222222222206', '11111111-1111-1111-1111-111111111111', 'mini-games', 'Mini Games', 6)
+  ('22222222-2222-2222-2222-222222222206', '11111111-1111-1111-1111-111111111111', 'mini-games', 'Mini Games', 6),
+  ('22222222-2222-2222-2222-222222222207', '11111111-1111-1111-1111-111111111111', 'literacy', 'Literacy', 7)
 on conflict (season_id, slug) do nothing;
 
 insert into public.competition_teams (id, season_id, name, slug, affiliation, color_hex, sort_order) values
@@ -137,24 +138,12 @@ insert into public.events (
    '2026-11-24 15:00:00+08', '2026-11-24 17:00:00+08', 'Main stage', 'All eight teams',
    null, '', false, 'auto', false),
   ('55555555-5555-5555-5555-555555555507', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222206',
-   'Minute to Win It', 'head_to_head',
-   '33333333-3333-3333-3333-333333333305', '33333333-3333-3333-3333-333333333308',
-   '2026-11-24 11:30:00+08', '2026-11-24 13:00:00+08', 'Activity hall', '',
-   null, '', false, 'auto', false)
-on conflict (id) do update
-  set name = excluded.name,
-      match_type = excluded.match_type,
-      team_a_id = excluded.team_a_id,
-      team_b_id = excluded.team_b_id,
-      start_at = excluded.start_at,
-      end_at = excluded.end_at,
-      venue = excluded.venue,
-      match_format = excluded.match_format,
-      winner_team_id = excluded.winner_team_id,
-      result_note = excluded.result_note,
-      is_highlighted = excluded.is_highlighted,
-      status_override = excluded.status_override,
-      is_archived = excluded.is_archived;
+   'Minute to Win It', '33333333-3333-3333-3333-333333333305', '33333333-3333-3333-3333-333333333308',
+   2, '2026-02-24 11:30:00+08', 'Activity hall', 'upcoming', ''),
+  ('55555555-5555-5555-5555-555555555508', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222207',
+   'Debate Championship', null, null,
+   3, '2026-02-25 10:00:00+08', 'Conference Hall', 'upcoming', 'All eight teams')
+on conflict (id) do nothing;
 
 insert into public.audit_log (season_id, action, entity_type, summary, after_json) values
   ('11111111-1111-1111-1111-111111111111', 'draft_saved', 'score_draft',

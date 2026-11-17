@@ -1,0 +1,17 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'>
+    <defs>
+      <linearGradient id='sg' x1='0%' y1='0%' x2='100%' y2='100%'>
+        <stop offset='0%' stop-color='#e879f9' />
+        <stop offset='50%' stop-color='#a855f7' />
+        <stop offset='100%' stop-color='#6b21a8' />
+      </linearGradient>
+    </defs>
+    <!-- Shiratorizawa Soaring Eagle -->
+    <path d='M50,42 C44,35 34,26 22,20 C14,16 7,15 3,15 C5,20 9,27 15,34 C22,41 30,48 38,53 C32,56 25,58 18,60 C14,61 10,61 7,61 C12,65 19,67 27,67 C35,66 43,62 49,56 L50,56 C52,60 55,64 60,67 C66,70 74,72 82,72 C86,72 91,71 95,69 C91,66 85,63 79,59 C74,56 69,51 66,45 C73,43 82,37 89,30 C94,25 98,19 100,14 C94,15 86,18 78,22 C67,28 58,35 52,43 Z' fill='url(#sg)' />
+    <!-- Head & Hooked Beak -->
+    <path d='M47,51 C48,46 51,43 55,42 C58,42 61,44 62,47 C64,51 64,56 61,60 C58,63 54,64 50,63 C46,62 44,57 47,51 Z' fill='#fae8ff' />
+    <path d='M58,54 L67,56 L63,60 C61,61 59,58 58,54 Z' fill='#facc15' />
+    <!-- Talons -->
+    <path d='M48,64 L46,75 L43,72 L45,64 Z' fill='#facc15' />
+    <path d='M53,64 L53,76 L50,73 L51,64 Z' fill='#facc15' />
+  </svg>

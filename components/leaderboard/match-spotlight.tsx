@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import type { FairEvent } from "@/lib/data/public";
-import {
-  eventWinnerLabel,
-  getComputedEventStatus,
-  pickFeaturedEvent,
-} from "@/lib/events";
-import { formatTime } from "@/lib/format";
-import { useNow } from "@/lib/hooks/use-now";
+import { pickFeaturedEvent } from "@/lib/events";
 
 /** Prefer highlighted, else ongoing, else soonest upcoming. Optionally prefer a category. */
 export function pickSpotlight(
@@ -23,55 +17,34 @@ export function pickSpotlight(
   return pickFeaturedEvent(scoped.length ? scoped : events, now);
 }
 
-export function MatchSpotlight({
-  events,
-  categorySlug,
-}: {
-  events: FairEvent[];
-  categorySlug?: string;
-}) {
-  const now = useNow(30_000);
-  const event = pickSpotlight(events, categorySlug, now);
-  if (!event) return null;
-
-  const status = getComputedEventStatus(event, now);
-  const live = status === "ongoing";
+export function MatchSpotlight({ event }: { event: FairEvent }) {
+  const categoryLabel = event.categories?.name || "SPORTS";
   const matchup =
     event.team_a && event.team_b
-      ? `${event.team_a.name} vs ${event.team_b.name}`
-      : null;
-  const winner = eventWinnerLabel(event);
+      ? { a: event.team_a.name, b: event.team_b.name }
+      : { a: "KARASUNO", b: "NEKOMA" };
 
   return (
-    <div className="rounded-xl bg-accent p-5 text-black">
-      <p className="text-[10px] font-semibold tracking-[0.18em] uppercase">
-        Match spotlight ·{" "}
-        {event.is_highlighted
-          ? "Pinned"
-          : live
-            ? "Live now"
-            : status === "ended"
-              ? "Final"
-              : "Up next"}
+    <Link
+      href={`/events/${event.id}`}
+      className="group block rounded-xl bg-[#ff6a00] p-6 text-black shadow-lg shadow-orange-950/20 transition-all duration-200 hover:brightness-105"
+    >
+      <p className="text-[10px] font-black tracking-[0.18em] text-black uppercase">
+        MATCH SPOTLIGHT
       </p>
-      <h3 className="mt-3 font-display text-4xl leading-none uppercase">
-        {event.categories?.name || event.name}
+      <p className="mt-0.5 text-[10px] font-bold tracking-[0.16em] text-black/80 uppercase">
+        {categoryLabel} / SAMPLE MATCH
+      </p>
+
+      <h3 className="mt-3 font-display text-4xl font-black uppercase tracking-tight text-black sm:text-5xl">
+        {event.title || "VOLLEYBALL"}
       </h3>
-      {matchup ? (
-        <p className="mt-2 text-sm font-medium">{matchup}</p>
-      ) : (
-        <p className="mt-2 text-sm font-medium">{event.name}</p>
-      )}
-      {winner ? <p className="mt-1 text-sm font-medium">{winner}</p> : null}
-      <p className="mt-3 text-sm opacity-80">
-        {event.venue} · {formatTime(event.start_at)} – {formatTime(event.end_at)}
-      </p>
-      <Link
-        href={`/events/${event.id}`}
-        className="mt-5 inline-flex rounded-lg bg-black px-4 py-2 text-sm text-white transition-opacity duration-200 hover:opacity-90"
-      >
-        View match details
-      </Link>
-    </div>
+
+      <div className="mt-5 flex items-center justify-between font-display text-base font-black tracking-wide uppercase sm:text-lg">
+        <span>{matchup.a}</span>
+        <span className="text-xs font-semibold lowercase opacity-75">vs</span>
+        <span>{matchup.b}</span>
+      </div>
+    </Link>
   );
 }

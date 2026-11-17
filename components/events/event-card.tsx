@@ -11,7 +11,7 @@ import {
   eventWinnerLabel,
   getComputedEventStatus,
 } from "@/lib/events";
-import { formatDateManila, formatTime } from "@/lib/format";
+import { formatDate, formatTime } from "@/lib/format";
 
 export function EventCard({
   event,
@@ -54,8 +54,7 @@ export function EventCard({
         <p className="mt-1 text-xs text-muted">{event.result_note}</p>
       ) : null}
       <p className="mt-4 text-xs text-muted">
-        {formatDateManila(event.start_at)} · {formatTime(event.start_at)} –{" "}
-        {formatTime(event.end_at)} · {event.venue}
+        {formatDate(event.starts_at)} · {formatTime(event.starts_at)} · {event.venue}
       </p>
       {cta.kind === "results" ? (
         <Link

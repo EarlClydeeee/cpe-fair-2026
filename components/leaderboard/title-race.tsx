@@ -17,26 +17,32 @@ export function TitleRace({
   const lead = first.total - second.total;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5">
-      <p className="text-[10px] tracking-[0.18em] text-muted uppercase">The title race</p>
+    <div className="rounded-xl border border-neutral-800/90 bg-[#16171b] p-6 text-white shadow-sm">
+      <p className="text-[10px] font-bold tracking-[0.18em] text-neutral-400 uppercase">
+        THE TITLE RACE
+      </p>
+
       <div className="mt-4 grid grid-cols-2 gap-4">
         <div>
-          <p className="font-display text-4xl text-accent">{formatPoints(lead)}</p>
-          <p className="mt-1 text-[10px] tracking-[0.14em] text-muted uppercase">
-            Point lead
+          <p className="font-display text-4xl font-black text-white sm:text-5xl leading-none">
+            {formatPoints(lead)}
           </p>
-          <p className="mt-2 text-sm text-foreground/90">
+          <p className="mt-1.5 text-[9px] font-bold tracking-[0.16em] text-neutral-400 uppercase">
+            POINT LEAD
+          </p>
+          <p className="mt-2 text-xs text-neutral-400 truncate">
             {first.team.name} over {second.team.name}
           </p>
         </div>
+
         <div>
-          <p className="font-display text-4xl">
-            {categoryName ? "1" : formatPoints(categoryCount)}
+          <p className="font-display text-4xl font-black text-white sm:text-5xl leading-none">
+            {categoryName ? "1" : categoryCount || 7}
           </p>
-          <p className="mt-1 text-[10px] tracking-[0.14em] text-muted uppercase">
-            {categoryName ? "Category" : "Categories"}
+          <p className="mt-1.5 text-[9px] font-bold tracking-[0.16em] text-neutral-400 uppercase">
+            {categoryName ? "CATEGORY" : "CATEGORIES"}
           </p>
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 text-xs text-neutral-400 truncate">
             {categoryName ? `${categoryName} standings` : "One overall champion"}
           </p>
         </div>
