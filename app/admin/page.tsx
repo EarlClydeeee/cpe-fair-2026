@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,7 @@ import { formatPoints, formatTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Admin overview" };
 
-export default async function AdminOverviewPage() {
+async function AdminOverviewContent() {
   const { stats, diffs, activity } = await getOverview();
   const firstDiff = diffs[0];
 
@@ -171,5 +172,19 @@ export default async function AdminOverviewPage() {
         </aside>
       </div>
     </div>
+  );
+}
+
+export default function AdminOverviewPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-xl border border-border bg-surface p-5 text-sm text-muted">
+          Loading overview…
+        </div>
+      }
+    >
+      <AdminOverviewContent />
+    </Suspense>
   );
 }

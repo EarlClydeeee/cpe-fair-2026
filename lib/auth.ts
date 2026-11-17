@@ -16,12 +16,79 @@ export type CurrentUser = {
 };
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  // #region agent log
+  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
+    body: JSON.stringify({
+      sessionId: "da5f1d",
+      runId: "post-fix-2",
+      hypothesisId: "B",
+      location: "lib/auth.ts:getCurrentUser:before-cookies",
+      message: "getCurrentUser before cookies()",
+      data: {},
+      timestamp: Math.trunc(performance.now()),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   await cookies();
+
+  // #region agent log
+  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
+    body: JSON.stringify({
+      sessionId: "da5f1d",
+      runId: "post-fix-2",
+      hypothesisId: "B",
+      location: "lib/auth.ts:getCurrentUser:after-cookies",
+      message: "getCurrentUser after cookies() (no connection here)",
+      data: { supabaseConfigured: isSupabaseConfigured },
+      timestamp: Math.trunc(performance.now()),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   if (!isSupabaseConfigured) return null;
 
   const supabase = await createClient();
+
+  // #region agent log
+  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
+    body: JSON.stringify({
+      sessionId: "da5f1d",
+      runId: "post-fix-2",
+      hypothesisId: "C",
+      location: "lib/auth.ts:getCurrentUser:before-getClaims",
+      message: "getCurrentUser before getClaims",
+      data: {},
+      timestamp: Math.trunc(performance.now()),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   const { data } = await supabase.auth.getClaims();
   const id = data?.claims?.sub;
+
+  // #region agent log
+  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
+    body: JSON.stringify({
+      sessionId: "da5f1d",
+      runId: "post-fix-2",
+      hypothesisId: "C",
+      location: "lib/auth.ts:getCurrentUser:after-getClaims",
+      message: "getCurrentUser after getClaims",
+      data: { hasSub: Boolean(id) },
+      timestamp: Math.trunc(performance.now()),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   if (!id) return null;
 
   const { data: profile } = await supabase

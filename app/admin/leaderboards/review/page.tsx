@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { DraftDiffCard } from "@/components/admin/draft-diff-card";
 import { PublishForm } from "@/components/admin/publish-form";
 import { LinkButton } from "@/components/ui/button";
@@ -18,12 +20,62 @@ function rankArrow(rankDelta: number) {
   return null;
 }
 
-export default async function ReviewPublishPage() {
+async function ReviewPublishContent() {
+  // #region agent log
+  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
+    body: JSON.stringify({
+      sessionId: "da5f1d",
+      runId: "post-fix-2",
+      hypothesisId: "F",
+      location: "review/page.tsx:before-connection",
+      message: "ReviewPublishContent before connection()",
+      data: {},
+      timestamp: Math.trunc(performance.now()),
+    }),
+  }).catch(() => {});
+  // #endregion
+
+  await connection();
+
+  // #region agent log
+  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
+    body: JSON.stringify({
+      sessionId: "da5f1d",
+      runId: "post-fix-2",
+      hypothesisId: "F",
+      location: "review/page.tsx:after-connection",
+      message: "ReviewPublishContent after connection()",
+      data: {},
+      timestamp: Math.trunc(performance.now()),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   const user = await requireStaff("/admin/leaderboards/review");
   const diffs = await getDraftDiffs();
   const projected = await getProjectedStandings(diffs);
   const summary = getReviewSummary(diffs, projected);
   const mayPublish = canScore(user.role);
+
+  // #region agent log
+  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
+    body: JSON.stringify({
+      sessionId: "da5f1d",
+      runId: "post-fix-2",
+      hypothesisId: "F",
+      location: "review/page.tsx:after-data",
+      message: "ReviewPublishContent data loaded",
+      data: { draftCount: diffs.length, role: user.role },
+      timestamp: Math.trunc(performance.now()),
+    }),
+  }).catch(() => {});
+  // #endregion
 
   const kpis = [
     {
@@ -153,5 +205,19 @@ export default async function ReviewPublishPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function ReviewPublishPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
+          Loading review…
+        </div>
+      }
+    >
+      <ReviewPublishContent />
+    </Suspense>
   );
 }

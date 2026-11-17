@@ -1,4 +1,5 @@
 import "server-only";
+import { connection } from "next/server";
 import { requireOwner, requireStaff } from "@/lib/auth";
 import { getComputedEventStatus } from "@/lib/events";
 import { createClient } from "@/lib/supabase/server";
@@ -21,6 +22,25 @@ function toTeam(
 }
 
 export async function getOverview() {
+  // Page segment prerender is separate from layout; opt into request time before Date/auth.
+  await connection();
+
+  // #region agent log
+  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
+    body: JSON.stringify({
+      sessionId: "da5f1d",
+      runId: "post-fix-3",
+      hypothesisId: "I",
+      location: "lib/data/admin.ts:getOverview",
+      message: "getOverview after connection(), before requireStaff/new Date",
+      data: {},
+      timestamp: Math.trunc(performance.now()),
+    }),
+  }).catch(() => {});
+  // #endregion
+
   await requireStaff("/admin");
   const now = new Date();
   const [season, teams, events, { rows }, diffs, categories] = await Promise.all([
