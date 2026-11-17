@@ -69,6 +69,7 @@ export async function saveTeam(_prev: ActionState, formData: FormData): Promise<
   revalidatePath("/teams");
   revalidatePath(`/teams/${parsed.data.slug}`);
   revalidatePath("/leaderboard");
+  revalidatePath("/live");
   return { ok: true, message: id ? "Team saved." : "Team created." };
 }
 
@@ -92,5 +93,7 @@ export async function archiveTeam(
   updateTag(tags.teams);
   revalidatePath("/admin/teams");
   revalidatePath("/teams");
+  revalidatePath("/leaderboard");
+  revalidatePath("/live");
   return { ok: true, message: "Team archived." };
 }

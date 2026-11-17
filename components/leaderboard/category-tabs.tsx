@@ -13,10 +13,12 @@ export function CategoryTabs({
   categories,
   activeSlug,
   showSampleBadge = false,
+  basePath = "/leaderboard",
 }: {
   categories: Category[];
   activeSlug?: string;
   showSampleBadge?: boolean;
+  basePath?: string;
 }) {
   // Ensure "Literacy" is always in the tab list even if the DB hasn't been seeded yet
   const hasLiteracy = categories.some((c) => c.slug === "literacy");
@@ -38,13 +40,13 @@ export function CategoryTabs({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Link href="/leaderboard" className={tabClass(!activeSlug)}>
+        <Link href={basePath} className={tabClass(!activeSlug)}>
           Overall
         </Link>
         {tabList.map((cat) => (
           <Link
             key={cat.id}
-            href={`/leaderboard?category=${cat.slug}`}
+            href={`${basePath}?category=${cat.slug}`}
             className={tabClass(activeSlug === cat.slug)}
           >
             {cat.name}

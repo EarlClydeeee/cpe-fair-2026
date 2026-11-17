@@ -85,6 +85,7 @@ export async function publishPendingScoreDrafts(
   revalidatePath("/admin/leaderboards/review");
   revalidatePath("/admin/leaderboards/history");
   revalidatePath("/leaderboard");
+  revalidatePath("/live");
   revalidatePath("/teams");
   return { ok: true, message: `Published ${data ?? 0} update(s).` };
 }

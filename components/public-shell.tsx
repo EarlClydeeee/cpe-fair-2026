@@ -37,6 +37,9 @@ export async function PublicFooter() {
           <Link href="/leaderboard" className="block text-foreground/90 transition-colors hover:text-accent">
             Leaderboard
           </Link>
+          <Link href="/live" className="block text-foreground/90 transition-colors hover:text-accent">
+            Live board
+          </Link>
           <Link href="/events" className="block text-foreground/90 transition-colors hover:text-accent">
             Events
           </Link>
