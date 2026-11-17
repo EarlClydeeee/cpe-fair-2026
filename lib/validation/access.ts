@@ -40,24 +40,60 @@ export const publishDraftsSchema = z.object({
     .pipe(z.array(uuidSchema).min(1)),
 });
 
-export const eventSchema = z.object({
-  id: uuidSchema.optional(),
-  title: z.string().trim().min(2).max(160),
-  category_id: uuidSchema,
-  team_a_id: z
-    .union([z.literal(""), uuidSchema])
-    .optional()
-    .transform((v) => (v ? v : null)),
-  team_b_id: z
-    .union([z.literal(""), uuidSchema])
-    .optional()
-    .transform((v) => (v ? v : null)),
-  day_number: z.coerce.number().int().min(1).max(30),
-  starts_at: z.string().min(1),
-  venue: z.string().trim().max(160).default(""),
-  status: z.enum(["upcoming", "in_progress", "final", "archived"]),
-  notes: z.string().trim().max(1000).default(""),
-});
+const optionalUuid = z
+  .union([z.literal(""), uuidSchema])
+  .optional()
+  .transform((v) => (v ? v : null));
+
+const clockHour = z.coerce.number().int().min(1).max(12);
+const clockMinute = z
+  .string()
+  .regex(/^\d{1,2}$/)
+  .transform((v) => v.padStart(2, "0"))
+  .refine((v) => Number(v) >= 0 && Number(v) <= 59, { message: "Invalid minute." });
+const clockPeriod = z.enum(["AM", "PM"]);
+
+export const eventSchema = z
+  .object({
+    id: uuidSchema.optional(),
+    name: z.string().trim().min(2).max(160),
+    category_id: uuidSchema,
+    match_type: z.enum(["head_to_head", "all_teams"]),
+    team_a_id: optionalUuid,
+    team_b_id: optionalUuid,
+    event_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Pick a date." }),
+    start_hour: clockHour,
+    start_minute: clockMinute,
+    start_period: clockPeriod,
+    end_hour: clockHour,
+    end_minute: clockMinute,
+    end_period: clockPeriod,
+    venue: z.string().trim().max(160).default(""),
+    match_format: z.string().trim().max(160).default(""),
+    is_highlighted: z
+      .union([z.literal("on"), z.literal("true"), z.literal("false"), z.literal("")])
+      .optional()
+      .transform((v) => v === "on" || v === "true"),
+    status_override: z.enum(["auto", "upcoming", "ongoing", "ended"]),
+    result_note: z.string().trim().max(500).default(""),
+  })
+  .superRefine((data, ctx) => {
+    if (data.match_type === "head_to_head") {
+      if (!data.team_a_id) {
+        ctx.addIssue({ code: "custom", message: "Select Team A.", path: ["team_a_id"] });
+      }
+      if (!data.team_b_id) {
+        ctx.addIssue({ code: "custom", message: "Select Team B.", path: ["team_b_id"] });
+      }
+      if (data.team_a_id && data.team_b_id && data.team_a_id === data.team_b_id) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Team A and Team B must differ.",
+          path: ["team_b_id"],
+        });
+      }
+    }
+  });
 
 export const teamSchema = z.object({
   id: uuidSchema.optional(),
@@ -86,4 +122,14 @@ export const teamSchema = z.object({
 
 export const deleteByIdSchema = z.object({
   id: uuidSchema,
+});
+
+export const assignWinnerSchema = z.object({
+  id: uuidSchema,
+  winner_team_id: uuidSchema,
+  /** Preview Final step may force Final so a winner can be saved. */
+  force_final: z
+    .union([z.literal("on"), z.literal("true"), z.literal("false"), z.literal("")])
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
 });

@@ -9,15 +9,17 @@ import {
   eventPrimaryCta,
   eventStatusDisplay,
   eventStatusTone,
+  eventWinnerLabel,
+  getComputedEventStatus,
 } from "@/lib/events";
-import { formatDateTime } from "@/lib/format";
+import { formatEventWindow } from "@/lib/format";
 
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const event = await getEvent(id);
-  return { title: event?.title ?? "Event" };
+  return { title: event?.name ?? "Event" };
 }
 
 export default async function EventDetailPage({ params }: Props) {
@@ -25,9 +27,11 @@ export default async function EventDetailPage({ params }: Props) {
   const event = await getEvent(id);
   if (!event) notFound();
 
+  const status = getComputedEventStatus(event);
   const matchup = eventMatchupLabel(event);
   const format = eventFormat(event);
-  const cta = eventPrimaryCta(event.status);
+  const winner = eventWinnerLabel(event);
+  const cta = eventPrimaryCta(status);
   const resultsHref = event.categories?.slug
     ? `/leaderboard?category=${event.categories.slug}`
     : "/leaderboard";
@@ -41,11 +45,12 @@ export default async function EventDetailPage({ params }: Props) {
         {event.categories?.name ? (
           <Badge tone="accent">{event.categories.name}</Badge>
         ) : null}
-        <Badge tone={eventStatusTone(event.status)}>
-          {eventStatusDisplay(event.status)}
+        {event.is_highlighted ? <Badge tone="accent">Spotlight</Badge> : null}
+        <Badge tone={eventStatusTone(status)}>
+          {eventStatusDisplay(status)}
         </Badge>
       </div>
-      <h1 className="mt-4 font-display text-5xl">{event.title}</h1>
+      <h1 className="mt-4 font-display text-5xl">{event.name}</h1>
       {matchup ? (
         <p className="mt-4 text-muted">
           {event.team_a ? (
@@ -67,13 +72,19 @@ export default async function EventDetailPage({ params }: Props) {
           ) : null}
         </p>
       ) : (
-        <p className="mt-4 text-muted">{event.notes || "All eight teams"}</p>
+        <p className="mt-4 text-muted">
+          {event.match_format || "All eight teams"}
+        </p>
       )}
+      {winner ? <p className="mt-3 text-sm text-info">{winner}</p> : null}
+      {event.result_note ? (
+        <p className="mt-1 text-sm text-muted">{event.result_note}</p>
+      ) : null}
       <dl className="mt-8 grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-border bg-surface p-4">
           <dt className="text-[10px] tracking-wide text-muted uppercase">When</dt>
           <dd className="mt-1 font-medium">
-            {formatDateTime(event.starts_at)}
+            {formatEventWindow(event.start_at, event.end_at)}
           </dd>
         </div>
         <div className="rounded-xl border border-border bg-surface p-4">
@@ -82,7 +93,9 @@ export default async function EventDetailPage({ params }: Props) {
         </div>
         {format ? (
           <div className="rounded-xl border border-border bg-surface p-4 sm:col-span-2">
-            <dt className="text-[10px] tracking-wide text-muted uppercase">Format</dt>
+            <dt className="text-[10px] tracking-wide text-muted uppercase">
+              Format
+            </dt>
             <dd className="mt-1 font-medium">{format}</dd>
           </div>
         ) : null}

@@ -1,11 +1,14 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import type { Database } from "./database.types";
 import { supabaseKey, supabaseUrl } from "./env";
 
 export async function createClient() {
   const cookieStore = await cookies();
+  // Supabase auth session expiry checks call Date.now(); wait for the request first.
+  await connection();
 
   return createServerClient<Database>(supabaseUrl, supabaseKey, {
     cookies: {

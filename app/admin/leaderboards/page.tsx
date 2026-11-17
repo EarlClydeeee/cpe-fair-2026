@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { ScorePanel } from "@/components/admin/score-panel";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
@@ -12,7 +14,8 @@ export const instant = false;
 
 type Props = { searchParams: Promise<{ team?: string; category?: string }> };
 
-export default async function AdminLeaderboardsPage({ searchParams }: Props) {
+async function LeaderboardsContent({ searchParams }: Props) {
+  await connection();
   const { team: teamId, category: categoryId } = await searchParams;
   const { categories, rows, drafts, draftMap } = await getScoreMatrix();
   const recent = await getAuditLog();
@@ -24,12 +27,14 @@ export default async function AdminLeaderboardsPage({ searchParams }: Props) {
     selectedTeam && selectedCategory
       ? draftMap.get(`${selectedTeam.id}:${selectedCategory.id}` as `${string}:${string}`)
       : undefined;
+  const selectedRow = selectedTeam
+    ? rows.find((r) => r.team.id === selectedTeam.id)
+    : undefined;
   const publishedPoints =
-    selectedTeam && selectedCategory
-      ? selectedTeam
-        ? rows.find((r) => r.team.id === selectedTeam.id)?.byCategory[selectedCategory.slug] ?? 0
-        : 0
+    selectedRow && selectedCategory
+      ? selectedRow.byCategory[selectedCategory.slug] ?? 0
       : 0;
+  const teamTotal = selectedRow?.total ?? 0;
 
   return (
     <div className="space-y-6">
@@ -119,14 +124,15 @@ export default async function AdminLeaderboardsPage({ searchParams }: Props) {
 
         {selectedTeam && selectedCategory ? (
           <ScorePanel
+            key={`${selectedTeam.id}-${selectedCategory.id}`}
             teams={rows.map((r) => ({ id: r.team.id, name: r.team.name }))}
             categories={categories.map((c) => ({ id: c.id, name: c.name }))}
             selectedTeamId={selectedTeam.id}
             selectedCategoryId={selectedCategory.id}
             publishedPoints={publishedPoints}
+            teamTotal={teamTotal}
             draftPoints={draft?.draft_points}
             draftId={draft?.id}
-            reason={draft?.reason}
           />
         ) : null}
       </div>
@@ -153,5 +159,19 @@ export default async function AdminLeaderboardsPage({ searchParams }: Props) {
         </ul>
       </div>
     </div>
+  );
+}
+
+export default function AdminLeaderboardsPage(props: Props) {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
+          Loading leaderboards…
+        </div>
+      }
+    >
+      <LeaderboardsContent {...props} />
+    </Suspense>
   );
 }

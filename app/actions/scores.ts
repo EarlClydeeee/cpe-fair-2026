@@ -59,7 +59,8 @@ export async function discardDraft(
   return { ok: true, message: "Draft discarded." };
 }
 
-export async function publishDrafts(
+/** Atomic publish of reviewed score drafts (locks rows inside publish_score_drafts). */
+export async function publishPendingScoreDrafts(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
@@ -86,4 +87,12 @@ export async function publishDrafts(
   revalidatePath("/leaderboard");
   revalidatePath("/teams");
   return { ok: true, message: `Published ${data ?? 0} update(s).` };
+}
+
+/** Form entrypoint — alias of publishPendingScoreDrafts. */
+export async function publishDrafts(
+  prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  return publishPendingScoreDrafts(prev, formData);
 }

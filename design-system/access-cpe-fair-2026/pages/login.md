@@ -3,10 +3,17 @@
 Extends `MASTER.md`.
 
 ## Structure
-- Split screen: left orange brand panel, right black form
-- Left: ACCESS mark, “Keep the fair in flight.”, dashed rule, slogan + 2026 watermark
-- Right: Control room label, Welcome back, email/password + Show toggle, Keep me signed in, Sign in CTA
+- Centered dark card on atmospheric background (radial accent wash)
+- Orange top accent rule on the card
+- ACCESS mark, “Umpires Gate” title, restricted-access subtitle
+- Single **Access code** field (password) with lock icon + Show toggle
+- CTA: Enter terminal
 - Footer: Back to leaderboard
+
+## Auth behavior
+- UI collects access code only
+- Server signs in with fixed `ADMIN_LOGIN_EMAIL` (default `admin@gmail.com`) + submitted code via Supabase `signInWithPassword`
+- No email field; Supabase Auth user is unchanged
 
 ## Notes
 - No public header/footer on this route

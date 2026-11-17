@@ -7,7 +7,8 @@ import { HeroMatchBanner } from "@/components/events/hero-match-banner";
 import { MatchDetailsDrawer } from "@/components/events/match-details-drawer";
 import type { Category, FairEvent } from "@/lib/data/public";
 import { pickFeaturedEvent } from "@/lib/events";
-import { dayLabel } from "@/lib/format";
+import { dayLabel, manilaDateKey } from "@/lib/format";
+import { useNow } from "@/lib/hooks/use-now";
 
 function tabClass(active: boolean) {
   return `rounded-lg px-4 py-2 text-xs tracking-[0.12em] uppercase transition-colors duration-200 ${
@@ -28,26 +29,32 @@ export function EventsLineup({
   categorySlug?: string;
   day?: number;
 }) {
+  const now = useNow(30_000);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const featured = useMemo(() => pickFeaturedEvent(events), [events]);
+  const featured = useMemo(
+    () => pickFeaturedEvent(events, now),
+    [events, now],
+  );
+
+  const dayDates = useMemo(() => {
+    const keys = Array.from(
+      new Set(events.map((e) => manilaDateKey(e.start_at))),
+    ).sort();
+    return keys.length ? keys : [];
+  }, [events]);
 
   const filtered = useMemo(() => {
     let rows = events;
     if (categorySlug) {
       rows = rows.filter((e) => e.categories?.slug === categorySlug);
     }
-    if (day) {
-      rows = rows.filter((e) => e.day_number === day);
+    if (day && dayDates[day - 1]) {
+      const key = dayDates[day - 1];
+      rows = rows.filter((e) => manilaDateKey(e.start_at) === key);
     }
     return rows;
-  }, [events, categorySlug, day]);
-
-  const dayNumbers = useMemo(() => {
-    const max = events.reduce((m, e) => Math.max(m, e.day_number), 0);
-    const count = Math.max(max, 2);
-    return Array.from({ length: count }, (_, i) => i + 1);
-  }, [events]);
+  }, [events, categorySlug, day, dayDates]);
 
   const selected = selectedId
     ? (events.find((e) => e.id === selectedId) ?? null)
@@ -80,7 +87,7 @@ export function EventsLineup({
   return (
     <>
       {featured ? (
-        <HeroMatchBanner event={featured} onOpenDetails={openDetails} />
+        <HeroMatchBanner event={featured} now={now} onOpenDetails={openDetails} />
       ) : (
         <p className="text-muted">Events appear after the database is seeded.</p>
       )}
@@ -114,19 +121,22 @@ export function EventsLineup({
           >
             All Dates
           </Link>
-          {dayNumbers.map((d) => (
-            <Link
-              key={d}
-              href={`/events?day=${d}${categorySlug ? `&category=${categorySlug}` : ""}`}
-              className={`rounded-lg border px-3 py-2 uppercase transition-colors duration-200 ${
-                day === d
-                  ? "border-accent text-accent"
-                  : "border-border text-muted hover:text-foreground"
-              }`}
-            >
-              {dayLabel(d)}
-            </Link>
-          ))}
+          {dayDates.map((_, index) => {
+            const d = index + 1;
+            return (
+              <Link
+                key={dayDates[index]}
+                href={`/events?day=${d}${categorySlug ? `&category=${categorySlug}` : ""}`}
+                className={`rounded-lg border px-3 py-2 uppercase transition-colors duration-200 ${
+                  day === d
+                    ? "border-accent text-accent"
+                    : "border-border text-muted hover:text-foreground"
+                }`}
+              >
+                {dayLabel(d)}
+              </Link>
+            );
+          })}
         </div>
       </div>
 
@@ -139,6 +149,7 @@ export function EventsLineup({
               key={event.id}
               event={event}
               index={i}
+              now={now}
               onOpenDetails={openDetails}
             />
           ))}
@@ -150,6 +161,7 @@ export function EventsLineup({
       <MatchDetailsDrawer
         event={selected}
         open={Boolean(selected)}
+        now={now}
         onClose={closeDetails}
       />
     </>

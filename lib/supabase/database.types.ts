@@ -101,27 +101,37 @@ export type Database = {
           id: string;
           season_id: string;
           category_id: string;
-          title: string;
+          name: string;
+          match_type: Database["public"]["Enums"]["event_match_type"];
           team_a_id: string | null;
           team_b_id: string | null;
-          day_number: number;
-          starts_at: string;
+          start_at: string;
+          end_at: string;
           venue: string;
-          status: Database["public"]["Enums"]["event_status"];
-          notes: string;
+          match_format: string;
+          winner_team_id: string | null;
+          result_note: string;
+          is_highlighted: boolean;
+          status_override: Database["public"]["Enums"]["event_status_override"];
+          is_archived: boolean;
         } & Timestamps;
         Insert: {
           id?: string;
           season_id: string;
           category_id: string;
-          title: string;
+          name: string;
+          match_type?: Database["public"]["Enums"]["event_match_type"];
           team_a_id?: string | null;
           team_b_id?: string | null;
-          day_number?: number;
-          starts_at: string;
+          start_at: string;
+          end_at: string;
           venue?: string;
-          status?: Database["public"]["Enums"]["event_status"];
-          notes?: string;
+          match_format?: string;
+          winner_team_id?: string | null;
+          result_note?: string;
+          is_highlighted?: boolean;
+          status_override?: Database["public"]["Enums"]["event_status_override"];
+          is_archived?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["events"]["Insert"]>;
         Relationships: [];
@@ -242,7 +252,8 @@ export type Database = {
     };
     Enums: {
       admin_role: "owner" | "site_admin" | "scoring_admin" | "events_editor";
-      event_status: "upcoming" | "in_progress" | "final" | "archived";
+      event_match_type: "head_to_head" | "all_teams";
+      event_status_override: "auto" | "upcoming" | "ongoing" | "ended";
       team_visibility: "active" | "archived";
       invitation_status: "pending" | "accepted" | "revoked";
       audit_action:

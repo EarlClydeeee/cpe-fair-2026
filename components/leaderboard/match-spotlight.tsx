@@ -1,17 +1,20 @@
+"use client";
+
 import Link from "next/link";
 import type { FairEvent } from "@/lib/data/public";
 import { pickFeaturedEvent } from "@/lib/events";
 
-/** Prefer in-progress, else soonest upcoming. Optionally prefer a category. */
+/** Prefer highlighted, else ongoing, else soonest upcoming. Optionally prefer a category. */
 export function pickSpotlight(
   events: FairEvent[],
   categorySlug?: string,
+  now = new Date(),
 ): FairEvent | null {
   if (!events.length) return null;
-  if (!categorySlug) return pickFeaturedEvent(events);
+  if (!categorySlug) return pickFeaturedEvent(events, now);
 
   const scoped = events.filter((e) => e.categories?.slug === categorySlug);
-  return pickFeaturedEvent(scoped.length ? scoped : events);
+  return pickFeaturedEvent(scoped.length ? scoped : events, now);
 }
 
 export function MatchSpotlight({ event }: { event: FairEvent }) {

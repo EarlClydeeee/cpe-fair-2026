@@ -1,6 +1,13 @@
 import { z } from "zod";
 
-export const uuidSchema = z.uuid({ error: "Invalid id." });
+/** Postgres uuid text shape (not RFC-variant-strict; seed/demo ids use repeated hex). */
+export const uuidSchema = z
+  .string()
+  .trim()
+  .regex(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    { error: "Invalid id." },
+  );
 
 export const optionalUrl = z
   .union([z.literal(""), z.url({ error: "Enter a valid URL." })])
