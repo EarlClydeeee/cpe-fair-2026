@@ -68,9 +68,9 @@ export function ScorePanel({
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-border bg-surface p-5">
+    <div className="space-y-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
       <div>
-        <h2 className="font-display text-2xl">Edit team score</h2>
+        <h2 className="font-display text-xl sm:text-2xl">Edit team score</h2>
         <p className="text-xs text-muted">
           {draftId ? "Draft saved — not yet published." : "No draft for this cell."}
         </p>

@@ -22,7 +22,9 @@ export default async function ChangeHistoryPage({ searchParams }: Props) {
           <p className="text-xs tracking-[0.18em] text-accent uppercase">
             A clear record of every update
           </p>
-          <h1 className="mt-2 font-display text-5xl">Change History</h1>
+          <h1 className="mt-2 font-display text-3xl leading-none sm:text-5xl">
+            Change History
+          </h1>
           <p className="mt-2 text-sm text-muted">
             Trace score drafts, published results, and fair-content updates.
           </p>

@@ -15,7 +15,9 @@ export default async function AdminEventsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-5xl">Event Management</h1>
+        <h1 className="font-display text-3xl leading-none sm:text-5xl">
+          Event Management
+        </h1>
         <p className="mt-2 text-sm text-muted">
           Organize fixtures, update venues, and keep the public schedule in sync.
         </p>

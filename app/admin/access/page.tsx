@@ -12,7 +12,9 @@ export default async function AdminAccessPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-5xl">Admin Access</h1>
+        <h1 className="font-display text-3xl leading-none sm:text-5xl">
+          Admin Access
+        </h1>
         <p className="mt-2 text-sm text-muted">
           Invite trusted organizers and keep control-room permissions clear.
         </p>

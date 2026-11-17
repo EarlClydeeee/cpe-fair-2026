@@ -62,7 +62,9 @@ async function ReviewPublishContent() {
           <p className="text-xs tracking-[0.18em] text-accent uppercase">
             Confirm before the public board updates
           </p>
-          <h1 className="mt-2 font-display text-5xl">Review & Publish</h1>
+          <h1 className="mt-2 font-display text-3xl leading-none sm:text-5xl">
+            Review & Publish
+          </h1>
           <p className="mt-2 text-sm text-muted">
             Confirm the score change and its impact before updating the public leaderboard.
           </p>

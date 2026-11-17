@@ -25,7 +25,9 @@ async function AdminOverviewContent() {
           <p className="text-xs tracking-[0.2em] text-accent uppercase">
             Your court. Your control.
           </p>
-          <h1 className="mt-2 font-display text-5xl">Workspace Overview</h1>
+          <h1 className="mt-2 font-display text-3xl leading-none sm:text-5xl">
+            Workspace Overview
+          </h1>
           <p className="mt-2 text-sm text-muted">
             A clear view of the fair, the teams, and what needs your attention.
           </p>
