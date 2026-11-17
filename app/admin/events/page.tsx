@@ -21,8 +21,12 @@ export default async function AdminEventsPage() {
         </p>
       </div>
       <EventManager
-        events={events as never}
-        categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+        events={events}
+        categories={categories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+        }))}
         teams={teams.map((t) => ({ id: t.id, name: t.name }))}
       />
     </div>

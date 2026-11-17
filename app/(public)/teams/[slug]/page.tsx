@@ -8,8 +8,9 @@ import {
   eventStatusDisplay,
   eventStatusTone,
   eventSubtitle,
+  getComputedEventStatus,
 } from "@/lib/events";
-import { dayLabel, formatPoints, formatTime } from "@/lib/format";
+import { formatDateManila, formatPoints, formatTime } from "@/lib/format";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -91,32 +92,36 @@ export default async function TeamDetailPage({ params }: Props) {
 
         {matches.length ? (
           <div className="mt-6 grid gap-3 md:grid-cols-2">
-            {matches.map((event) => (
-              <article
-                key={event.id}
-                className="rounded-xl border border-border bg-surface p-5 transition-colors duration-200 hover:border-accent/40"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs tracking-wide text-accent uppercase">
-                    {event.categories?.name ?? "Event"}
-                  </p>
-                  <Badge tone={eventStatusTone(event.status)}>
-                    {eventStatusDisplay(event.status)}
-                  </Badge>
-                </div>
-                <h3 className="mt-3 font-display text-3xl">{event.title}</h3>
-                <p className="mt-2 text-sm text-muted">{eventSubtitle(event)}</p>
-                <p className="mt-4 text-xs text-muted">
-                  {dayLabel(event.day_number)} · {formatTime(event.starts_at)} · {event.venue}
-                </p>
-                <Link
-                  href={`/events/${event.id}`}
-                  className="mt-4 inline-block text-sm text-accent transition-opacity duration-200 hover:opacity-80"
+            {matches.map((event) => {
+              const status = getComputedEventStatus(event);
+              return (
+                <article
+                  key={event.id}
+                  className="rounded-xl border border-border bg-surface p-5 transition-colors duration-200 hover:border-accent/40"
                 >
-                  Match details →
-                </Link>
-              </article>
-            ))}
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs tracking-wide text-accent uppercase">
+                      {event.categories?.name ?? "Event"}
+                    </p>
+                    <Badge tone={eventStatusTone(status)}>
+                      {eventStatusDisplay(status)}
+                    </Badge>
+                  </div>
+                  <h3 className="mt-3 font-display text-3xl">{event.name}</h3>
+                  <p className="mt-2 text-sm text-muted">{eventSubtitle(event)}</p>
+                  <p className="mt-4 text-xs text-muted">
+                    {formatDateManila(event.start_at)} · {formatTime(event.start_at)} ·{" "}
+                    {event.venue}
+                  </p>
+                  <Link
+                    href={`/events/${event.id}`}
+                    className="mt-4 inline-block text-sm text-accent transition-opacity duration-200 hover:opacity-80"
+                  >
+                    Match details →
+                  </Link>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <p className="mt-6 text-sm text-muted">

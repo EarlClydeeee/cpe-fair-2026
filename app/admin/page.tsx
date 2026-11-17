@@ -3,7 +3,12 @@ import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getOverview } from "@/lib/data/admin";
-import { eventStatusLabel, formatPoints, formatTime } from "@/lib/format";
+import {
+  eventAdminStatusDisplay,
+  eventStatusTone,
+  getComputedEventStatus,
+} from "@/lib/events";
+import { formatPoints, formatTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Admin overview" };
 
@@ -32,7 +37,7 @@ export default async function AdminOverviewPage() {
           [
             "Events",
             String(stats.events).padStart(2, "0"),
-            `${stats.upcoming} upcoming · ${stats.inProgress} in progress · ${stats.finals} final`,
+            `${stats.upcoming} upcoming · ${stats.inProgress} ongoing · ${stats.finals} ended`,
           ],
           ["Published points", formatPoints(stats.publishedPoints), "Current overall standings"],
           [
@@ -94,28 +99,26 @@ export default async function AdminOverviewPage() {
             <p className="text-[10px] tracking-[0.16em] text-muted uppercase">Event activity</p>
             <p className="mt-1 text-sm text-muted">Current schedule snapshot.</p>
             <ul className="mt-4 space-y-3">
-              {activity.map((event) => (
-                <li key={event.id} className="flex items-center justify-between gap-3 text-sm">
-                  <span>
-                    <span className="text-muted">{formatTime(event.starts_at)}</span>{" "}
-                    {event.title}
-                    {event.team_a && event.team_b
-                      ? ` (${event.team_a.name} vs ${event.team_b.name})`
-                      : ""}
-                  </span>
-                  <Badge
-                    tone={
-                      event.status === "in_progress"
-                        ? "accent"
-                        : event.status === "final"
-                          ? "info"
-                          : "muted"
-                    }
+              {activity.map((event) => {
+                const status = getComputedEventStatus(event);
+                return (
+                  <li
+                    key={event.id}
+                    className="flex items-center justify-between gap-3 text-sm"
                   >
-                    {eventStatusLabel(event.status)}
-                  </Badge>
-                </li>
-              ))}
+                    <span>
+                      <span className="text-muted">{formatTime(event.start_at)}</span>{" "}
+                      {event.name}
+                      {event.team_a && event.team_b
+                        ? ` (${event.team_a.name} vs ${event.team_b.name})`
+                        : ""}
+                    </span>
+                    <Badge tone={eventStatusTone(status)}>
+                      {eventAdminStatusDisplay(status)}
+                    </Badge>
+                  </li>
+                );
+              })}
             </ul>
             <Link
               href="/admin/events"

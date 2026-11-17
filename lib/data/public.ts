@@ -8,10 +8,13 @@ import { tags } from "./tags";
 export type Season = Tables<"seasons">;
 export type Category = Tables<"categories">;
 export type CompetitionTeam = Tables<"competition_teams">;
+export type FairEventTeam = Pick<CompetitionTeam, "id" | "name" | "slug" | "color_hex">;
+
 export type FairEvent = Tables<"events"> & {
   categories?: Pick<Category, "id" | "name" | "slug"> | null;
-  team_a?: Pick<CompetitionTeam, "id" | "name" | "slug" | "color_hex"> | null;
-  team_b?: Pick<CompetitionTeam, "id" | "name" | "slug" | "color_hex"> | null;
+  team_a?: FairEventTeam | null;
+  team_b?: FairEventTeam | null;
+  winner_team?: FairEventTeam | null;
 };
 
 export type StandingRow = {
@@ -95,9 +98,29 @@ export async function getTeamBySlug(slug: string): Promise<CompetitionTeam | nul
   return teams.find((t) => t.slug === slug) ?? null;
 }
 
+function mapEventJoins(
+  event: Tables<"events">,
+  catById: Map<string, Category>,
+  teamById: Map<string, CompetitionTeam>,
+): FairEvent {
+  const cat = catById.get(event.category_id);
+  const teamA = event.team_a_id ? teamById.get(event.team_a_id) : null;
+  const teamB = event.team_b_id ? teamById.get(event.team_b_id) : null;
+  const winner = event.winner_team_id ? teamById.get(event.winner_team_id) : null;
+  const toTeam = (t: CompetitionTeam | null | undefined): FairEventTeam | null =>
+    t ? { id: t.id, name: t.name, slug: t.slug, color_hex: t.color_hex } : null;
+
+  return {
+    ...event,
+    categories: cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null,
+    team_a: toTeam(teamA),
+    team_b: toTeam(teamB),
+    winner_team: toTeam(winner),
+  };
+}
+
 export async function getEvents(filters?: {
   categorySlug?: string;
-  day?: number;
 }): Promise<FairEvent[]> {
   "use cache";
   cacheLife("minutes");
@@ -110,36 +133,22 @@ export async function getEvents(filters?: {
   const [categories, teams, rawEvents] = await Promise.all([
     getCategories(season.id),
     getTeams(season.id),
-    query("getEventsRaw", [] as Tables<"events">[], () => {
-      let q = createPublicClient()
+    query("getEventsRaw", [] as Tables<"events">[], () =>
+      createPublicClient()
         .from("events")
         .select("*")
         .eq("season_id", season.id)
-        .neq("status", "archived")
-        .order("starts_at");
-      if (filters?.day) q = q.eq("day_number", filters.day);
-      return q;
-    }),
+        .eq("is_archived", false)
+        .order("start_at"),
+    ),
   ]);
 
   const catById = new Map(categories.map((c) => [c.id, c]));
   const teamById = new Map(teams.map((t) => [t.id, t]));
 
-  let rows: FairEvent[] = rawEvents.map((event) => {
-    const cat = catById.get(event.category_id);
-    const teamA = event.team_a_id ? teamById.get(event.team_a_id) : null;
-    const teamB = event.team_b_id ? teamById.get(event.team_b_id) : null;
-    return {
-      ...event,
-      categories: cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null,
-      team_a: teamA
-        ? { id: teamA.id, name: teamA.name, slug: teamA.slug, color_hex: teamA.color_hex }
-        : null,
-      team_b: teamB
-        ? { id: teamB.id, name: teamB.name, slug: teamB.slug, color_hex: teamB.color_hex }
-        : null,
-    };
-  });
+  let rows: FairEvent[] = rawEvents.map((event) =>
+    mapEventJoins(event, catById, teamById),
+  );
 
   if (filters?.categorySlug) {
     rows = rows.filter((e) => e.categories?.slug === filters.categorySlug);
@@ -159,9 +168,9 @@ export async function getEventsForTeam(teamId: string): Promise<FairEvent[]> {
       (event) =>
         event.team_a_id === teamId ||
         event.team_b_id === teamId ||
-        (!event.team_a_id && !event.team_b_id),
+        event.match_type === "all_teams",
     )
-    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+    .sort((a, b) => a.start_at.localeCompare(b.start_at));
 }
 
 export async function getStandings(categorySlug?: string): Promise<{

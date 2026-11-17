@@ -5,21 +5,55 @@ import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { canManageEvents, requireStaff } from "@/lib/auth";
 import { ensureActiveSeason } from "@/lib/data/season";
 import { tags } from "@/lib/data/tags";
+import { manilaIsoFromParts } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { deleteByIdSchema, eventSchema } from "@/lib/validation/access";
 
-function toIso(local: string) {
-  const d = new Date(local);
-  if (Number.isNaN(d.getTime())) throw new Error("Invalid date");
-  return d.toISOString();
+function revalidateEventPaths(eventId?: string | null) {
+  updateTag(tags.events);
+  updateTag(tags.audit);
+  revalidatePath("/admin/events");
+  revalidatePath("/events");
+  revalidatePath("/leaderboard");
+  revalidatePath("/admin");
+  if (eventId) revalidatePath(`/events/${eventId}`);
 }
 
-export async function saveEvent(_prev: ActionState, formData: FormData): Promise<ActionState> {
+export async function saveEvent(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const user = await requireStaff("/admin/events");
-  if (!canManageEvents(user.role)) return { ok: false, message: "Events role required." };
+  if (!canManageEvents(user.role)) {
+    return { ok: false, message: "Events role required." };
+  }
 
   const parsed = eventSchema.safeParse(formObject(formData));
   if (!parsed.success) return fieldErrors(parsed.error);
+
+  const data = parsed.data;
+  let start_at: string;
+  let end_at: string;
+  try {
+    start_at = manilaIsoFromParts(
+      data.event_date,
+      String(data.start_hour),
+      data.start_minute,
+      data.start_period,
+    );
+    end_at = manilaIsoFromParts(
+      data.event_date,
+      String(data.end_hour),
+      data.end_minute,
+      data.end_period,
+    );
+  } catch {
+    return { ok: false, message: "Use a valid schedule window." };
+  }
+
+  if (new Date(end_at).getTime() <= new Date(start_at).getTime()) {
+    return { ok: false, message: "End time must be after start time." };
+  }
 
   const supabase = await createClient();
   const season = await ensureActiveSeason(supabase);
@@ -30,37 +64,72 @@ export async function saveEvent(_prev: ActionState, formData: FormData): Promise
     };
   }
 
-  let starts_at: string;
-  try {
-    starts_at = toIso(parsed.data.starts_at);
-  } catch {
-    return { ok: false, message: "Use a valid start time." };
+  const match_type = data.match_type;
+  const team_a_id = match_type === "all_teams" ? null : data.team_a_id;
+  const team_b_id = match_type === "all_teams" ? null : data.team_b_id;
+
+  let winner_team_id = data.winner_team_id;
+  if (winner_team_id && match_type === "head_to_head") {
+    if (winner_team_id !== team_a_id && winner_team_id !== team_b_id) {
+      return { ok: false, message: "Winner must be Team A or Team B." };
+    }
   }
 
-  const { id, ...rest } = parsed.data;
-  const row = { ...rest, starts_at, season_id: season.id };
+  const row = {
+    season_id: season.id,
+    name: data.name,
+    category_id: data.category_id,
+    match_type,
+    team_a_id,
+    team_b_id,
+    start_at,
+    end_at,
+    venue: data.venue,
+    match_format: data.match_format,
+    winner_team_id,
+    result_note: data.result_note,
+    is_highlighted: data.is_highlighted,
+    status_override: data.status_override,
+    is_archived: false,
+  };
 
-  const { error } = id
-    ? await supabase.from("events").update(row).eq("id", id)
-    : await supabase.from("events").insert(row);
+  if (data.is_highlighted) {
+    let clearQ = supabase
+      .from("events")
+      .update({ is_highlighted: false })
+      .eq("season_id", season.id)
+      .eq("is_highlighted", true);
+    if (data.id) clearQ = clearQ.neq("id", data.id);
+    const { error: clearError } = await clearQ;
+    if (clearError) return { ok: false, message: clearError.message };
+  }
 
-  if (error) return { ok: false, message: error.message };
+  let entityId = data.id ?? null;
+
+  if (data.id) {
+    const { error } = await supabase.from("events").update(row).eq("id", data.id);
+    if (error) return { ok: false, message: error.message };
+  } else {
+    const { data: inserted, error } = await supabase
+      .from("events")
+      .insert(row)
+      .select("id")
+      .single();
+    if (error) return { ok: false, message: error.message };
+    entityId = inserted?.id ?? null;
+  }
 
   await supabase.from("audit_log").insert({
     season_id: season.id,
     actor_id: user.id,
     action: "event_updated",
     entity_type: "event",
-    entity_id: id ?? null,
-    summary: `${id ? "Updated" : "Created"} event ${parsed.data.title}`,
+    entity_id: entityId,
+    summary: `${data.id ? "Updated" : "Created"} event ${data.name}`,
     after_json: row as never,
   });
 
-  updateTag(tags.events);
-  updateTag(tags.audit);
-  revalidatePath("/admin/events");
-  revalidatePath("/events");
-  revalidatePath("/admin");
+  revalidateEventPaths(entityId);
   return { ok: true, message: "Event saved." };
 }
 
@@ -69,20 +138,40 @@ export async function archiveEvent(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireStaff("/admin/events");
-  if (!canManageEvents(user.role)) return { ok: false, message: "Events role required." };
+  if (!canManageEvents(user.role)) {
+    return { ok: false, message: "Events role required." };
+  }
 
   const parsed = deleteByIdSchema.safeParse(formObject(formData));
   if (!parsed.success) return fieldErrors(parsed.error);
 
   const supabase = await createClient();
+  const season = await ensureActiveSeason(supabase);
+
+  const { data: existing, error: loadError } = await supabase
+    .from("events")
+    .select("id, name, season_id")
+    .eq("id", parsed.data.id)
+    .maybeSingle();
+  if (loadError) return { ok: false, message: loadError.message };
+  if (!existing) return { ok: false, message: "Event not found." };
+
   const { error } = await supabase
     .from("events")
-    .update({ status: "archived" })
+    .update({ is_archived: true, is_highlighted: false })
     .eq("id", parsed.data.id);
   if (error) return { ok: false, message: error.message };
 
-  updateTag(tags.events);
-  revalidatePath("/admin/events");
-  revalidatePath("/events");
+  await supabase.from("audit_log").insert({
+    season_id: season?.id ?? existing.season_id,
+    actor_id: user.id,
+    action: "event_updated",
+    entity_type: "event",
+    entity_id: existing.id,
+    summary: `Archived event ${existing.name}`,
+    after_json: { is_archived: true, is_highlighted: false } as never,
+  });
+
+  revalidateEventPaths(existing.id);
   return { ok: true, message: "Event archived." };
 }

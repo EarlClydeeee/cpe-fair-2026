@@ -10,16 +10,20 @@ import {
   eventPrimaryCta,
   eventStatusDisplay,
   eventStatusTone,
+  eventWinnerLabel,
+  getComputedEventStatus,
 } from "@/lib/events";
-import { dayLabel, formatDateTime } from "@/lib/format";
+import { formatEventWindow } from "@/lib/format";
 
 export function MatchDetailsDrawer({
   event,
   open,
+  now = new Date(),
   onClose,
 }: {
   event: FairEvent | null;
   open: boolean;
+  now?: Date;
   onClose: () => void;
 }) {
   const titleId = useId();
@@ -42,9 +46,11 @@ export function MatchDetailsDrawer({
 
   if (!open || !event) return null;
 
+  const status = getComputedEventStatus(event, now);
   const matchup = eventMatchupLabel(event);
   const format = eventFormat(event);
-  const cta = eventPrimaryCta(event.status);
+  const winner = eventWinnerLabel(event);
+  const cta = eventPrimaryCta(status);
   const resultsHref = event.categories?.slug
     ? `/leaderboard?category=${event.categories.slug}`
     : "/leaderboard";
@@ -82,13 +88,14 @@ export function MatchDetailsDrawer({
             {event.categories?.name ? (
               <Badge tone="accent">{event.categories.name}</Badge>
             ) : null}
-            <Badge tone={eventStatusTone(event.status)}>
-              {eventStatusDisplay(event.status)}
+            {event.is_highlighted ? <Badge tone="accent">Spotlight</Badge> : null}
+            <Badge tone={eventStatusTone(status)}>
+              {eventStatusDisplay(status)}
             </Badge>
           </div>
 
           <h2 id={titleId} className="mt-4 font-display text-4xl leading-none">
-            {event.title}
+            {event.name}
           </h2>
 
           {matchup ? (
@@ -112,14 +119,21 @@ export function MatchDetailsDrawer({
               ) : null}
             </p>
           ) : (
-            <p className="mt-4 text-muted">{event.notes || "All eight teams"}</p>
+            <p className="mt-4 text-muted">
+              {event.match_format || "All eight teams"}
+            </p>
           )}
+
+          {winner ? <p className="mt-3 text-sm text-info">{winner}</p> : null}
+          {event.result_note ? (
+            <p className="mt-1 text-sm text-muted">{event.result_note}</p>
+          ) : null}
 
           <dl className="mt-8 grid gap-3">
             <div className="rounded-xl border border-border bg-background p-4">
               <dt className="text-[10px] tracking-wide text-muted uppercase">When</dt>
               <dd className="mt-1 font-medium">
-                {dayLabel(event.day_number)} · {formatDateTime(event.starts_at)}
+                {formatEventWindow(event.start_at, event.end_at)}
               </dd>
             </div>
             <div className="rounded-xl border border-border bg-background p-4">
@@ -128,7 +142,9 @@ export function MatchDetailsDrawer({
             </div>
             {format ? (
               <div className="rounded-xl border border-border bg-background p-4">
-                <dt className="text-[10px] tracking-wide text-muted uppercase">Format</dt>
+                <dt className="text-[10px] tracking-wide text-muted uppercase">
+                  Format
+                </dt>
                 <dd className="mt-1 font-medium">{format}</dd>
               </div>
             ) : null}

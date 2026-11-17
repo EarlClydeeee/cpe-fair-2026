@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CategoryTabs } from "@/components/leaderboard/category-tabs";
-import { MatchSpotlight, pickSpotlight } from "@/components/leaderboard/match-spotlight";
+import { MatchSpotlight } from "@/components/leaderboard/match-spotlight";
 import { Podium } from "@/components/leaderboard/podium";
 import { StandingsTable } from "@/components/leaderboard/standings-table";
 import { TitleRace } from "@/components/leaderboard/title-race";
@@ -21,7 +21,6 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   const activeCategory = categorySlug
     ? categories.find((c) => c.slug === categorySlug)
     : undefined;
-  const spotlight = pickSpotlight(events, categorySlug);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -68,7 +67,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
         </div>
 
         <aside className="space-y-4">
-          {spotlight ? <MatchSpotlight event={spotlight} /> : null}
+          <MatchSpotlight events={events} categorySlug={categorySlug} />
           <TitleRace
             rows={rows}
             categoryName={activeCategory?.name}
