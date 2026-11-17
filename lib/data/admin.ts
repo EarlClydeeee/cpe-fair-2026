@@ -84,7 +84,7 @@ export async function getAdminEvents(): Promise<FairEvent[]> {
       .select("*")
       .eq("season_id", season.id)
       .eq("is_archived", false)
-      .order("start_at"),
+      .order("start_at", { ascending: false }),
   ]);
   if (error) throw new Error(error.message);
 
