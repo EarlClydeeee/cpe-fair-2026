@@ -17,8 +17,8 @@ export function FormMessage({ state }: { state: ActionState }) {
       {state.message ? <p>{state.message}</p> : null}
       {!state.ok && details.length > 0 ? (
         <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs">
-          {details.map((msg) => (
-            <li key={msg}>{msg}</li>
+          {details.map((msg, i) => (
+            <li key={`${i}-${msg}`}>{msg}</li>
           ))}
         </ul>
       ) : null}
