@@ -13,7 +13,7 @@ type Props = { searchParams: Promise<{ category?: string }> };
 
 export default async function LeaderboardPage({ searchParams }: Props) {
   const { category: categorySlug } = await searchParams;
-  const [{ categories, rows }, events] = await Promise.all([
+  const [{ categories, rows, source }, events] = await Promise.all([
     getStandings(categorySlug),
     getEvents(),
   ]);
@@ -21,6 +21,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   const activeCategory = categorySlug
     ? categories.find((c) => c.slug === categorySlug)
     : undefined;
+  const isSample = source === "sample";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -47,7 +48,11 @@ export default async function LeaderboardPage({ searchParams }: Props) {
 
       <div className="dash-rule my-8" />
 
-      <CategoryTabs categories={categories} activeSlug={categorySlug} />
+      <CategoryTabs
+        categories={categories}
+        activeSlug={categorySlug}
+        showSampleBadge={isSample}
+      />
 
       <div className="mt-10 grid gap-4 lg:grid-cols-[1.7fr_0.9fr]">
         <div className="space-y-8">
@@ -73,10 +78,12 @@ export default async function LeaderboardPage({ searchParams }: Props) {
             categoryName={activeCategory?.name}
             categoryCount={categories.length}
           />
-          <div className="rounded-xl border border-dashed border-border p-4 text-xs leading-5 text-muted">
-            A preview of the climb. Scores and matchups shown are illustrative until live scoring
-            begins.
-          </div>
+          {isSample ? (
+            <div className="rounded-xl border border-dashed border-border p-4 text-xs leading-5 text-muted">
+              A preview of the climb. Scores and matchups shown are illustrative until live scoring
+              begins.
+            </div>
+          ) : null}
         </aside>
       </div>
     </div>

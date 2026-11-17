@@ -2,13 +2,19 @@
 
 import Link from "next/link";
 import type { FairEvent } from "@/lib/data/public";
-import { pickFeaturedEvent } from "@/lib/events";
+import {
+  eventMatchupLabel,
+  eventStatusDisplay,
+  getComputedEventStatus,
+  pickFeaturedEvent,
+} from "@/lib/events";
+import { useNow } from "@/lib/hooks/use-now";
 
 /** Prefer highlighted, else ongoing, else soonest upcoming. Optionally prefer a category. */
 export function pickSpotlight(
   events: FairEvent[],
-  categorySlug?: string,
-  now = new Date(),
+  categorySlug: string | undefined,
+  now: Date,
 ): FairEvent | null {
   if (!events.length) return null;
   if (!categorySlug) return pickFeaturedEvent(events, now);
@@ -24,14 +30,14 @@ export function MatchSpotlight({
   events: FairEvent[];
   categorySlug?: string;
 }) {
-  const event = pickSpotlight(events, categorySlug);
+  const now = useNow();
+  const event = pickSpotlight(events, categorySlug, now);
   if (!event) return null;
 
-  const categoryLabel = event.categories?.name || "SPORTS";
-  const matchup =
-    event.team_a && event.team_b
-      ? { a: event.team_a.name, b: event.team_b.name }
-      : { a: "KARASUNO", b: "NEKOMA" };
+  const categoryLabel = event.categories?.name || "Event";
+  const status = getComputedEventStatus(event, now);
+  const matchup = eventMatchupLabel(event);
+  const isHeadToHead = event.match_type === "head_to_head" || Boolean(matchup);
 
   return (
     <Link
@@ -42,18 +48,24 @@ export function MatchSpotlight({
         MATCH SPOTLIGHT
       </p>
       <p className="mt-0.5 text-[10px] font-bold tracking-[0.16em] text-black/80 uppercase">
-        {categoryLabel} / SAMPLE MATCH
+        {categoryLabel} / {eventStatusDisplay(status)}
       </p>
 
       <h3 className="mt-3 font-display text-4xl font-black uppercase tracking-tight text-black sm:text-5xl">
-        {event.name || "VOLLEYBALL"}
+        {event.name}
       </h3>
 
-      <div className="mt-5 flex items-center justify-between font-display text-base font-black tracking-wide uppercase sm:text-lg">
-        <span>{matchup.a}</span>
-        <span className="text-xs font-semibold lowercase opacity-75">vs</span>
-        <span>{matchup.b}</span>
-      </div>
+      {isHeadToHead ? (
+        <div className="mt-5 flex items-center justify-between font-display text-base font-black tracking-wide uppercase sm:text-lg">
+          <span>{event.team_a?.name ?? "TBD"}</span>
+          <span className="text-xs font-semibold lowercase opacity-75">vs</span>
+          <span>{event.team_b?.name ?? "TBD"}</span>
+        </div>
+      ) : (
+        <p className="mt-5 font-display text-base font-black tracking-wide uppercase sm:text-lg">
+          {event.match_format?.trim() || "All eight teams"}
+        </p>
+      )}
     </Link>
   );
 }

@@ -15,7 +15,7 @@ export type EventStatusInput = {
 
 export function getComputedEventStatus(
   event: EventStatusInput,
-  now = new Date(),
+  now: Date,
 ): ComputedEventStatus {
   if (event.status_override !== "auto") {
     return event.status_override;
@@ -32,7 +32,7 @@ export function getComputedEventStatus(
 
 export function pickFeaturedEvent(
   events: FairEvent[],
-  now = new Date(),
+  now: Date,
 ): FairEvent | null {
   const active = events.filter((e) => !e.is_archived);
   if (!active.length) return null;

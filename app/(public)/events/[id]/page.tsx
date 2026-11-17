@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Badge } from "@/components/ui/badge";
 import { getEvent } from "@/lib/data/public";
 import {
@@ -16,6 +17,8 @@ import { formatEventWindow } from "@/lib/format";
 
 type Props = { params: Promise<{ id: string }> };
 
+export const instant = false;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const event = await getEvent(id);
@@ -23,11 +26,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function EventDetailPage({ params }: Props) {
+  await connection();
+  const now = new Date();
   const { id } = await params;
   const event = await getEvent(id);
   if (!event) notFound();
 
-  const status = getComputedEventStatus(event);
+  const status = getComputedEventStatus(event, now);
   const matchup = eventMatchupLabel(event);
   const format = eventFormat(event);
   const winner = eventWinnerLabel(event);

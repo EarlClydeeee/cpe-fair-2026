@@ -12,9 +12,11 @@ function tabClass(active: boolean) {
 export function CategoryTabs({
   categories,
   activeSlug,
+  showSampleBadge = false,
 }: {
   categories: Category[];
   activeSlug?: string;
+  showSampleBadge?: boolean;
 }) {
   // Ensure "Literacy" is always in the tab list even if the DB hasn't been seeded yet
   const hasLiteracy = categories.some((c) => c.slug === "literacy");
@@ -49,9 +51,11 @@ export function CategoryTabs({
           </Link>
         ))}
       </div>
-      <span className="hidden text-[10px] font-bold tracking-[0.16em] text-neutral-400 uppercase sm:inline-block">
-        PREVIEW / SAMPLE SCORES
-      </span>
+      {showSampleBadge ? (
+        <span className="hidden text-[10px] font-bold tracking-[0.16em] text-neutral-400 uppercase sm:inline-block">
+          PREVIEW / SAMPLE SCORES
+        </span>
+      ) : null}
     </div>
   );
 }

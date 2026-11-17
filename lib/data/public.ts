@@ -262,6 +262,7 @@ export async function getEvents(filters?: {
 
   if (filters?.categorySlug) {
     rows = rows.filter((e) => e.categories?.slug === filters.categorySlug);
+    return rows;
   }
   return rows.length ? rows : DEFAULT_EVENTS;
 }
@@ -283,9 +284,26 @@ export async function getEventsForTeam(teamId: string): Promise<FairEvent[]> {
     .sort((a, b) => a.start_at.localeCompare(b.start_at));
 }
 
+export type PublicDataSource = "live" | "sample";
+
+function sampleStandingsForCategory(categorySlug?: string): StandingRow[] {
+  if (!categorySlug) return DEFAULT_STANDINGS;
+  return DEFAULT_STANDINGS.map((row) => ({
+    ...row,
+    total: row.byCategory[categorySlug] ?? 0,
+  }))
+    .sort((a, b) => b.total - a.total)
+    .map((row, i, arr) => ({
+      ...row,
+      rank: i + 1,
+      toLeader: row.total - (arr[0]?.total ?? 0),
+    }));
+}
+
 export async function getStandings(categorySlug?: string): Promise<{
   categories: Category[];
   rows: StandingRow[];
+  source: PublicDataSource;
 }> {
   "use cache";
   cacheLife({ stale: 60, revalidate: 60, expire: 300 });
@@ -293,19 +311,11 @@ export async function getStandings(categorySlug?: string): Promise<{
 
   const [categories, teams] = await Promise.all([getCategories(), getTeams()]);
   if (!isSupabaseConfigured || !teams.length) {
-    const filteredRows = categorySlug
-      ? DEFAULT_STANDINGS.map((row) => ({
-          ...row,
-          total: row.byCategory[categorySlug] ?? 0,
-        }))
-          .sort((a, b) => b.total - a.total)
-          .map((row, i, arr) => ({
-            ...row,
-            rank: i + 1,
-            toLeader: row.total - (arr[0]?.total ?? 0),
-          }))
-      : DEFAULT_STANDINGS;
-    return { categories, rows: filteredRows };
+    return {
+      categories,
+      rows: sampleStandingsForCategory(categorySlug),
+      source: "sample",
+    };
   }
 
   const scores = await query(
@@ -322,19 +332,11 @@ export async function getStandings(categorySlug?: string): Promise<{
   );
 
   if (!scores.length) {
-    const filteredRows = categorySlug
-      ? DEFAULT_STANDINGS.map((row) => ({
-          ...row,
-          total: row.byCategory[categorySlug] ?? 0,
-        }))
-          .sort((a, b) => b.total - a.total)
-          .map((row, i, arr) => ({
-            ...row,
-            rank: i + 1,
-            toLeader: row.total - (arr[0]?.total ?? 0),
-          }))
-      : DEFAULT_STANDINGS;
-    return { categories, rows: filteredRows };
+    return {
+      categories,
+      rows: sampleStandingsForCategory(categorySlug),
+      source: "sample",
+    };
   }
 
   const categoryIds = new Set(categories.map((c) => c.id));
@@ -367,5 +369,5 @@ export async function getStandings(categorySlug?: string): Promise<{
     row.toLeader = row.total - leader;
   });
 
-  return { categories, rows };
+  return { categories, rows, source: "live" };
 }

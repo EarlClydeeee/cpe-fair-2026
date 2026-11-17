@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { TeamBanner } from "@/components/team-banner";
 import { Badge } from "@/components/ui/badge";
 import { getEventsForTeam, getStandings, getTeamBySlug } from "@/lib/data/public";
@@ -14,6 +15,8 @@ import { formatDateManila, formatPoints, formatTime } from "@/lib/format";
 
 type Props = { params: Promise<{ slug: string }> };
 
+export const instant = false;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const team = await getTeamBySlug(slug);
@@ -21,6 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function TeamDetailPage({ params }: Props) {
+  await connection();
+  const now = new Date();
   const { slug } = await params;
   const team = await getTeamBySlug(slug);
   if (!team) notFound();
@@ -93,7 +98,7 @@ export default async function TeamDetailPage({ params }: Props) {
         {matches.length ? (
           <div className="mt-6 grid gap-3 md:grid-cols-2">
             {matches.map((event) => {
-              const status = getComputedEventStatus(event);
+              const status = getComputedEventStatus(event, now);
               return (
                 <article
                   key={event.id}

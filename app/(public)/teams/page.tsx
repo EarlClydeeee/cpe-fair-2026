@@ -7,12 +7,26 @@ import { formatPoints } from "@/lib/format";
 export const metadata: Metadata = { title: "Teams" };
 export const instant = false;
 
-type Props = { searchParams: Promise<{ q?: string; sort?: string }> };
+type Props = {
+  searchParams: Promise<{ q?: string; sort?: string; affiliation?: string }>;
+};
 
 export default async function TeamsPage({ searchParams }: Props) {
-  const { q, sort } = await searchParams;
+  const { q, sort, affiliation } = await searchParams;
   const { rows, categories } = await getStandings();
   let list = rows;
+
+  const affiliations = [
+    ...new Set(
+      rows
+        .map((r) => r.team.affiliation.trim())
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => a.localeCompare(b));
+
+  if (affiliation) {
+    list = list.filter((r) => r.team.affiliation === affiliation);
+  }
   if (q) {
     const needle = q.toLowerCase();
     list = list.filter(
@@ -66,6 +80,18 @@ export default async function TeamsPage({ searchParams }: Props) {
             className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none transition-colors duration-200 focus:border-accent"
           />
           <select
+            name="affiliation"
+            defaultValue={affiliation ?? ""}
+            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+          >
+            <option value="">All sections</option>
+            {affiliations.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+          <select
             name="sort"
             defaultValue={sort ?? "rank"}
             className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
@@ -83,14 +109,12 @@ export default async function TeamsPage({ searchParams }: Props) {
         </form>
       </div>
 
-      {/* Grid of Team Cards with Guaranteed Uniform Height and Alignment */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {list.map((row) => (
           <article
             key={row.team.id}
-            className="flex flex-col h-full overflow-hidden rounded-xl border border-border bg-surface transition-all duration-200 hover:border-accent/40 hover:shadow-lg"
+            className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-all duration-200 hover:border-accent/40 hover:shadow-lg"
           >
-            {/* Top Banner with Rank Badge */}
             <div className="relative shrink-0">
               <TeamBanner
                 name={row.team.name}
@@ -99,34 +123,30 @@ export default async function TeamsPage({ searchParams }: Props) {
                 ratio="16/11"
                 className="rounded-none border-0"
               />
-              <span className="absolute left-3 top-3 rounded-md bg-black/75 px-2 py-1 text-xs font-mono text-white/90">
+              <span className="absolute top-3 left-3 rounded-md bg-black/75 px-2 py-1 font-mono text-xs text-white/90">
                 #{String(row.rank).padStart(2, "0")}
               </span>
             </div>
 
-            {/* Bottom Content Area with Consistent Vertical Slots */}
             <div
               className="flex flex-1 flex-col justify-between p-4.5"
               style={{ borderTop: `3px solid ${row.team.color_hex}` }}
             >
               <div>
-                {/* Fixed-height Team Name slot (56px) - aligns short & long names uniformly */}
                 <div className="flex h-14 items-center">
-                  <h2 className="font-display text-xl sm:text-2xl leading-tight line-clamp-2 uppercase text-white">
+                  <h2 className="font-display text-xl leading-tight text-white uppercase sm:text-2xl line-clamp-2">
                     {row.team.name}
                   </h2>
                 </div>
 
-                {/* Fixed-height Affiliation slot (20px) */}
-                <p className="mt-1 h-5 text-xs text-muted truncate">
+                <p className="mt-1 h-5 truncate text-xs text-muted">
                   {row.team.affiliation || "Unaffiliated"}
                 </p>
               </div>
 
-              {/* Bottom Footer pinned at bottom with aligned baseline */}
-              <div className="mt-4 pt-3.5 border-t border-border/40 flex items-baseline justify-between">
-                <div className="flex items-baseline gap-1.5 min-w-0">
-                  <span className="font-display text-2xl font-bold leading-none text-white">
+              <div className="mt-4 flex items-baseline justify-between border-t border-border/40 pt-3.5">
+                <div className="flex min-w-0 items-baseline gap-1.5">
+                  <span className="font-display text-2xl leading-none font-bold text-white">
                     {formatPoints(row.total)}
                   </span>
                   <span className="text-[11px] font-bold text-muted uppercase">PTS</span>
@@ -134,7 +154,7 @@ export default async function TeamsPage({ searchParams }: Props) {
                 <Link
                   href={`/teams/${row.team.slug}`}
                   style={{ color: row.team.color_hex }}
-                  className="text-xs font-semibold uppercase tracking-wider shrink-0 transition-opacity duration-200 hover:opacity-80"
+                  className="shrink-0 text-xs font-semibold tracking-wider uppercase transition-opacity duration-200 hover:opacity-80"
                 >
                   View team →
                 </Link>

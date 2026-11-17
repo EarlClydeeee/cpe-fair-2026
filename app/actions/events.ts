@@ -197,7 +197,7 @@ export async function assignEventWinner(
     return { ok: false, message: "Archived events cannot be updated." };
   }
 
-  const status = getComputedEventStatus(existing);
+  const status = getComputedEventStatus(existing, new Date());
   const isFinal =
     status === "ended" || existing.status_override === "ended";
   if (!isFinal && !parsed.data.force_final) {

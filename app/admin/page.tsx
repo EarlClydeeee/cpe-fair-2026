@@ -15,6 +15,7 @@ export const metadata: Metadata = { title: "Admin overview" };
 
 async function AdminOverviewContent() {
   const { stats, diffs, activity } = await getOverview();
+  const now = new Date();
   const firstDiff = diffs[0];
 
   return (
@@ -101,7 +102,7 @@ async function AdminOverviewContent() {
             <p className="mt-1 text-sm text-muted">Current schedule snapshot.</p>
             <ul className="mt-4 space-y-3">
               {activity.map((event) => {
-                const status = getComputedEventStatus(event);
+                const status = getComputedEventStatus(event, now);
                 return (
                   <li
                     key={event.id}
