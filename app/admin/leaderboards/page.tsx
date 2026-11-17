@@ -23,12 +23,14 @@ export default async function AdminLeaderboardsPage({ searchParams }: Props) {
     selectedTeam && selectedCategory
       ? draftMap.get(`${selectedTeam.id}:${selectedCategory.id}` as `${string}:${string}`)
       : undefined;
+  const selectedRow = selectedTeam
+    ? rows.find((r) => r.team.id === selectedTeam.id)
+    : undefined;
   const publishedPoints =
-    selectedTeam && selectedCategory
-      ? selectedTeam
-        ? rows.find((r) => r.team.id === selectedTeam.id)?.byCategory[selectedCategory.slug] ?? 0
-        : 0
+    selectedRow && selectedCategory
+      ? selectedRow.byCategory[selectedCategory.slug] ?? 0
       : 0;
+  const teamTotal = selectedRow?.total ?? 0;
 
   return (
     <div className="space-y-6">
@@ -118,11 +120,13 @@ export default async function AdminLeaderboardsPage({ searchParams }: Props) {
 
         {selectedTeam && selectedCategory ? (
           <ScorePanel
+            key={`${selectedTeam.id}-${selectedCategory.id}`}
             teams={rows.map((r) => ({ id: r.team.id, name: r.team.name }))}
             categories={categories.map((c) => ({ id: c.id, name: c.name }))}
             selectedTeamId={selectedTeam.id}
             selectedCategoryId={selectedCategory.id}
             publishedPoints={publishedPoints}
+            teamTotal={teamTotal}
             draftPoints={draft?.draft_points}
             draftId={draft?.id}
             reason={draft?.reason}

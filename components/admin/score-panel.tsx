@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useMemo, useState } from "react";
 import { discardDraft, saveScoreDraft } from "@/app/actions/scores";
 import { initialActionState } from "@/lib/action-state";
+import { formatPoints } from "@/lib/format";
 import { FormMessage } from "../ui/form-message";
 import { SelectField, TextAreaField, TextField } from "../ui/input";
 import { SubmitButton } from "../submit-button";
@@ -13,6 +15,7 @@ export function ScorePanel({
   selectedTeamId,
   selectedCategoryId,
   publishedPoints,
+  teamTotal,
   draftPoints,
   draftId,
   reason,
@@ -22,13 +25,33 @@ export function ScorePanel({
   selectedTeamId?: string;
   selectedCategoryId?: string;
   publishedPoints: number;
+  teamTotal: number;
   draftPoints?: number;
   draftId?: string;
   reason?: string;
 }) {
+  const router = useRouter();
+  const cellKey = `${selectedTeamId ?? ""}-${selectedCategoryId ?? ""}`;
+  const initialAccumulated = Math.max(
+    0,
+    draftPoints !== undefined ? draftPoints - publishedPoints : 0,
+  );
+  const [accumulated, setAccumulated] = useState(initialAccumulated);
   const [saveState, saveAction] = useActionState(saveScoreDraft, initialActionState);
   const [discardState, discardAction] = useActionState(discardDraft, initialActionState);
-  const preview = draftPoints ?? publishedPoints;
+
+  const draftScore = publishedPoints + accumulated;
+  const previewTotal = useMemo(
+    () => teamTotal - publishedPoints + draftScore,
+    [teamTotal, publishedPoints, draftScore],
+  );
+  const delta = previewTotal - teamTotal;
+
+  function navigateSelection(nextTeamId: string, nextCategoryId: string) {
+    router.push(
+      `/admin/leaderboards?team=${encodeURIComponent(nextTeamId)}&category=${encodeURIComponent(nextCategoryId)}`,
+    );
+  }
 
   return (
     <div className="space-y-4 rounded-2xl border border-border bg-surface p-5">
@@ -38,8 +61,17 @@ export function ScorePanel({
           {draftId ? "Draft saved — not yet published." : "No draft for this cell."}
         </p>
       </div>
-      <form action={saveAction} className="space-y-3">
-        <SelectField label="Team" name="team_id" defaultValue={selectedTeamId} required>
+      <form key={cellKey} action={saveAction} className="space-y-3">
+        <SelectField
+          label="Team"
+          name="team_id"
+          defaultValue={selectedTeamId}
+          required
+          onChange={(e) => {
+            if (!selectedCategoryId) return;
+            navigateSelection(e.target.value, selectedCategoryId);
+          }}
+        >
           {teams.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
@@ -51,6 +83,10 @@ export function ScorePanel({
           name="category_id"
           defaultValue={selectedCategoryId}
           required
+          onChange={(e) => {
+            if (!selectedTeamId) return;
+            navigateSelection(selectedTeamId, e.target.value);
+          }}
         >
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
@@ -65,20 +101,46 @@ export function ScorePanel({
           readOnly
         />
         <TextField
-          label="Draft score"
-          name="draft_points"
+          label="Score accumulated"
+          name="score_accumulated"
           type="number"
-          defaultValue={draftPoints ?? publishedPoints}
+          min={0}
+          step={1}
+          defaultValue={initialAccumulated}
           required
+          hint="Whole numbers only — added to the published score."
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            setAccumulated(Number.isFinite(next) ? Math.max(0, Math.trunc(next)) : 0);
+          }}
+        />
+        <input type="hidden" name="draft_points" value={draftScore} />
+        <TextField
+          label="Draft score"
+          name="draft_score_display"
+          value={String(draftScore)}
+          readOnly
+          hint="Published score + score accumulated."
         />
         <TextAreaField
           label="Reason for change"
           name="reason"
           defaultValue={reason ?? ""}
         />
-        <p className="text-sm text-muted">
-          Total preview uses this category cell: published {publishedPoints} → draft {preview}
-        </p>
+        <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm">
+          <p className="text-[10px] tracking-wide text-muted uppercase">
+            Overall total preview
+          </p>
+          <p className="mt-1 font-display text-2xl">
+            {formatPoints(teamTotal)}
+            <span className="mx-2 text-muted">→</span>
+            {formatPoints(previewTotal)}
+            <span className="ml-2 text-sm text-accent">
+              {delta >= 0 ? "+" : ""}
+              {formatPoints(delta)} pts
+            </span>
+          </p>
+        </div>
         <FormMessage state={saveState} />
         <SubmitButton className="w-full">Update draft</SubmitButton>
       </form>
