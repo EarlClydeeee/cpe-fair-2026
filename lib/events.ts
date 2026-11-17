@@ -84,6 +84,24 @@ export function eventAdminStatusDisplay(
   return status.replaceAll("_", " ").toUpperCase();
 }
 
+/** Event Status Preview labels (mockup: FINAL not ENDED) */
+export function eventPreviewStatusDisplay(
+  status: ComputedEventStatus | string,
+): string {
+  if (status === "ongoing") return "ONGOING";
+  if (status === "ended") return "FINAL";
+  if (status === "upcoming") return "UPCOMING";
+  return status.replaceAll("_", " ").toUpperCase();
+}
+
+export function eventPreviewStatusCopy(
+  status: ComputedEventStatus,
+): string {
+  if (status === "upcoming") return "The event has not started yet.";
+  if (status === "ongoing") return "Start time reached. The event is now ongoing.";
+  return "End time reached. The event is now final.";
+}
+
 export function eventPrimaryCta(status: ComputedEventStatus | string): {
   label: string;
   kind: "details" | "results";

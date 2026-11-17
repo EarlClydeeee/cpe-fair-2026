@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { archiveEvent, saveEvent } from "@/app/actions/events";
+import { EventStatusPreview } from "@/components/admin/event-status-preview";
 import { initialActionState } from "@/lib/action-state";
 import type { FairEvent } from "@/lib/data/public";
 import {
@@ -19,7 +20,7 @@ import {
 } from "@/lib/format";
 import { useNow } from "@/lib/hooks/use-now";
 import { FormMessage } from "../ui/form-message";
-import { SelectField, TextAreaField, TextField } from "../ui/input";
+import { SelectField, TextField } from "../ui/input";
 import { SubmitButton } from "../submit-button";
 import { Badge } from "../ui/badge";
 
@@ -108,8 +109,7 @@ export function EventManager({
   const [matchType, setMatchType] = useState<"head_to_head" | "all_teams">(
     "head_to_head",
   );
-  const [teamAId, setTeamAId] = useState("");
-  const [teamBId, setTeamBId] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const isCreating = selectedId === NEW_EVENT;
   const selected = useMemo(
@@ -121,15 +121,11 @@ export function EventManager({
 
   const syncSelection = (event?: FairEvent) => {
     setMatchType(event?.match_type ?? "head_to_head");
-    setTeamAId(event?.team_a_id ?? "");
-    setTeamBId(event?.team_b_id ?? "");
   };
 
   useEffect(() => {
     setMatchType(selected?.match_type ?? "head_to_head");
-    setTeamAId(selected?.team_a_id ?? "");
-    setTeamBId(selected?.team_b_id ?? "");
-  }, [formKey, selected?.match_type, selected?.team_a_id, selected?.team_b_id]);
+  }, [formKey, selected?.match_type]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -168,12 +164,9 @@ export function EventManager({
     ? manilaTwelveHour(selected.end_at)
     : { hour: "5", minute: "30", period: "PM" as const };
 
-  const winnerOptions = useMemo(() => {
-    if (matchType === "head_to_head") {
-      return teams.filter((t) => t.id === teamAId || t.id === teamBId);
-    }
-    return teams;
-  }, [matchType, teams, teamAId, teamBId]);
+  const selectedStatus = selected
+    ? getComputedEventStatus(selected, now)
+    : null;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
@@ -303,8 +296,6 @@ export function EventManager({
             ) {
               setMatchType(target.value);
             }
-            if (target.name === "team_a_id") setTeamAId(target.value);
-            if (target.name === "team_b_id") setTeamBId(target.value);
           }}
         >
           {selected ? <input type="hidden" name="id" value={selected.id} /> : null}
@@ -465,29 +456,23 @@ export function EventManager({
             <p className="text-[10px] tracking-[0.16em] text-muted uppercase">
               Match result
             </p>
-            <SelectField
-              label="Winner"
-              name="winner_team_id"
-              defaultValue={selected?.winner_team_id ?? ""}
-            >
-              <option value="">TBD / No winner yet</option>
-              {winnerOptions.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </SelectField>
+            <div className="rounded-lg border border-border bg-surface-2 px-3 py-3 text-sm">
+              <p className="text-xs tracking-wide text-muted uppercase">Winner</p>
+              <p className="mt-1 font-medium">
+                {selected?.winner_team?.name ?? "Not assigned"}
+              </p>
+              <p className="mt-2 text-xs text-muted">
+                Winner selection unlocks in Status Preview when the event is
+                Final. Assigning a winner does not publish team points —
+                update scores in Leaderboard Control.
+              </p>
+            </div>
             <TextField
               label="Score / Result note"
               name="result_note"
               defaultValue={selected?.result_note ?? ""}
               placeholder="2-1 or 25-21, 25-19"
             />
-            <p className="text-xs text-muted">
-              Selecting a winner updates the public match result card. To award
-              category points to the standings, update the team&apos;s score in
-              Leaderboard Control.
-            </p>
           </section>
 
           <FormMessage state={saveState} />
@@ -495,15 +480,34 @@ export function EventManager({
         </form>
 
         {selected ? (
-          <form action={archiveAction} className="mt-3">
-            <input type="hidden" name="id" value={selected.id} />
-            <FormMessage state={archiveState} />
-            <SubmitButton variant="ghost" className="w-full">
-              Archive event
-            </SubmitButton>
-          </form>
+          <div className="mt-3 space-y-2">
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="w-full rounded-lg border border-accent/40 bg-accent-soft px-4 py-2.5 text-sm font-medium text-foreground transition hover:border-accent"
+            >
+              Preview status
+              {selectedStatus === "ended" ? " · Assign winner" : ""}
+            </button>
+            <form action={archiveAction}>
+              <input type="hidden" name="id" value={selected.id} />
+              <FormMessage state={archiveState} />
+              <SubmitButton variant="ghost" className="w-full">
+                Archive event
+              </SubmitButton>
+            </form>
+          </div>
         ) : null}
       </div>
+
+      {selected ? (
+        <EventStatusPreview
+          event={selected}
+          teams={teams}
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

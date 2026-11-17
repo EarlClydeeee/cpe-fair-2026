@@ -56,6 +56,11 @@ export function formatEventWindow(startAt: string, endAt: string) {
   return `${date} · ${formatTime(startAt)} – ${formatTime(endAt)}`;
 }
 
+/** e.g. 2:00 PM — 3:00 PM (preview mockup em dash) */
+export function formatTimeRange(startAt: string, endAt: string) {
+  return `${formatTime(startAt)} — ${formatTime(endAt)}`;
+}
+
 export function formatPoints(n: number) {
   return n.toLocaleString("en-US");
 }

@@ -75,7 +75,6 @@ export const eventSchema = z
       .optional()
       .transform((v) => v === "on" || v === "true"),
     status_override: z.enum(["auto", "upcoming", "ongoing", "ended"]),
-    winner_team_id: optionalUuid,
     result_note: z.string().trim().max(500).default(""),
   })
   .superRefine((data, ctx) => {
@@ -123,4 +122,14 @@ export const teamSchema = z.object({
 
 export const deleteByIdSchema = z.object({
   id: uuidSchema,
+});
+
+export const assignWinnerSchema = z.object({
+  id: uuidSchema,
+  winner_team_id: uuidSchema,
+  /** Preview Final step may force Final so a winner can be saved. */
+  force_final: z
+    .union([z.literal("on"), z.literal("true"), z.literal("false"), z.literal("")])
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
 });

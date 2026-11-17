@@ -5,9 +5,14 @@ import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { canManageEvents, requireStaff } from "@/lib/auth";
 import { ensureActiveSeason } from "@/lib/data/season";
 import { tags } from "@/lib/data/tags";
+import { getComputedEventStatus } from "@/lib/events";
 import { manilaIsoFromParts } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
-import { deleteByIdSchema, eventSchema } from "@/lib/validation/access";
+import {
+  assignWinnerSchema,
+  deleteByIdSchema,
+  eventSchema,
+} from "@/lib/validation/access";
 
 function revalidateEventPaths(eventId?: string | null) {
   updateTag(tags.events);
@@ -68,13 +73,6 @@ export async function saveEvent(
   const team_a_id = match_type === "all_teams" ? null : data.team_a_id;
   const team_b_id = match_type === "all_teams" ? null : data.team_b_id;
 
-  let winner_team_id = data.winner_team_id;
-  if (winner_team_id && match_type === "head_to_head") {
-    if (winner_team_id !== team_a_id && winner_team_id !== team_b_id) {
-      return { ok: false, message: "Winner must be Team A or Team B." };
-    }
-  }
-
   const row = {
     season_id: season.id,
     name: data.name,
@@ -86,7 +84,6 @@ export async function saveEvent(
     end_at,
     venue: data.venue,
     match_format: data.match_format,
-    winner_team_id,
     result_note: data.result_note,
     is_highlighted: data.is_highlighted,
     status_override: data.status_override,
@@ -174,4 +171,93 @@ export async function archiveEvent(
 
   revalidateEventPaths(existing.id);
   return { ok: true, message: "Event archived." };
+}
+
+export async function assignEventWinner(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireStaff("/admin/events");
+  if (!canManageEvents(user.role)) {
+    return { ok: false, message: "Events role required." };
+  }
+
+  const parsed = assignWinnerSchema.safeParse(formObject(formData));
+  if (!parsed.success) return fieldErrors(parsed.error);
+
+  const supabase = await createClient();
+  const { data: existing, error: loadError } = await supabase
+    .from("events")
+    .select("*")
+    .eq("id", parsed.data.id)
+    .maybeSingle();
+  if (loadError) return { ok: false, message: loadError.message };
+  if (!existing) return { ok: false, message: "Event not found." };
+  if (existing.is_archived) {
+    return { ok: false, message: "Archived events cannot be updated." };
+  }
+
+  const status = getComputedEventStatus(existing);
+  const isFinal =
+    status === "ended" || existing.status_override === "ended";
+  if (!isFinal && !parsed.data.force_final) {
+    return {
+      ok: false,
+      message:
+        "Winner assignment is available only after the event becomes Final.",
+    };
+  }
+
+  const winnerId = parsed.data.winner_team_id;
+  if (existing.match_type === "head_to_head") {
+    if (
+      winnerId !== existing.team_a_id &&
+      winnerId !== existing.team_b_id
+    ) {
+      return { ok: false, message: "Winner must be Team A or Team B." };
+    }
+  } else {
+    const { data: team, error: teamError } = await supabase
+      .from("competition_teams")
+      .select("id")
+      .eq("id", winnerId)
+      .eq("season_id", existing.season_id)
+      .eq("visibility", "active")
+      .maybeSingle();
+    if (teamError) return { ok: false, message: teamError.message };
+    if (!team) {
+      return { ok: false, message: "Winner must be an active team." };
+    }
+  }
+
+  const { error } = await supabase
+    .from("events")
+    .update({
+      winner_team_id: winnerId,
+      status_override: "ended",
+    })
+    .eq("id", existing.id);
+  if (error) return { ok: false, message: error.message };
+
+  const { data: winnerTeam } = await supabase
+    .from("competition_teams")
+    .select("name")
+    .eq("id", winnerId)
+    .maybeSingle();
+
+  await supabase.from("audit_log").insert({
+    season_id: existing.season_id,
+    actor_id: user.id,
+    action: "event_updated",
+    entity_type: "event",
+    entity_id: existing.id,
+    summary: `Assigned winner ${winnerTeam?.name ?? winnerId} for ${existing.name}`,
+    after_json: {
+      winner_team_id: winnerId,
+      status_override: "ended",
+    } as never,
+  });
+
+  revalidateEventPaths(existing.id);
+  return { ok: true, message: "Winner saved." };
 }
