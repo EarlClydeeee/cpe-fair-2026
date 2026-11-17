@@ -19,58 +19,9 @@ function AdminShellFallback() {
 }
 
 async function AdminAuthenticatedShell({ children }: { children: React.ReactNode }) {
-  // #region agent log
-  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
-    body: JSON.stringify({
-      sessionId: "da5f1d",
-      runId: "post-fix-2",
-      hypothesisId: "E",
-      location: "app/admin/layout.tsx:shell:before-connection",
-      message: "AdminAuthenticatedShell before connection()",
-      data: {},
-      timestamp: Math.trunc(performance.now()),
-    }),
-  }).catch(() => {});
-  // #endregion
-
+  // Exclude Supabase auth (uses Date.now for session expiry) from Cache Components prerender.
   await connection();
-
-  // #region agent log
-  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
-    body: JSON.stringify({
-      sessionId: "da5f1d",
-      runId: "post-fix-2",
-      hypothesisId: "E",
-      location: "app/admin/layout.tsx:shell:after-connection",
-      message: "AdminAuthenticatedShell after connection()",
-      data: {},
-      timestamp: Math.trunc(performance.now()),
-    }),
-  }).catch(() => {});
-  // #endregion
-
   const user = await requireStaff();
-
-  // #region agent log
-  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
-    body: JSON.stringify({
-      sessionId: "da5f1d",
-      runId: "post-fix-2",
-      hypothesisId: "A",
-      location: "app/admin/layout.tsx:shell:after-requireStaff",
-      message: "AdminAuthenticatedShell after requireStaff",
-      data: { hasUser: Boolean(user?.id), role: user?.role ?? null },
-      timestamp: Math.trunc(performance.now()),
-    }),
-  }).catch(() => {});
-  // #endregion
-
   const season = await getActiveSeason();
 
   return (

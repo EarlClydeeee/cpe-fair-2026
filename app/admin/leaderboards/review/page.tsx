@@ -21,61 +21,12 @@ function rankArrow(rankDelta: number) {
 }
 
 async function ReviewPublishContent() {
-  // #region agent log
-  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
-    body: JSON.stringify({
-      sessionId: "da5f1d",
-      runId: "post-fix-2",
-      hypothesisId: "F",
-      location: "review/page.tsx:before-connection",
-      message: "ReviewPublishContent before connection()",
-      data: {},
-      timestamp: Math.trunc(performance.now()),
-    }),
-  }).catch(() => {});
-  // #endregion
-
   await connection();
-
-  // #region agent log
-  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
-    body: JSON.stringify({
-      sessionId: "da5f1d",
-      runId: "post-fix-2",
-      hypothesisId: "F",
-      location: "review/page.tsx:after-connection",
-      message: "ReviewPublishContent after connection()",
-      data: {},
-      timestamp: Math.trunc(performance.now()),
-    }),
-  }).catch(() => {});
-  // #endregion
-
   const user = await requireStaff("/admin/leaderboards/review");
   const diffs = await getDraftDiffs();
   const projected = await getProjectedStandings(diffs);
   const summary = getReviewSummary(diffs, projected);
   const mayPublish = canScore(user.role);
-
-  // #region agent log
-  fetch("http://127.0.0.1:7912/ingest/c1c12f56-2425-4c76-b3de-7fa974d28ed2", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "da5f1d" },
-    body: JSON.stringify({
-      sessionId: "da5f1d",
-      runId: "post-fix-2",
-      hypothesisId: "F",
-      location: "review/page.tsx:after-data",
-      message: "ReviewPublishContent data loaded",
-      data: { draftCount: diffs.length, role: user.role },
-      timestamp: Math.trunc(performance.now()),
-    }),
-  }).catch(() => {});
-  // #endregion
 
   const kpis = [
     {
