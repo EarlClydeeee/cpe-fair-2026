@@ -48,7 +48,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
 ];
 
 export const DEFAULT_TEAMS: CompetitionTeam[] = [
-  { id: "33333333-3333-3333-3333-333333333301", season_id: DEFAULT_SEASON.id, name: "Karasuno", slug: "karasuno", affiliation: "Section 2", color_hex: "#FF6B21", sort_order: 1, visibility: "active", artwork_url: "/teams/karasuno.png", created_at: NOW, updated_at: NOW },
+  { id: "33333333-3333-3333-3333-333333333301", season_id: DEFAULT_SEASON.id, name: "Karasuno", slug: "karasuno", affiliation: "Section 2", color_hex: "#3B82F6", sort_order: 1, visibility: "active", artwork_url: "/teams/karasuno.png", created_at: NOW, updated_at: NOW },
   { id: "33333333-3333-3333-3333-333333333302", season_id: DEFAULT_SEASON.id, name: "Nekoma", slug: "nekoma", affiliation: "Section 5", color_hex: "#E11D48", sort_order: 2, visibility: "active", artwork_url: "/teams/nekoma.png", created_at: NOW, updated_at: NOW },
   { id: "33333333-3333-3333-3333-333333333303", season_id: DEFAULT_SEASON.id, name: "Aoba Johsai", slug: "aoba-johsai", affiliation: "Section 7", color_hex: "#14B8A6", sort_order: 3, visibility: "active", artwork_url: "/teams/aoba-johsai.png", created_at: NOW, updated_at: NOW },
   { id: "33333333-3333-3333-3333-333333333304", season_id: DEFAULT_SEASON.id, name: "Inarizaki", slug: "inarizaki", affiliation: "Section 1", color_hex: "#EAB308", sort_order: 4, visibility: "active", artwork_url: "/teams/inarizaki.png", created_at: NOW, updated_at: NOW },

@@ -38,7 +38,7 @@ export function EventsLineup({
   day?: number;
 }) {
   const now = useNow(30_000);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<FairEvent | null>(null);
 
   const featured = useMemo(
     () => pickFeaturedEvent(events, now),
@@ -64,16 +64,12 @@ export function EventsLineup({
     return rows;
   }, [events, categorySlug, day, dayDates]);
 
-  const selected = selectedId
-    ? (events.find((e) => e.id === selectedId) ?? null)
-    : null;
-
   const openDetails = useCallback((event: FairEvent) => {
-    setSelectedId(event.id);
+    setSelectedEvent(event);
   }, []);
 
   const closeDetails = useCallback(() => {
-    setSelectedId(null);
+    setSelectedEvent(null);
   }, []);
 
   const hasLiteracy = categories.some((c) => c.slug === "literacy");
@@ -165,8 +161,8 @@ export function EventsLineup({
       )}
 
       <MatchDetailsDrawer
-        event={selected}
-        open={Boolean(selected)}
+        event={selectedEvent}
+        open={Boolean(selectedEvent)}
         now={now}
         onClose={closeDetails}
       />

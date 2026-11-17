@@ -90,7 +90,7 @@ export function HeroMatchBanner({
             onClick={() => onOpenDetails(event)}
             className="inline-flex min-h-11 cursor-pointer items-center rounded-lg bg-black px-4 py-2.5 text-sm text-white transition-opacity duration-200 hover:opacity-90"
           >
-            View match details
+            {status === "ended" ? "View match results" : "View match details"}
           </button>
           <p className="max-w-[9.5rem] text-right text-[10px] leading-snug tracking-[0.12em] text-black/65 uppercase lg:hidden">
             {formatDate(event.start_at)}

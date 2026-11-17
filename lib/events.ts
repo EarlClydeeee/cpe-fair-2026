@@ -121,10 +121,17 @@ export function eventMatchupLabel(event: FairEvent): string | null {
 }
 
 export function eventSubtitle(event: FairEvent): string {
-  return eventMatchupLabel(event) ?? (event.match_format || "All eight teams");
+  if (!event) return "";
+  return (
+    eventMatchupLabel(event) ??
+    (typeof event.match_format === "string" && event.match_format.trim()
+      ? event.match_format.trim()
+      : "All eight teams")
+  );
 }
 
 export function eventFormat(event: FairEvent): string | null {
+  if (!event || typeof event.match_format !== "string") return null;
   const format = event.match_format.trim();
   return format || null;
 }
