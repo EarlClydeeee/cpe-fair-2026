@@ -5,7 +5,10 @@ import { getCategories, getTeams } from "@/lib/data/public";
 
 export const metadata: Metadata = { title: "Event management" };
 
-export default async function AdminEventsPage() {
+type Props = { searchParams: Promise<{ status?: string; id?: string }> };
+
+export default async function AdminEventsPage({ searchParams }: Props) {
+  const { status, id } = (await searchParams) ?? {};
   const [events, categories, teams] = await Promise.all([
     getAdminEvents(),
     getCategories(),
@@ -29,7 +32,9 @@ export default async function AdminEventsPage() {
           name: c.name,
           slug: c.slug,
         }))}
-        teams={teams.map((t) => ({ id: t.id, name: t.name }))}
+        teams={teams.map((t) => ({ id: t.id, name: t.name, color_hex: t.color_hex }))}
+        initialStatusFilter={status}
+        initialSelectedId={id}
       />
     </div>
   );

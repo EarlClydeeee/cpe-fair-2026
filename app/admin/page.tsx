@@ -38,22 +38,24 @@ async function AdminOverviewContent() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          ["Active teams", String(stats.teams).padStart(2, "0"), "Seven sections + Fukurodani"],
+          ["Active teams", String(stats.teams).padStart(2, "0"), "Seven sections + Fukurodani", "/admin/teams"],
           [
             "Events",
             String(stats.events).padStart(2, "0"),
             `${stats.upcoming} upcoming · ${stats.inProgress} ongoing · ${stats.finals} ended`,
+            "/admin/events",
           ],
-          ["Published points", formatPoints(stats.publishedPoints), "Current overall standings"],
+          ["Published points", formatPoints(stats.publishedPoints), "Current overall standings", "/admin/leaderboards"],
           [
             "Saved draft",
             String(stats.drafts).padStart(2, "0"),
             stats.drafts
               ? "Score updates ready for review"
               : "No drafts waiting",
+            "/admin/leaderboards/review",
           ],
-        ].map(([label, value, hint]) => (
-          <div key={label} className="rounded-xl border border-border bg-surface p-5">
+        ].map(([label, value, hint, href]) => (
+          <Link key={label} href={href} className="rounded-xl border border-border bg-surface p-5 transition-colors hover:border-accent/40">
             <p className="text-[10px] tracking-[0.16em] text-muted uppercase">{label}</p>
             <p
               className={`mt-2 font-display text-4xl ${
@@ -63,7 +65,7 @@ async function AdminOverviewContent() {
               {value}
             </p>
             <p className="mt-2 text-xs text-muted">{hint}</p>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -98,7 +100,7 @@ async function AdminOverviewContent() {
                 ))}
               </ul>
               <LinkButton
-                href={`/admin/events`}
+                href="/admin/events?status=needs_winner"
                 className="mt-4"
               >
                 Announce winners ({unannouncedWinners.length})

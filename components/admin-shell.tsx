@@ -9,11 +9,75 @@ import { roleLabel, type AdminRole } from "@/lib/roles";
 import { Button } from "./ui/button";
 
 const links = [
-  { href: "/admin", label: "Overview", n: "01" },
-  { href: "/admin/leaderboards", label: "Leaderboards", n: "02" },
-  { href: "/admin/events", label: "Events", n: "03" },
-  { href: "/admin/teams", label: "Teams", n: "04" },
-  { href: "/admin/access", label: "Admin access", n: "05" },
+  {
+    href: "/admin",
+    label: "Overview",
+    n: "01",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <rect width="7" height="9" x="3" y="3" rx="1" />
+        <rect width="7" height="5" x="14" y="3" rx="1" />
+        <rect width="7" height="9" x="14" y="12" rx="1" />
+        <rect width="7" height="5" x="3" y="16" rx="1" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/leaderboards",
+    label: "Leaderboards",
+    n: "02",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+        <path d="M4 22h16" />
+        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+      </svg>
+    ),
+    subLinks: [
+      { href: "/admin/leaderboards", label: "1 · Scores", exact: true },
+      { href: "/admin/leaderboards/review", label: "2 · Review & publish" },
+      { href: "/admin/leaderboards/history", label: "3 · History" },
+    ],
+  },
+  {
+    href: "/admin/events",
+    label: "Events",
+    n: "03",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M8 2v4" />
+        <path d="M16 2v4" />
+        <rect width="18" height="18" x="3" y="4" rx="2" />
+        <path d="M3 10h18" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/teams",
+    label: "Teams",
+    n: "04",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/access",
+    label: "Admin access",
+    n: "05",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+      </svg>
+    ),
+  },
 ];
 
 function useClientPathname() {
@@ -25,6 +89,61 @@ function useClientPathname() {
   return ready ? pathname : "";
 }
 
+function getBreadcrumbs(pathname: string) {
+  const crumbs: { label: string; href?: string }[] = [{ label: "Admin", href: "/admin" }];
+
+  if (pathname === "/admin") {
+    crumbs.push({ label: "Overview" });
+  } else if (pathname.startsWith("/admin/leaderboards")) {
+    crumbs.push({ label: "Leaderboards", href: "/admin/leaderboards" });
+    if (pathname === "/admin/leaderboards/review") {
+      crumbs.push({ label: "Review & publish" });
+    } else if (pathname === "/admin/leaderboards/history") {
+      crumbs.push({ label: "History" });
+    } else if (pathname === "/admin/leaderboards") {
+      crumbs.push({ label: "Scores" });
+    }
+  } else if (pathname === "/admin/events") {
+    crumbs.push({ label: "Events" });
+  } else if (pathname === "/admin/teams") {
+    crumbs.push({ label: "Teams" });
+  } else if (pathname === "/admin/access") {
+    crumbs.push({ label: "Admin Access" });
+  } else {
+    const segment = pathname.split("/").pop();
+    if (segment) crumbs.push({ label: segment });
+  }
+
+  return crumbs;
+}
+
+function BreadcrumbBar({ pathname }: { pathname: string }) {
+  const crumbs = getBreadcrumbs(pathname);
+
+  return (
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted">
+      {crumbs.map((crumb, idx) => {
+        const isLast = idx === crumbs.length - 1;
+        return (
+          <span key={crumb.label} className="inline-flex items-center gap-1.5">
+            {idx > 0 && <span className="opacity-40">/</span>}
+            {isLast || !crumb.href ? (
+              <span className="font-semibold text-foreground">{crumb.label}</span>
+            ) : (
+              <Link
+                href={crumb.href}
+                className="transition-colors hover:text-foreground"
+              >
+                {crumb.label}
+              </Link>
+            )}
+          </span>
+        );
+      })}
+    </nav>
+  );
+}
+
 function NavLinks({
   pathname,
   onNavigate,
@@ -33,26 +152,61 @@ function NavLinks({
   onNavigate?: () => void;
 }) {
   return (
-    <nav className="space-y-1" aria-label="Admin workspace">
+    <nav className="space-y-1.5" aria-label="Admin workspace">
       {links.map((link) => {
         const isActive =
           link.href === "/admin"
             ? pathname === "/admin"
             : pathname.startsWith(link.href);
+
+        const showSubLinks =
+          Boolean(link.subLinks) && pathname.startsWith(link.href);
+
         return (
-          <Link
-            key={link.href}
-            href={link.href}
-            onClick={onNavigate}
-            className={`flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors duration-200 ${
-              isActive
-                ? "border border-accent/40 bg-accent-soft text-accent"
-                : "text-muted hover:bg-surface-2 hover:text-foreground"
-            }`}
-          >
-            <span className="font-mono text-[10px] opacity-70">{link.n}</span>
-            {link.label}
-          </Link>
+          <div key={link.href} className="space-y-1">
+            <Link
+              href={link.href}
+              onClick={onNavigate}
+              className={`flex min-h-10 items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                isActive
+                  ? "border border-accent/40 bg-accent-soft text-accent shadow-sm"
+                  : "text-muted hover:bg-surface-2 hover:text-foreground"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className={isActive ? "text-accent" : "text-muted"}>
+                  {link.icon}
+                </span>
+                <span>{link.label}</span>
+              </div>
+              <span className="font-mono text-[10px] opacity-60">{link.n}</span>
+            </Link>
+
+            {/* Sub-links for deeper sections */}
+            {showSubLinks && link.subLinks ? (
+              <div className="ml-5 space-y-1 border-l border-border/80 pl-3 pt-0.5">
+                {link.subLinks.map((sub) => {
+                  const isSubActive = sub.exact
+                    ? pathname === sub.href
+                    : pathname.startsWith(sub.href);
+                  return (
+                    <Link
+                      key={sub.href}
+                      href={sub.href}
+                      onClick={onNavigate}
+                      className={`block rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+                        isSubActive
+                          ? "bg-surface-2 font-semibold text-accent"
+                          : "text-muted hover:bg-surface-2 hover:text-foreground"
+                      }`}
+                    >
+                      {sub.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
         );
       })}
     </nav>
@@ -93,10 +247,10 @@ function SidebarChrome({
         </span>
       </Link>
 
-      <p className="px-2 text-[10px] tracking-[0.18em] text-muted uppercase">
-        Workspace
+      <p className="px-2 text-[10px] tracking-[0.18em] text-muted uppercase font-semibold">
+        Workspace Navigation
       </p>
-      <div className="mt-3">
+      <div className="mt-2.5">
         <NavLinks pathname={pathname} onNavigate={onNavigate} />
       </div>
 
@@ -108,17 +262,23 @@ function SidebarChrome({
       <div className="mt-auto space-y-3 pt-6 md:pt-8">
         <div className="rounded-xl border border-accent/20 bg-[#2a1a12] p-3">
           <p className="text-[10px] tracking-[0.16em] text-muted uppercase">
-            Preview workspace
+            Active session
           </p>
-          <p className="mt-1 text-xs leading-5 text-muted">
-            Sample scores and fixtures for UI preview.
-          </p>
-          <p className="mt-2 text-xs font-semibold tracking-wide text-accent uppercase">
+          <p className="mt-1 text-xs font-semibold tracking-wide text-accent uppercase">
             {roleLabel(role)}
           </p>
+          <Link
+            href="/leaderboard"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2.5 inline-flex items-center gap-1.5 text-xs text-muted hover:text-foreground transition"
+          >
+            <span>Preview Public Site</span>
+            <span className="text-[10px]">↗</span>
+          </Link>
         </div>
         <form action={signOut}>
-          <Button type="submit" variant="secondary" className="w-full min-h-11">
+          <Button type="submit" variant="secondary" className="w-full min-h-10 text-xs">
             Sign out
           </Button>
         </form>
@@ -186,7 +346,7 @@ export function AdminShell({
               </span>
             </Link>
             <div className="flex items-center gap-2">
-              <span className="rounded-md bg-surface-2 px-2 py-1 text-[9px] tracking-[0.12em] text-accent uppercase">
+              <span className="rounded-md bg-surface-2 px-2 py-1 text-[9px] tracking-[0.12em] text-accent uppercase font-semibold">
                 {roleLabel(role)}
               </span>
               <button
@@ -240,79 +400,41 @@ export function AdminShell({
           </div>
         ) : null}
 
-        {/* Desktop top bar */}
-        <div className="hidden items-center justify-between gap-3 border-b border-border px-6 py-4 md:flex">
-          <p className="text-xs tracking-wide text-muted">Admin / Control room</p>
-          <div className="flex items-center gap-2">
+        {/* Desktop top bar with dynamic breadcrumbs */}
+        <div className="hidden items-center justify-between gap-3 border-b border-border px-6 py-3.5 md:flex">
+          <BreadcrumbBar pathname={pathname} />
+          <div className="flex items-center gap-2.5">
             <Link
               href="/leaderboard"
-              className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition-colors duration-200 hover:text-foreground"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition-colors duration-200 hover:border-accent hover:text-foreground"
             >
-              View public site
+              <span>View public site</span>
+              <span className="text-[10px]">↗</span>
             </Link>
-            <span className="rounded-lg bg-surface-2 px-3 py-1.5 text-xs tracking-wide text-accent uppercase">
+            <span className="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold tracking-wide text-accent uppercase">
               {roleLabel(role)}
             </span>
           </div>
         </div>
 
-        {/* Phone utility strip */}
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5 md:hidden">
-          <p className="truncate text-[11px] tracking-wide text-muted">
-            Admin / Control room
-          </p>
+        {/* Phone utility strip with breadcrumb */}
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2 md:hidden">
+          <BreadcrumbBar pathname={pathname} />
           <Link
             href="/leaderboard"
-            className="shrink-0 rounded-md border border-border px-2.5 py-1 text-[10px] tracking-[0.08em] text-muted uppercase transition-colors duration-200 hover:text-foreground"
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0 rounded-md border border-border px-2 py-1 text-[10px] tracking-[0.08em] text-muted uppercase transition-colors duration-200 hover:text-foreground"
           >
-            Public site
+            Public site ↗
           </Link>
         </div>
 
         <div className="flex-1 px-4 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6">
           {children}
         </div>
-      </div>
-    </div>
-  );
-}
-
-/** @deprecated Prefer AdminShell — kept for any direct imports during transition */
-export function AdminSidebar({
-  role,
-  seasonName,
-}: {
-  role: AdminRole;
-  seasonName: string;
-}) {
-  const pathname = useClientPathname();
-  return (
-    <aside className="flex h-full min-h-screen w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-6">
-      <SidebarChrome role={role} seasonName={seasonName} pathname={pathname} />
-    </aside>
-  );
-}
-
-export function AdminTopBar({
-  crumbs,
-  role,
-}: {
-  crumbs: string;
-  role: AdminRole;
-}) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-6 sm:py-4">
-      <p className="text-xs tracking-wide text-muted">{crumbs}</p>
-      <div className="flex items-center gap-2">
-        <Link
-          href="/leaderboard"
-          className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition-colors duration-200 hover:text-foreground"
-        >
-          View public site
-        </Link>
-        <span className="rounded-lg bg-surface-2 px-3 py-1.5 text-xs tracking-wide text-accent uppercase">
-          {roleLabel(role)}
-        </span>
       </div>
     </div>
   );
