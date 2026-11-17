@@ -9,7 +9,7 @@ import {
   eventStatusTone,
   eventSubtitle,
 } from "@/lib/events";
-import { dayLabel, formatPoints, formatTime } from "@/lib/format";
+import { formatDate, formatPoints, formatTime } from "@/lib/format";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -107,7 +107,7 @@ export default async function TeamDetailPage({ params }: Props) {
                 <h3 className="mt-3 font-display text-3xl">{event.title}</h3>
                 <p className="mt-2 text-sm text-muted">{eventSubtitle(event)}</p>
                 <p className="mt-4 text-xs text-muted">
-                  {dayLabel(event.day_number)} · {formatTime(event.starts_at)} · {event.venue}
+                  {formatDate(event.starts_at)} · {formatTime(event.starts_at)} · {event.venue}
                 </p>
                 <Link
                   href={`/events/${event.id}`}

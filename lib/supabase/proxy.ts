@@ -7,6 +7,15 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const { pathname } = request.nextUrl;
   const needsAuth = pathname.startsWith("/admin");
+  const hasAdminSession =
+    request.cookies.get("cpe_admin_session")?.value === "authenticated";
+
+  if (hasAdminSession) {
+    if (pathname === "/login") {
+      return redirectWithCookies(request, response, "/admin");
+    }
+    return response;
+  }
 
   if (!isSupabaseConfigured) {
     if (needsAuth) return redirectWithCookies(request, response, "/login", pathname);

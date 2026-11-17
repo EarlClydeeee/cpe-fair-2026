@@ -9,7 +9,7 @@ import {
   eventStatusTone,
   eventSubtitle,
 } from "@/lib/events";
-import { dayLabel, formatTime } from "@/lib/format";
+import { formatDate, formatTime } from "@/lib/format";
 
 export function EventCard({
   event,
@@ -41,7 +41,7 @@ export function EventCard({
       <h3 className="mt-3 font-display text-3xl">{event.title}</h3>
       <p className="mt-2 text-sm text-muted">{eventSubtitle(event)}</p>
       <p className="mt-4 text-xs text-muted">
-        {dayLabel(event.day_number)} · {formatTime(event.starts_at)} · {event.venue}
+        {formatDate(event.starts_at)} · {formatTime(event.starts_at)} · {event.venue}
       </p>
       {cta.kind === "results" ? (
         <Link

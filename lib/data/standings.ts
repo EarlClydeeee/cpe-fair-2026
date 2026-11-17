@@ -1,5 +1,6 @@
 import "server-only";
 import { requireStaff } from "@/lib/auth";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Tables } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveSeason, getCategories, getStandings, getTeams } from "./public";
@@ -30,6 +31,7 @@ export async function getScoreMatrix() {
 
 export async function getDrafts(): Promise<Tables<"score_drafts">[]> {
   await requireStaff();
+  if (!isSupabaseConfigured) return [];
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("score_drafts")

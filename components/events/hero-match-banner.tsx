@@ -8,7 +8,7 @@ import {
   eventStatusDisplay,
   eventStatusTone,
 } from "@/lib/events";
-import { dayLabel, formatTime } from "@/lib/format";
+import { formatDate, formatTime } from "@/lib/format";
 
 export function HeroMatchBanner({
   event,
@@ -57,7 +57,7 @@ export function HeroMatchBanner({
       <div className="grid place-items-center bg-surface p-8">
         <div className="text-center">
           <p className="text-xs tracking-[0.18em] text-muted uppercase">
-            {dayLabel(event.day_number)}
+            {formatDate(event.starts_at, true)}
           </p>
           <p className="mt-2 font-display text-6xl">{formatTime(event.starts_at)}</p>
         </div>

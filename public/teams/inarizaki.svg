@@ -1,0 +1,35 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'>
+    <defs>
+      <linearGradient id='ig' x1='0%' y1='0%' x2='100%' y2='100%'>
+        <stop offset='0%' stop-color='#fbbf24' />
+        <stop offset='50%' stop-color='#ea580c' />
+        <stop offset='100%' stop-color='#9a3412' />
+      </linearGradient>
+    </defs>
+    <!-- Inarizaki Standing Fox -->
+    <!-- Head and Ears -->
+    <path d='M68,28 L75,12 L80,24 L88,14 L87,27 C91,30 94,33 97,35 L86,41 C82,38 78,36 74,36 L68,28 Z' fill='url(#ig)' />
+    <polygon points='75,17 78,24 73,23' fill='#fef3c7' />
+    <polygon points='85,18 86,26 82,24' fill='#fef3c7' />
+    <polygon points='92,36 97,35 94,39' fill='#1c1917' />
+    <!-- White muzzle -->
+    <path d='M83,38 L94,36 L86,42 C84,41 83,39 83,38 Z' fill='#ffffff' />
+    <!-- Body -->
+    <path d='M74,36 C68,36 58,40 50,44 C42,48 35,53 28,60 C24,64 19,70 14,76 C11,80 8,83 5,85 C9,83 15,79 21,74 C28,68 35,63 44,58 C54,54 64,50 72,48 L76,52 L78,44 L74,36 Z' fill='url(#ig)' />
+    <!-- Bushy Tail with white tip -->
+    <path d='M28,60 C22,66 16,73 10,79 C6,83 4,86 3,88 C5,87 9,84 13,80 C18,74 24,68 30,62 Z' fill='#ffffff' />
+    <!-- Legs -->
+    <!-- Front Leg 1 -->
+    <path d='M73,48 L76,66 L78,82 L73,82 L70,68 L68,51 Z' fill='#ea580c' />
+    <!-- Front Leg 2 -->
+    <path d='M67,52 L69,67 L70,80 L67,80 L64,68 L64,54 Z' fill='#c2410c' />
+    <!-- Rear Leg 1 -->
+    <path d='M46,56 C44,62 43,70 44,78 L47,82 L42,82 L40,76 C39,70 40,64 42,58 Z' fill='#ea580c' />
+    <!-- Rear Leg 2 -->
+    <path d='M52,55 L52,68 L53,80 L49,80 L48,70 L49,57 Z' fill='#c2410c' />
+    <!-- White paws -->
+    <rect x='72' y='79' width='6' height='3' rx='1' fill='#ffffff' />
+    <rect x='66' y='78' width='5' height='3' rx='1' fill='#ffffff' />
+    <rect x='42' y='79' width='6' height='3' rx='1' fill='#ffffff' />
+    <rect x='49' y='78' width='5' height='3' rx='1' fill='#ffffff' />
+  </svg>

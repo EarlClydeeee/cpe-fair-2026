@@ -8,6 +8,7 @@ import { getScoreMatrix } from "@/lib/data/standings";
 import { formatDateTime, formatPoints } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Leaderboard control" };
+export const instant = false;
 
 type Props = { searchParams: Promise<{ team?: string; category?: string }> };
 

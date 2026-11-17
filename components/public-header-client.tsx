@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -30,11 +31,16 @@ export function PublicHeaderClient() {
           href="/leaderboard"
           className="flex items-center gap-3 transition-opacity duration-200 hover:opacity-90"
         >
-          <span className="grid size-9 place-items-center rounded-md bg-gradient-to-br from-accent to-amber-600 font-display text-lg text-black shadow-[0_0_18px_rgba(255,107,33,0.35)]">
-            A
-          </span>
+          <Image
+            src="/logo.png"
+            alt="ACCESS CPE Fair 2026"
+            width={40}
+            height={40}
+            className="size-10 object-contain drop-shadow-[0_0_12px_rgba(255,107,33,0.35)]"
+            priority
+          />
           <span className="leading-tight">
-            <span className="block font-display text-xl tracking-[0.08em]">Access</span>
+            <span className="block font-display text-xl tracking-[0.08em] uppercase">ACCESS</span>
             <span className="block text-[10px] tracking-[0.2em] text-muted uppercase">
               CPE Fair 2026
             </span>

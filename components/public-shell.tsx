@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { PublicHeaderClient } from "./public-header-client";
 
@@ -11,9 +12,13 @@ export function PublicFooter() {
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-[1.4fr_1fr_1fr] sm:px-6">
         <div>
           <div className="mb-4 flex items-center gap-3">
-            <span className="grid size-8 place-items-center rounded-md bg-accent font-display text-base text-black">
-              A
-            </span>
+            <Image
+              src="/logo.png"
+              alt="ACCESS CPE Fair 2026"
+              width={36}
+              height={36}
+              className="size-9 object-contain drop-shadow-[0_0_10px_rgba(255,107,33,0.3)]"
+            />
             <span className="font-display text-lg tracking-wide">Access</span>
           </div>
           <p className="font-display text-3xl leading-none tracking-wide">
@@ -40,7 +45,7 @@ export function PublicFooter() {
         </div>
         <div className="space-y-2 text-sm">
           <p className="text-[10px] tracking-[0.18em] text-muted uppercase">The competition</p>
-          {["Sports", "Logic & Board", "Esports", "Academics", "Talents", "Mini Games"].map((c) => (
+          {["Sports", "Logic & Board", "Esports", "Academics", "Talents", "Mini Games","Literacy"].map((c) => (
             <p key={c} className="text-muted">
               {c}
             </p>

@@ -1,0 +1,28 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'>
+    <defs>
+      <linearGradient id='fg' x1='0%' y1='0%' x2='100%' y2='100%'>
+        <stop offset='0%' stop-color='#94a3b8' />
+        <stop offset='50%' stop-color='#64748b' />
+        <stop offset='100%' stop-color='#334155' />
+      </linearGradient>
+    </defs>
+    <!-- Fukurodani Horned Owl -->
+    <!-- Head with Horned Ear Tufts -->
+    <path d='M42,22 L45,32 C48,31 52,31 55,32 L58,22 C61,27 63,33 62,39 C59,42 55,44 50,44 C45,44 41,42 38,39 C37,33 39,27 42,22 Z' fill='url(#fg)' />
+    <!-- Intense Owl Eyes -->
+    <circle cx='45' cy='36' r='4' fill='#fef08a' />
+    <circle cx='55' cy='36' r='4' fill='#fef08a' />
+    <circle cx='45' cy='36' r='2' fill='#0f172a' />
+    <circle cx='55' cy='36' r='2' fill='#0f172a' />
+    <!-- Sharp Beak -->
+    <polygon points='48,38 52,38 50,44' fill='#ca8a04' />
+    <!-- Outstretched Wings -->
+    <path d='M38,39 C31,34 22,26 12,18 C14,28 17,39 22,48 C26,55 32,61 38,65 C34,69 29,72 23,74 C31,76 40,74 47,68 L50,68 C53,74 62,76 70,74 C64,72 59,69 55,65 C61,61 67,55 71,48 C76,39 79,28 81,18 C71,26 62,34 55,39 Z' fill='url(#fg)' />
+    <!-- Breast Feathers -->
+    <path d='M44,46 C48,48 52,48 56,46 C58,54 57,63 50,68 C43,63 42,54 44,46 Z' fill='#cbd5e1' />
+    <path d='M47,52 L50,56 L53,52' stroke='#64748b' stroke-width='1.5' stroke-linecap='round' />
+    <path d='M46,60 L50,64 L54,60' stroke='#64748b' stroke-width='1.5' stroke-linecap='round' />
+    <!-- Talons -->
+    <path d='M45,70 L43,78 L46,75 L48,70 Z' fill='#ca8a04' />
+    <path d='M55,70 L57,78 L54,75 L52,70 Z' fill='#ca8a04' />
+  </svg>

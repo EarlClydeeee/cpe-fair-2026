@@ -11,7 +11,7 @@ import {
   eventStatusDisplay,
   eventStatusTone,
 } from "@/lib/events";
-import { dayLabel, formatDateTime } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 
 export function MatchDetailsDrawer({
   event,
@@ -119,7 +119,7 @@ export function MatchDetailsDrawer({
             <div className="rounded-xl border border-border bg-background p-4">
               <dt className="text-[10px] tracking-wide text-muted uppercase">When</dt>
               <dd className="mt-1 font-medium">
-                {dayLabel(event.day_number)} · {formatDateTime(event.starts_at)}
+                {formatDateTime(event.starts_at)}
               </dd>
             </div>
             <div className="rounded-xl border border-border bg-background p-4">

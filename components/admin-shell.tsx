@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -36,9 +37,14 @@ export function AdminSidebar({
   return (
     <aside className="flex h-full min-h-screen w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-6">
       <Link href="/admin" className="mb-8 flex items-center gap-3 px-2 transition-opacity duration-200 hover:opacity-90">
-        <span className="grid size-9 place-items-center rounded-md bg-accent font-display text-lg text-black">
-          A
-        </span>
+        <Image
+          src="/logo.png"
+          alt="ACCESS Control Room"
+          width={40}
+          height={40}
+          className="size-10 object-contain drop-shadow-[0_0_12px_rgba(255,107,33,0.35)]"
+          priority
+        />
         <span>
           <span className="block font-display text-lg">ACCESS</span>
           <span className="block text-[10px] tracking-[0.16em] text-muted uppercase">

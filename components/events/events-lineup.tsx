@@ -61,6 +61,22 @@ export function EventsLineup({
     setSelectedId(null);
   }, []);
 
+  const hasLiteracy = categories.some((c) => c.slug === "literacy");
+  const categoryFilters = hasLiteracy
+    ? categories
+    : [
+        ...categories,
+        {
+          id: "cat-7",
+          season_id: "default",
+          slug: "literacy",
+          name: "Literacy",
+          sort_order: 7,
+          created_at: "",
+          updated_at: "",
+        },
+      ];
+
   return (
     <>
       {featured ? (
@@ -77,7 +93,7 @@ export function EventsLineup({
           >
             All events
           </Link>
-          {categories.map((cat) => (
+          {categoryFilters.map((cat) => (
             <Link
               key={cat.id}
               href={`/events?category=${cat.slug}${day ? `&day=${day}` : ""}`}
@@ -96,7 +112,7 @@ export function EventsLineup({
                 : "border-border text-muted hover:text-foreground"
             }`}
           >
-            Day: All
+            All Dates
           </Link>
           {dayNumbers.map((d) => (
             <Link
