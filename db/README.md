@@ -6,6 +6,7 @@
 | `migrations/0002_rls.sql` | Role helpers + RLS |
 | `migrations/0003_triggers.sql` | Profile trigger, draft/publish RPCs |
 | `migrations/0005_team_artwork_storage.sql` | Public `team-artwork` storage bucket + policies |
+| `migrations/0008_realtime.sql` | Realtime publication for live page updates |
 | `seed.sql` | Season, 6 categories, 8 teams, scores, draft, events |
 
 ## Apply

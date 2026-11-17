@@ -20,7 +20,6 @@ function revalidateEventPaths(eventId?: string | null) {
   revalidatePath("/admin/events");
   revalidatePath("/events");
   revalidatePath("/leaderboard");
-  revalidatePath("/live");
   revalidatePath("/admin");
   if (eventId) revalidatePath(`/events/${eventId}`);
 }
