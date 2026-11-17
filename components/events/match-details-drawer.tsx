@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Badge } from "@/components/ui/badge";
 import type { FairEvent } from "@/lib/data/public";
 import {
@@ -13,7 +14,7 @@ import {
   eventWinnerLabel,
   getComputedEventStatus,
 } from "@/lib/events";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatEventWindow } from "@/lib/format";
 
 export function MatchDetailsDrawer({
   event,
@@ -27,7 +28,13 @@ export function MatchDetailsDrawer({
   onClose: () => void;
 }) {
   const titleId = useId();
+  const descId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -44,10 +51,11 @@ export function MatchDetailsDrawer({
     };
   }, [open, onClose]);
 
-  if (!open || !event) return null;
+  if (!open || !event || !mounted) return null;
 
   const status = getComputedEventStatus(event, now);
-  const matchup = eventMatchupLabel(event);
+  const isFinal = status === "ended";
+  const isOngoing = status === "ongoing";
   const format = eventFormat(event);
   const winner = eventWinnerLabel(event);
   const cta = eventPrimaryCta(status);
@@ -55,127 +63,398 @@ export function MatchDetailsDrawer({
     ? `/leaderboard?category=${event.categories.slug}`
     : "/leaderboard";
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-stretch sm:justify-end"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md transition-opacity duration-200"
       role="presentation"
+      onClick={onClose}
     >
-      <button
-        type="button"
-        aria-label="Close match details"
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <aside
+      <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex max-h-[88vh] w-full flex-col rounded-t-2xl border border-border bg-surface shadow-2xl sm:h-full sm:max-h-none sm:max-w-md sm:rounded-none sm:border-y-0 sm:border-r-0 sm:border-l"
+        aria-describedby={descId}
+        onClick={(e) => e.stopPropagation()}
+        className="relative flex max-h-[90vh] w-full max-w-xl flex-col rounded-2xl border border-border bg-[#141414] shadow-2xl overflow-hidden"
       >
-        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-border sm:hidden" aria-hidden />
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <p className="text-[10px] font-semibold tracking-[0.18em] text-muted uppercase">
-            Match details
-          </p>
-          <button
-            ref={closeRef}
-            type="button"
-            onClick={onClose}
-            className="min-h-10 rounded-lg px-3 text-sm text-muted transition-colors duration-200 hover:bg-surface-2 hover:text-foreground"
-          >
-            Close
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-6">
-          <div className="flex flex-wrap gap-2">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b border-border/80 px-6 py-4 bg-surface/80">
+          <div className="flex flex-wrap items-center gap-2">
             {event.categories?.name ? (
               <Badge tone="accent">{event.categories.name}</Badge>
             ) : null}
             {event.is_highlighted ? <Badge tone="accent">Spotlight</Badge> : null}
-            <Badge tone={eventStatusTone(status)}>
-              {eventStatusDisplay(status)}
-            </Badge>
+            {isOngoing ? (
+              <Badge tone="accent" className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent animate-ping" />
+                Live
+              </Badge>
+            ) : (
+              <Badge tone={eventStatusTone(status)}>
+                {eventStatusDisplay(status)}
+              </Badge>
+            )}
           </div>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="rounded-full p-2 text-muted transition-colors hover:bg-surface-2 hover:text-foreground cursor-pointer"
+          >
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
 
-          <h2 id={titleId} className="mt-4 font-display text-4xl leading-none">
+        {/* Modal Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <h2
+            id={titleId}
+            className="font-display text-3xl sm:text-4xl leading-tight font-black tracking-wide text-foreground"
+          >
             {event.name}
           </h2>
 
-          {matchup ? (
-            <p className="mt-4 text-lg">
-              {event.team_a ? (
-                <Link
-                  href={`/teams/${event.team_a.slug}`}
-                  className="text-foreground transition-colors duration-200 hover:text-accent"
-                >
-                  {event.team_a.name}
-                </Link>
+          <p id={descId} className="sr-only">
+            {isFinal
+              ? `Game result and match details for ${event.name}`
+              : `Match details and schedule for ${event.name}`}
+          </p>
+
+          {/* RESULTS VIEW: For Ended / Final Games */}
+          {isFinal ? (
+            <div className="mt-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold tracking-[0.16em] text-accent uppercase">
+                  Match Result
+                </span>
+                <div className="h-px flex-1 bg-border/80" />
+              </div>
+
+              {/* Head-to-Head Result Cards */}
+              {event.team_a && event.team_b ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Team A */}
+                  <div
+                    className={`relative rounded-xl border p-4 transition-colors ${
+                      event.winner_team_id === event.team_a.id
+                        ? "border-accent/60 bg-accent/10 shadow-md shadow-accent/5"
+                        : "border-border bg-surface/60 opacity-80"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="h-3 w-3 shrink-0 rounded-full"
+                          style={{
+                            backgroundColor: event.team_a.color_hex || "#ff6b21",
+                          }}
+                        />
+                        {event.team_a.slug ? (
+                          <Link
+                            href={`/teams/${event.team_a.slug}`}
+                            className="font-display text-lg font-bold text-foreground hover:text-accent truncate transition-colors"
+                          >
+                            {event.team_a.name}
+                          </Link>
+                        ) : (
+                          <span className="font-display text-lg font-bold text-foreground truncate">
+                            {event.team_a.name}
+                          </span>
+                        )}
+                      </div>
+                      {event.winner_team_id === event.team_a.id ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-accent px-2 py-0.5 text-[10px] font-bold text-black uppercase">
+                          🏆 Winner
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Team B */}
+                  <div
+                    className={`relative rounded-xl border p-4 transition-colors ${
+                      event.winner_team_id === event.team_b.id
+                        ? "border-accent/60 bg-accent/10 shadow-md shadow-accent/5"
+                        : "border-border bg-surface/60 opacity-80"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="h-3 w-3 shrink-0 rounded-full"
+                          style={{
+                            backgroundColor: event.team_b.color_hex || "#3b82f6",
+                          }}
+                        />
+                        {event.team_b.slug ? (
+                          <Link
+                            href={`/teams/${event.team_b.slug}`}
+                            className="font-display text-lg font-bold text-foreground hover:text-accent truncate transition-colors"
+                          >
+                            {event.team_b.name}
+                          </Link>
+                        ) : (
+                          <span className="font-display text-lg font-bold text-foreground truncate">
+                            {event.team_b.name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ) : null}
-              <span className="text-muted"> vs </span>
-              {event.team_b ? (
-                <Link
-                  href={`/teams/${event.team_b.slug}`}
-                  className="text-foreground transition-colors duration-200 hover:text-accent"
-                >
-                  {event.team_b.name}
-                </Link>
+
+              {/* Winner Callout Box */}
+              {event.winner_team ? (
+                <div className="flex items-center gap-3.5 rounded-xl border border-accent/40 bg-accent/10 p-4">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold tracking-[0.18em] text-accent uppercase">
+                      Official Winner
+                    </p>
+                    <p className="font-display text-xl sm:text-2xl font-bold text-foreground truncate">
+                      {event.winner_team.name}
+                    </p>
+                  </div>
+                </div>
               ) : null}
-            </p>
+
+              {/* Score / Result Notes */}
+              {event.result_note ? (
+                <div className="rounded-xl border border-border bg-surface p-4">
+                  <p className="text-[10px] font-bold tracking-[0.16em] text-muted uppercase">
+                    Score / Match Summary
+                  </p>
+                  <p className="mt-1.5 text-base font-semibold text-foreground">
+                    {event.result_note}
+                  </p>
+                </div>
+              ) : null}
+            </div>
           ) : (
-            <p className="mt-4 text-muted">
-              {event.match_format || "All eight teams"}
-            </p>
+            /* DETAILS VIEW: For Upcoming / Live Games */
+            <div className="mt-5 space-y-4">
+              {isOngoing ? (
+                <div className="flex items-center gap-3 rounded-xl border border-accent/40 bg-accent/10 p-4">
+                  <span className="relative flex h-3 w-3 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-accent" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold tracking-wider text-accent uppercase">
+                      Match Currently In Progress
+                    </p>
+                    <p className="text-xs text-muted mt-0.5">
+                      Spectators can watch live at {event.venue || "the venue"}.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Matchup Duel Preview */}
+              {event.team_a && event.team_b ? (
+                <div className="rounded-xl border border-border bg-surface/80 p-4">
+                  <p className="text-[10px] font-bold tracking-[0.16em] text-muted uppercase">
+                    Head to Head Matchup
+                  </p>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className="h-3.5 w-3.5 shrink-0 rounded-full"
+                        style={{
+                          backgroundColor: event.team_a.color_hex || "#ff6b21",
+                        }}
+                      />
+                      {event.team_a.slug ? (
+                        <Link
+                          href={`/teams/${event.team_a.slug}`}
+                          className="font-display text-lg font-bold text-foreground hover:text-accent truncate transition-colors"
+                        >
+                          {event.team_a.name}
+                        </Link>
+                      ) : (
+                        <span className="font-display text-lg font-bold text-foreground truncate">
+                          {event.team_a.name}
+                        </span>
+                      )}
+                    </div>
+                    <span className="rounded-full bg-surface-2 border border-border px-2.5 py-1 text-xs font-bold text-muted">
+                      VS
+                    </span>
+                    <div className="flex items-center gap-2.5 min-w-0 justify-end">
+                      {event.team_b.slug ? (
+                        <Link
+                          href={`/teams/${event.team_b.slug}`}
+                          className="font-display text-lg font-bold text-foreground hover:text-accent truncate transition-colors text-right"
+                        >
+                          {event.team_b.name}
+                        </Link>
+                      ) : (
+                        <span className="font-display text-lg font-bold text-foreground truncate text-right">
+                          {event.team_b.name}
+                        </span>
+                      )}
+                      <span
+                        className="h-3.5 w-3.5 shrink-0 rounded-full"
+                        style={{
+                          backgroundColor: event.team_b.color_hex || "#3b82f6",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-border bg-surface/80 p-4">
+                  <p className="text-[10px] font-bold tracking-[0.16em] text-muted uppercase">
+                    Competitors
+                  </p>
+                  <p className="mt-1.5 font-display text-lg font-medium text-foreground">
+                    {event.match_format || "All eight teams"}
+                  </p>
+                </div>
+              )}
+            </div>
           )}
 
-          {winner ? <p className="mt-3 text-sm text-info">{winner}</p> : null}
-          {event.result_note ? (
-            <p className="mt-1 text-sm text-muted">{event.result_note}</p>
-          ) : null}
+          {/* Event Metadata Breakdown Grid */}
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-bold tracking-[0.16em] text-muted uppercase">
+                Event Details
+              </span>
+              <div className="h-px flex-1 bg-border/80" />
+            </div>
 
-          <dl className="mt-8 grid gap-3">
-            <div className="rounded-xl border border-border bg-background p-4">
-              <dt className="text-[10px] tracking-wide text-muted uppercase">When</dt>
-              <dd className="mt-1 font-medium">
-                {formatDateTime(event.start_at)}
-              </dd>
-            </div>
-            <div className="rounded-xl border border-border bg-background p-4">
-              <dt className="text-[10px] tracking-wide text-muted uppercase">Venue</dt>
-              <dd className="mt-1 font-medium">{event.venue || "TBA"}</dd>
-            </div>
-            {format ? (
-              <div className="rounded-xl border border-border bg-background p-4">
-                <dt className="text-[10px] tracking-wide text-muted uppercase">
-                  Format
-                </dt>
-                <dd className="mt-1 font-medium">{format}</dd>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* When */}
+              <div className="rounded-xl border border-border bg-surface p-3.5">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted uppercase">
+                  <svg
+                    className="h-3.5 w-3.5 text-accent shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                    <line x1="16" x2="16" y1="2" y2="6" />
+                    <line x1="8" x2="8" y1="2" y2="6" />
+                    <line x1="3" x2="21" y1="10" y2="10" />
+                  </svg>
+                  <span>When</span>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {formatEventWindow(event.start_at, event.end_at)}
+                </p>
               </div>
-            ) : null}
-          </dl>
+
+              {/* Venue */}
+              <div className="rounded-xl border border-border bg-surface p-3.5">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted uppercase">
+                  <svg
+                    className="h-3.5 w-3.5 text-accent shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  <span>Venue</span>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {event.venue || "Venue TBA"}
+                </p>
+              </div>
+
+              {/* Category */}
+              <div className="rounded-xl border border-border bg-surface p-3.5">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted uppercase">
+                  <svg
+                    className="h-3.5 w-3.5 text-accent shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  <span>Category</span>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {event.categories?.name || "General"}
+                </p>
+              </div>
+
+              {/* Format */}
+              {format ? (
+                <div className="rounded-xl border border-border bg-surface p-3.5">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-muted uppercase">
+                    <svg
+                      className="h-3.5 w-3.5 text-accent shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" x2="12" y1="8" y2="12" />
+                      <line x1="12" x2="12.01" y1="16" y2="16" />
+                    </svg>
+                    <span>Format</span>
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-foreground">
+                    {format}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-border px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          {cta.kind === "results" ? (
+        {/* Modal Footer Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 border-t border-border px-6 py-4 bg-surface/60">
+          {isFinal && event.categories?.slug ? (
             <Link
               href={resultsHref}
-              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black transition-opacity duration-200 hover:opacity-90"
+              className="w-full sm:w-auto inline-flex min-h-10 items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-bold text-black transition hover:bg-accent-dim"
             >
-              View results
+              View Standings
             </Link>
           ) : null}
-          <Link
-            href={`/events/${event.id}`}
-            className={`inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2.5 text-sm transition-colors duration-200 ${
-              cta.kind === "results"
-                ? "border border-border text-muted hover:text-foreground"
-                : "bg-accent font-semibold text-black hover:opacity-90"
-            }`}
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full sm:w-auto inline-flex min-h-10 items-center justify-center rounded-lg border border-border/80 px-5 py-2 text-sm font-medium text-muted transition hover:bg-surface-2 hover:text-foreground cursor-pointer"
           >
-            Open full page
-          </Link>
+            Close
+          </button>
         </div>
-      </aside>
+      </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
+
+export { MatchDetailsDrawer as MatchDetailsModal };

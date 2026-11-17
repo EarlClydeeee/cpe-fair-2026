@@ -54,32 +54,74 @@ const manilaTimeParts = new Intl.DateTimeFormat("en-US", {
   hour12: true,
 });
 
-export function formatTime(iso: string) {
-  return timeOnly.format(new Date(iso));
+export function formatTime(iso?: string | null) {
+  if (!iso) return "TBA";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "TBA";
+    return timeOnly.format(d);
+  } catch {
+    return "TBA";
+  }
 }
 
-export function formatDate(iso: string, includeYear = false) {
-  const d = new Date(iso);
-  return includeYear ? dateOnly.format(d) : dateShort.format(d);
+export function formatDate(iso?: string | null, includeYear = false) {
+  if (!iso) return "TBA";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "TBA";
+    return includeYear ? dateOnly.format(d) : dateShort.format(d);
+  } catch {
+    return "TBA";
+  }
 }
 
-export function formatDateTime(iso: string) {
-  return dateTime12.format(new Date(iso));
+export function formatDateTime(iso?: string | null) {
+  if (!iso) return "TBA";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "TBA";
+    return dateTime12.format(d);
+  } catch {
+    return "TBA";
+  }
 }
 
-export function formatDateManila(iso: string) {
-  return dateLong.format(new Date(iso));
+export function formatDateManila(iso?: string | null) {
+  if (!iso) return "TBA";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "TBA";
+    return dateLong.format(d);
+  } catch {
+    return "TBA";
+  }
 }
 
 /** e.g. Nov 23, 2026 · 3:30 PM – 5:30 PM */
-export function formatEventWindow(startAt: string, endAt: string) {
-  const date = formatDateManila(startAt);
-  return `${date} · ${formatTime(startAt)} – ${formatTime(endAt)}`;
+export function formatEventWindow(startAt?: string | null, endAt?: string | null) {
+  if (!startAt) return "Schedule TBA";
+  try {
+    const date = formatDateManila(startAt);
+    const startStr = formatTime(startAt);
+    if (!endAt) return `${date} · ${startStr}`;
+    const endStr = formatTime(endAt);
+    return `${date} · ${startStr} – ${endStr}`;
+  } catch {
+    return "Schedule TBA";
+  }
 }
 
 /** e.g. 2:00 PM — 3:00 PM (preview mockup em dash) */
-export function formatTimeRange(startAt: string, endAt: string) {
-  return `${formatTime(startAt)} — ${formatTime(endAt)}`;
+export function formatTimeRange(startAt?: string | null, endAt?: string | null) {
+  if (!startAt) return "Time TBA";
+  try {
+    const startStr = formatTime(startAt);
+    if (!endAt) return startStr;
+    return `${startStr} — ${formatTime(endAt)}`;
+  } catch {
+    return "Time TBA";
+  }
 }
 
 export function formatPoints(n: number) {

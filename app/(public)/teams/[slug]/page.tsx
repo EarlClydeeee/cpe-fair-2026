@@ -130,10 +130,10 @@ export default async function TeamDetailPage({ params }: Props) {
                       {event.venue}
                     </p>
                     <Link
-                      href={`/events/${event.id}`}
+                      href="/events"
                       className="shrink-0 text-sm text-accent transition-opacity duration-200 hover:opacity-80"
                     >
-                      Details →
+                      Schedule →
                     </Link>
                   </div>
                 </article>

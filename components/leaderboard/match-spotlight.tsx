@@ -41,7 +41,7 @@ export function MatchSpotlight({
 
   return (
     <Link
-      href={`/events/${event.id}`}
+      href="/events"
       className="group block rounded-xl bg-[#ff6a00] p-4 text-black shadow-lg shadow-orange-950/20 transition-[filter] duration-200 hover:brightness-105 sm:p-6"
     >
       <p className="text-[10px] font-black tracking-[0.18em] text-black uppercase">
