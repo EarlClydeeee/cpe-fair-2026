@@ -43,9 +43,6 @@ export async function PublicFooter() {
           <Link href="/teams" className="block text-foreground/90 transition-colors hover:text-accent">
             Teams
           </Link>
-          <Link href="/login" className="block text-accent transition-colors hover:brightness-110">
-            Admin sign in →
-          </Link>
         </div>
         <div className="space-y-2 text-sm">
           <p className="text-[10px] tracking-[0.18em] text-muted uppercase">The competition</p>
