@@ -54,7 +54,7 @@ export function EventCard({
         <p className="mt-1 text-xs text-muted">{event.result_note}</p>
       ) : null}
       <p className="mt-4 text-xs text-muted">
-        {formatDate(event.starts_at)} · {formatTime(event.starts_at)} · {event.venue}
+        {formatDate(event.start_at)} · {formatTime(event.start_at)} · {event.venue}
       </p>
       {cta.kind === "results" ? (
         <Link

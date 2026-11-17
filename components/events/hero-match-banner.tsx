@@ -73,7 +73,7 @@ export function HeroMatchBanner({
       <div className="grid place-items-center bg-surface p-8">
         <div className="text-center">
           <p className="text-xs tracking-[0.18em] text-muted uppercase">
-            {formatDate(event.starts_at, true)}
+            {formatDate(event.start_at, true)}
           </p>
         </div>
       </div>

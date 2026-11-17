@@ -2,6 +2,7 @@ import "server-only";
 import { connection } from "next/server";
 import { requireOwner, requireStaff } from "@/lib/auth";
 import { getComputedEventStatus } from "@/lib/events";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/database.types";
 import {

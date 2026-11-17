@@ -133,7 +133,7 @@ export function MatchDetailsDrawer({
             <div className="rounded-xl border border-border bg-background p-4">
               <dt className="text-[10px] tracking-wide text-muted uppercase">When</dt>
               <dd className="mt-1 font-medium">
-                {formatDateTime(event.starts_at)}
+                {formatDateTime(event.start_at)}
               </dd>
             </div>
             <div className="rounded-xl border border-border bg-background p-4">

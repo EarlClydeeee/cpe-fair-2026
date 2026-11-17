@@ -17,7 +17,16 @@ export function pickSpotlight(
   return pickFeaturedEvent(scoped.length ? scoped : events, now);
 }
 
-export function MatchSpotlight({ event }: { event: FairEvent }) {
+export function MatchSpotlight({
+  events,
+  categorySlug,
+}: {
+  events: FairEvent[];
+  categorySlug?: string;
+}) {
+  const event = pickSpotlight(events, categorySlug);
+  if (!event) return null;
+
   const categoryLabel = event.categories?.name || "SPORTS";
   const matchup =
     event.team_a && event.team_b
@@ -37,7 +46,7 @@ export function MatchSpotlight({ event }: { event: FairEvent }) {
       </p>
 
       <h3 className="mt-3 font-display text-4xl font-black uppercase tracking-tight text-black sm:text-5xl">
-        {event.title || "VOLLEYBALL"}
+        {event.name || "VOLLEYBALL"}
       </h3>
 
       <div className="mt-5 flex items-center justify-between font-display text-base font-black tracking-wide uppercase sm:text-lg">

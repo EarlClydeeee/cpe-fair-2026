@@ -14,7 +14,23 @@ const dateLong = new Intl.DateTimeFormat("en-PH", {
   year: "numeric",
 });
 
+const dateShort = new Intl.DateTimeFormat("en-PH", {
+  timeZone: "Asia/Manila",
+  month: "short",
+  day: "numeric",
+});
+
 const dateOnly = new Intl.DateTimeFormat("en-PH", {
+  timeZone: "Asia/Manila",
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+const dateTime12 = new Intl.DateTimeFormat("en-PH", {
   timeZone: "Asia/Manila",
   month: "short",
   day: "numeric",

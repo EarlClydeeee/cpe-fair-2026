@@ -3,6 +3,7 @@ import { requireStaff } from "@/lib/auth";
 import type { AdminRole } from "@/lib/roles";
 import type { ReviewChangeLine } from "@/lib/review-types";
 import type { Tables } from "@/lib/supabase/database.types";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import {
   getActiveSeason,
