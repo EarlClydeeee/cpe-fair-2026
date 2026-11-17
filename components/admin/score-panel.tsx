@@ -18,6 +18,7 @@ export function ScorePanel({
   teamTotal,
   draftPoints,
   draftId,
+  reason = "",
 }: {
   teams: { id: string; name: string }[];
   categories: { id: string; name: string }[];
@@ -31,17 +32,23 @@ export function ScorePanel({
 }) {
   const router = useRouter();
   const cellKey = `${selectedTeamId ?? ""}-${selectedCategoryId ?? ""}`;
-  const initialAccumulated = Math.max(
-    0,
-    draftPoints !== undefined ? draftPoints - publishedPoints : 0,
-  );
+  const savedDraftPoints = draftPoints !== undefined ? draftPoints : publishedPoints;
+  const initialAccumulated = Math.max(0, savedDraftPoints - publishedPoints);
   const [accumulated, setAccumulated] = useState(initialAccumulated);
+  const [reasonValue, setReasonValue] = useState(reason);
   const [saveState, saveAction] = useActionState(saveScoreDraft, initialActionState);
   const [discardState, discardAction] = useActionState(discardDraft, initialActionState);
 
   useEffect(() => {
     setAccumulated(initialAccumulated);
-  }, [cellKey, initialAccumulated]);
+    setReasonValue(reason);
+  }, [cellKey, initialAccumulated, reason]);
+
+  useEffect(() => {
+    if (saveState.ok || discardState.ok) {
+      router.refresh();
+    }
+  }, [saveState.ok, saveState.message, discardState.ok, discardState.message, router]);
 
   const draftScore = publishedPoints + accumulated;
   const previewTotal = useMemo(
@@ -49,6 +56,10 @@ export function ScorePanel({
     [teamTotal, publishedPoints, draftScore],
   );
   const delta = previewTotal - teamTotal;
+
+  const pointsUnchanged = draftScore === savedDraftPoints;
+  const reasonUnchanged = reasonValue.trim() === reason.trim();
+  const canSubmit = !(pointsUnchanged && reasonUnchanged);
 
   function navigateSelection(nextTeamId: string, nextCategoryId: string) {
     router.push(
@@ -131,10 +142,10 @@ export function ScorePanel({
         <TextAreaField
           label="Reason for change"
           name="reason"
-          key={`${cellKey}-reason`}
-          defaultValue=""
+          value={reasonValue}
           placeholder="Why is this score changing?"
           error={saveState.errors?.reason?.[0]}
+          onChange={(e) => setReasonValue(e.target.value)}
         />
         <div className="rounded-xl border border-border bg-surface-2 p-3 text-sm">
           <p className="text-[10px] tracking-wide text-muted uppercase">
@@ -151,7 +162,9 @@ export function ScorePanel({
           </p>
         </div>
         <FormMessage state={saveState} />
-        <SubmitButton className="w-full">Update draft</SubmitButton>
+        <SubmitButton className="w-full" disabled={!canSubmit}>
+          {draftId && !canSubmit ? "Draft up to date" : "Update draft"}
+        </SubmitButton>
       </form>
       {draftId ? (
         <form action={discardAction}>

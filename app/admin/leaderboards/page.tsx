@@ -20,21 +20,37 @@ async function LeaderboardsContent({ searchParams }: Props) {
   const { categories, rows, drafts, draftMap } = await getScoreMatrix();
   const recent = await getAuditLog();
 
-  const selectedTeam = rows.find((r) => r.team.id === teamId)?.team ?? rows[0]?.team;
+  const matrixRows = rows
+    .map((row) => {
+      const byCategory = Object.fromEntries(
+        categories.map((c) => {
+          const key = `${row.team.id}:${c.id}` as `${string}:${string}`;
+          const draft = draftMap.get(key);
+          return [c.slug, draft ? draft.draft_points : (row.byCategory[c.slug] ?? 0)];
+        }),
+      ) as Record<string, number>;
+      const total = categories.reduce((sum, c) => sum + (byCategory[c.slug] ?? 0), 0);
+      return { ...row, byCategory, total };
+    })
+    .sort((a, b) => b.total - a.total || a.team.sort_order - b.team.sort_order)
+    .map((row, index) => ({ ...row, rank: index + 1 }));
+
+  const selectedTeam =
+    matrixRows.find((r) => r.team.id === teamId)?.team ?? matrixRows[0]?.team;
   const selectedCategory =
     categories.find((c) => c.id === categoryId) ?? categories[0];
   const draft =
     selectedTeam && selectedCategory
       ? draftMap.get(`${selectedTeam.id}:${selectedCategory.id}` as `${string}:${string}`)
       : undefined;
-  const selectedRow = selectedTeam
+  const publishedSource = selectedTeam
     ? rows.find((r) => r.team.id === selectedTeam.id)
     : undefined;
   const publishedPoints =
-    selectedRow && selectedCategory
-      ? selectedRow.byCategory[selectedCategory.slug] ?? 0
+    publishedSource && selectedCategory
+      ? publishedSource.byCategory[selectedCategory.slug] ?? 0
       : 0;
-  const teamTotal = selectedRow?.total ?? 0;
+  const publishedTeamTotal = publishedSource?.total ?? 0;
 
   return (
     <div className="space-y-6">
@@ -57,9 +73,9 @@ async function LeaderboardsContent({ searchParams }: Props) {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          ["Teams", String(rows.length).padStart(2, "0")],
+          ["Teams", String(matrixRows.length).padStart(2, "0")],
           ["Categories", String(categories.length).padStart(2, "0")],
-          ["Published points", formatPoints(rows.reduce((s, r) => s + r.total, 0))],
+          ["Draft matrix total", formatPoints(matrixRows.reduce((s, r) => s + r.total, 0))],
           ["Saved draft", String(drafts.length).padStart(2, "0")],
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl border border-border bg-surface p-4">
@@ -85,8 +101,11 @@ async function LeaderboardsContent({ searchParams }: Props) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => {
+              {matrixRows.map((row) => {
                 const selected = selectedTeam?.id === row.team.id;
+                const hasAnyDraft = categories.some((c) =>
+                  draftMap.has(`${row.team.id}:${c.id}` as `${string}:${string}`),
+                );
                 return (
                   <tr
                     key={row.team.id}
@@ -99,9 +118,7 @@ async function LeaderboardsContent({ searchParams }: Props) {
                     {categories.map((c) => {
                       const key = `${row.team.id}:${c.id}` as `${string}:${string}`;
                       const hasDraft = draftMap.has(key);
-                      const points = hasDraft
-                        ? draftMap.get(key)!.draft_points
-                        : row.byCategory[c.slug] ?? 0;
+                      const points = row.byCategory[c.slug] ?? 0;
                       return (
                         <td key={c.id} className="px-3 py-3">
                           <Link
@@ -114,7 +131,12 @@ async function LeaderboardsContent({ searchParams }: Props) {
                         </td>
                       );
                     })}
-                    <td className="px-3 py-3 font-display text-lg">{formatPoints(row.total)}</td>
+                    <td
+                      className={`px-3 py-3 font-display text-lg ${hasAnyDraft ? "text-accent" : ""}`}
+                    >
+                      {formatPoints(row.total)}
+                      {hasAnyDraft ? " *" : ""}
+                    </td>
                   </tr>
                 );
               })}
@@ -125,14 +147,15 @@ async function LeaderboardsContent({ searchParams }: Props) {
         {selectedTeam && selectedCategory ? (
           <ScorePanel
             key={`${selectedTeam.id}-${selectedCategory.id}`}
-            teams={rows.map((r) => ({ id: r.team.id, name: r.team.name }))}
+            teams={matrixRows.map((r) => ({ id: r.team.id, name: r.team.name }))}
             categories={categories.map((c) => ({ id: c.id, name: c.name }))}
             selectedTeamId={selectedTeam.id}
             selectedCategoryId={selectedCategory.id}
             publishedPoints={publishedPoints}
-            teamTotal={teamTotal}
+            teamTotal={publishedTeamTotal}
             draftPoints={draft?.draft_points}
             draftId={draft?.id}
+            reason={draft?.reason ?? ""}
           />
         ) : null}
       </div>
