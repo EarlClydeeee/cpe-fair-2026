@@ -24,29 +24,53 @@ export default async function LeaderboardPage({ searchParams }: Props) {
   const isSample = source === "sample";
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-6">
-        <div className="reveal">
-          <p className="text-xs tracking-[0.2em] text-accent uppercase">
-            Eight teams. One court.
-          </p>
-          <h1 className="mt-2 font-display text-5xl sm:text-6xl">
-            {activeCategory
-              ? `${activeCategory.name} Leaderboard`
-              : "Overall Leaderboard"}
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
-            Every point counts. Follow the teams rising to the top of ACCESS CPE Fair 2026.
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs tracking-[0.18em] text-accent uppercase">Fly high</p>
-          <p className="font-display text-6xl text-accent sm:text-7xl">2026</p>
-          <p className="text-xs tracking-[0.18em] text-muted uppercase">The next chapter</p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      {/* Centered Hero Title (Dynamic Animated 3D Typography - No Pixelation) */}
+      <header className="relative mx-auto flex flex-col items-center justify-center pt-3 pb-5 text-center select-none overflow-visible">
+        {/* Ambient Stadium Court Atmosphere - Breathing Aura */}
+        <div
+          className="pointer-events-none absolute -top-16 h-72 w-[600px] max-w-full rounded-full bg-gradient-to-b from-[#ff6a00]/20 via-[#ff6a00]/10 to-transparent blur-3xl animate-court-pulse"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute top-4 h-40 w-80 rounded-full bg-[#ff6a00]/20 blur-2xl animate-glow-drift"
+          aria-hidden
+        />
 
-      <div className="dash-rule my-8" />
+        <div className="relative z-10 flex flex-col items-center">
+          {/* Top Kicker with Framed Court Accent Lines */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <span
+              className="h-[1.5px] w-6 sm:w-14 bg-gradient-to-r from-transparent to-[#ff6a00]"
+              aria-hidden
+            />
+            <p className="font-display text-xs font-bold tracking-[0.3em] text-[#ff6a00] uppercase sm:text-sm md:text-base drop-shadow-[0_2px_12px_rgba(255,106,0,0.5)]">
+              SERVE, SET, ENGINEER
+            </p>
+            <span
+              className="h-[1.5px] w-6 sm:w-14 bg-gradient-to-l from-transparent to-[#ff6a00]"
+              aria-hidden
+            />
+          </div>
+
+          {/* Main Title: ON THE COURT with Metallic Shimmer */}
+          <h1 className="mt-2.5 font-display text-5xl font-black tracking-tight uppercase sm:text-6xl md:text-7xl lg:text-8xl leading-none">
+            <span className="bg-[linear-gradient(110deg,#ffffff_25%,#ffedd5_45%,#ffffff_60%,#e2e8f0_75%,#ffffff_100%)] bg-clip-text text-transparent animate-shimmer drop-shadow-[0_4px_24px_rgba(255,106,0,0.35)] [paint-order:stroke_fill]">
+              ON THE COURT
+            </span>
+          </h1>
+
+          {/* Tournament Year: 2026 with Buttery Smooth Metallic Sheen & Breathing Glow */}
+          <p className="mt-1 font-display text-6xl font-black tracking-tight sm:text-7xl md:text-8xl lg:text-9xl leading-none animate-year-glow">
+            <span className="bg-[linear-gradient(115deg,#ff6a00_0%,#ff8838_30%,#ffe2b8_50%,#ff8838_70%,#ff6a00_100%)] bg-clip-text text-transparent animate-year-sheen">
+              2026
+            </span>
+          </p>
+        </div>
+      </header>
+
+      {/* Dashed Divider */}
+      <div className="my-7 border-b border-dashed border-neutral-700/60" />
 
       <CategoryTabs
         categories={categories}
