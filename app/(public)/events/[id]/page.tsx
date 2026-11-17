@@ -42,11 +42,11 @@ export default async function EventDetailPage({ params }: Props) {
     : "/leaderboard";
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-12">
       <Link href="/events" className="text-sm text-muted hover:text-accent">
         ← Back to events
       </Link>
-      <div className="mt-6 flex flex-wrap gap-2">
+      <div className="mt-5 flex flex-wrap gap-2 sm:mt-6">
         {event.categories?.name ? (
           <Badge tone="accent">{event.categories.name}</Badge>
         ) : null}
@@ -55,27 +55,56 @@ export default async function EventDetailPage({ params }: Props) {
           {eventStatusDisplay(status)}
         </Badge>
       </div>
-      <h1 className="mt-4 font-display text-5xl">{event.name}</h1>
+      <h1 className="mt-4 font-display text-4xl leading-none sm:text-5xl">
+        {event.name}
+      </h1>
       {matchup ? (
-        <p className="mt-4 text-muted">
-          {event.team_a ? (
-            <Link
-              href={`/teams/${event.team_a.slug}`}
-              className="text-foreground transition-colors duration-200 hover:text-accent"
-            >
-              {event.team_a.name}
-            </Link>
-          ) : null}
-          <span> vs </span>
-          {event.team_b ? (
-            <Link
-              href={`/teams/${event.team_b.slug}`}
-              className="text-foreground transition-colors duration-200 hover:text-accent"
-            >
-              {event.team_b.name}
-            </Link>
-          ) : null}
-        </p>
+        <div className="mt-4 space-y-1 sm:space-y-0">
+          <p className="grid gap-1 font-display text-lg tracking-wide sm:hidden">
+            {event.team_a ? (
+              <Link
+                href={`/teams/${event.team_a.slug}`}
+                className="text-foreground transition-colors duration-200 hover:text-accent"
+              >
+                {event.team_a.name}
+              </Link>
+            ) : (
+              <span>TBD</span>
+            )}
+            <span className="text-[10px] font-bold tracking-[0.2em] text-muted uppercase">
+              versus
+            </span>
+            {event.team_b ? (
+              <Link
+                href={`/teams/${event.team_b.slug}`}
+                className="text-foreground transition-colors duration-200 hover:text-accent"
+              >
+                {event.team_b.name}
+              </Link>
+            ) : (
+              <span>TBD</span>
+            )}
+          </p>
+          <p className="hidden text-muted sm:block">
+            {event.team_a ? (
+              <Link
+                href={`/teams/${event.team_a.slug}`}
+                className="text-foreground transition-colors duration-200 hover:text-accent"
+              >
+                {event.team_a.name}
+              </Link>
+            ) : null}
+            <span> vs </span>
+            {event.team_b ? (
+              <Link
+                href={`/teams/${event.team_b.slug}`}
+                className="text-foreground transition-colors duration-200 hover:text-accent"
+              >
+                {event.team_b.name}
+              </Link>
+            ) : null}
+          </p>
+        </div>
       ) : (
         <p className="mt-4 text-muted">
           {event.match_format || "All eight teams"}
@@ -85,7 +114,7 @@ export default async function EventDetailPage({ params }: Props) {
       {event.result_note ? (
         <p className="mt-1 text-sm text-muted">{event.result_note}</p>
       ) : null}
-      <dl className="mt-8 grid gap-4 sm:grid-cols-2">
+      <dl className="mt-7 grid gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4">
         <div className="rounded-xl border border-border bg-surface p-4">
           <dt className="text-[10px] tracking-wide text-muted uppercase">When</dt>
           <dd className="mt-1 font-medium">
@@ -108,7 +137,7 @@ export default async function EventDetailPage({ params }: Props) {
       {cta.kind === "results" ? (
         <Link
           href={resultsHref}
-          className="mt-8 inline-flex rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black transition-opacity duration-200 hover:opacity-90"
+          className="mt-7 inline-flex min-h-11 items-center rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black transition-opacity duration-200 hover:opacity-90 sm:mt-8"
         >
           View results
         </Link>

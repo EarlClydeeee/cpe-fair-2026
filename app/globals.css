@@ -85,6 +85,38 @@
     border-top: 2px dashed color-mix(in oklab, var(--accent) 55%, transparent);
   }
 
+  /* Horizontal filter rails for phone — no wrapping tab piles */
+  .scroll-rail {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .scroll-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scroll-rail > * {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .scroll-rail-edge {
+    /* Fade only the trailing edge — keep the first chip fully legible */
+    mask-image: linear-gradient(
+      90deg,
+      #000 0,
+      #000 calc(100% - 28px),
+      transparent
+    );
+  }
+
   .panel {
     background: var(--surface);
     border: 1px solid var(--border);

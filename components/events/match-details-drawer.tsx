@@ -56,7 +56,10 @@ export function MatchDetailsDrawer({
     : "/leaderboard";
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="presentation">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-stretch sm:justify-end"
+      role="presentation"
+    >
       <button
         type="button"
         aria-label="Close match details"
@@ -67,8 +70,9 @@ export function MatchDetailsDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-surface shadow-2xl"
+        className="relative flex max-h-[88vh] w-full flex-col rounded-t-2xl border border-border bg-surface shadow-2xl sm:h-full sm:max-h-none sm:max-w-md sm:rounded-none sm:border-y-0 sm:border-r-0 sm:border-l"
       >
+        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-border sm:hidden" aria-hidden />
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <p className="text-[10px] font-semibold tracking-[0.18em] text-muted uppercase">
             Match details
@@ -77,7 +81,7 @@ export function MatchDetailsDrawer({
             ref={closeRef}
             type="button"
             onClick={onClose}
-            className="rounded-lg px-2 py-1 text-sm text-muted transition-colors duration-200 hover:bg-surface-2 hover:text-foreground"
+            className="min-h-10 rounded-lg px-3 text-sm text-muted transition-colors duration-200 hover:bg-surface-2 hover:text-foreground"
           >
             Close
           </button>
@@ -151,18 +155,18 @@ export function MatchDetailsDrawer({
           </dl>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-border px-5 py-4">
+        <div className="flex flex-col gap-2 border-t border-border px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           {cta.kind === "results" ? (
             <Link
               href={resultsHref}
-              className="inline-flex items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black transition-opacity duration-200 hover:opacity-90"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black transition-opacity duration-200 hover:opacity-90"
             >
               View results
             </Link>
           ) : null}
           <Link
             href={`/events/${event.id}`}
-            className={`inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm transition-colors duration-200 ${
+            className={`inline-flex min-h-11 items-center justify-center rounded-lg px-4 py-2.5 text-sm transition-colors duration-200 ${
               cta.kind === "results"
                 ? "border border-border text-muted hover:text-foreground"
                 : "bg-accent font-semibold text-black hover:opacity-90"

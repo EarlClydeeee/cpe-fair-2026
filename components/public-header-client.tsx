@@ -25,23 +25,25 @@ export function PublicHeaderClient() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur-md pt-[env(safe-area-inset-top)]">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:h-16 sm:gap-4 sm:px-6">
         <Link
           href="/leaderboard"
-          className="flex items-center gap-3 transition-opacity duration-200 hover:opacity-90"
+          className="flex min-w-0 items-center gap-2.5 transition-opacity duration-200 hover:opacity-90 sm:gap-3"
         >
           <Image
             src="/logo.png"
             alt="ACCESS CPE Fair 2026"
             width={40}
             height={40}
-            className="size-10 object-contain drop-shadow-[0_0_12px_rgba(255,107,33,0.35)]"
+            className="size-9 object-contain drop-shadow-[0_0_12px_rgba(255,107,33,0.35)] sm:size-10"
             priority
           />
-          <span className="leading-tight">
-            <span className="block font-display text-xl tracking-[0.08em] uppercase">ACCESS</span>
-            <span className="block text-[10px] tracking-[0.2em] text-muted uppercase">
+          <span className="min-w-0 leading-tight">
+            <span className="block font-display text-lg tracking-[0.08em] uppercase sm:text-xl">
+              ACCESS
+            </span>
+            <span className="block truncate text-[9px] tracking-[0.18em] text-muted uppercase sm:text-[10px] sm:tracking-[0.2em]">
               CPE Fair 2026
             </span>
           </span>
@@ -104,9 +106,9 @@ export function PublicHeaderClient() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className={`rounded-lg px-3 py-2.5 text-sm tracking-[0.12em] uppercase transition-colors duration-200 ${
+                  className={`rounded-lg px-3 py-3 text-sm tracking-[0.12em] uppercase transition-colors duration-200 ${
                     active
-                      ? "bg-accent-soft text-accent"
+                      ? "border-l-2 border-accent bg-accent-soft text-accent"
                       : "text-muted hover:bg-surface-2 hover:text-foreground"
                   }`}
                 >

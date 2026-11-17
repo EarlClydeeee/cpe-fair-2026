@@ -18,9 +18,9 @@ export function TitleRace({
     chasers[0] != null ? leader.total - chasers[0].total : null;
 
   return (
-    <div className="rounded-xl border border-neutral-800/90 bg-[#16171b] p-6 text-white shadow-sm">
+    <div className="rounded-xl border border-neutral-800/90 bg-[#16171b] p-4 text-white shadow-sm sm:p-6">
       <p className="text-[10px] font-bold tracking-[0.18em] text-neutral-400 uppercase">
-        THE TITLE RACE
+        The title race
       </p>
 
       <div className="mt-4">

@@ -11,10 +11,18 @@ import { dayLabel, manilaDateKey } from "@/lib/format";
 import { useNow } from "@/lib/hooks/use-now";
 
 function tabClass(active: boolean) {
-  return `rounded-lg px-4 py-2 text-xs tracking-[0.12em] uppercase transition-colors duration-200 ${
+  return `whitespace-nowrap rounded-lg px-3.5 py-2.5 text-[11px] tracking-[0.12em] uppercase transition-colors duration-200 sm:px-4 sm:text-xs ${
     active
       ? "bg-accent text-black"
       : "bg-surface-2 text-muted hover:text-foreground"
+  }`;
+}
+
+function dayClass(active: boolean) {
+  return `whitespace-nowrap rounded-lg border px-3 py-2.5 text-[11px] uppercase transition-colors duration-200 sm:text-xs ${
+    active
+      ? "border-accent text-accent"
+      : "border-border text-muted hover:text-foreground"
   }`;
 }
 
@@ -92,58 +100,56 @@ export function EventsLineup({
         <p className="text-muted">Events appear after the database is seeded.</p>
       )}
 
-      <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href={day ? `/events?day=${day}` : "/events"}
-            className={tabClass(!categorySlug)}
-          >
-            All events
-          </Link>
-          {categoryFilters.map((cat) => (
+      <div className="mt-7 space-y-2.5 sm:mt-10 sm:space-y-3">
+        <div className="-mx-4 scroll-rail-edge px-4 sm:mx-0 sm:px-0">
+          <div className="scroll-rail flex-nowrap" aria-label="Event categories">
             <Link
-              key={cat.id}
-              href={`/events?category=${cat.slug}${day ? `&day=${day}` : ""}`}
-              className={tabClass(categorySlug === cat.slug)}
+              href={day ? `/events?day=${day}` : "/events"}
+              className={tabClass(!categorySlug)}
             >
-              {cat.name}
+              All events
             </Link>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2 text-xs">
-          <Link
-            href={`/events${categorySlug ? `?category=${categorySlug}` : ""}`}
-            className={`rounded-lg border px-3 py-2 uppercase transition-colors duration-200 ${
-              !day
-                ? "border-accent text-accent"
-                : "border-border text-muted hover:text-foreground"
-            }`}
-          >
-            All Dates
-          </Link>
-          {dayDates.map((_, index) => {
-            const d = index + 1;
-            return (
+            {categoryFilters.map((cat) => (
               <Link
-                key={dayDates[index]}
-                href={`/events?day=${d}${categorySlug ? `&category=${categorySlug}` : ""}`}
-                className={`rounded-lg border px-3 py-2 uppercase transition-colors duration-200 ${
-                  day === d
-                    ? "border-accent text-accent"
-                    : "border-border text-muted hover:text-foreground"
-                }`}
+                key={cat.id}
+                href={`/events?category=${cat.slug}${day ? `&day=${day}` : ""}`}
+                className={tabClass(categorySlug === cat.slug)}
               >
-                {dayLabel(d)}
+                {cat.name}
               </Link>
-            );
-          })}
+            ))}
+          </div>
+        </div>
+        <div className="-mx-4 scroll-rail-edge px-4 sm:mx-0 sm:px-0">
+          <div className="scroll-rail flex-nowrap" aria-label="Competition days">
+            <Link
+              href={`/events${categorySlug ? `?category=${categorySlug}` : ""}`}
+              className={dayClass(!day)}
+            >
+              All dates
+            </Link>
+            {dayDates.map((_, index) => {
+              const d = index + 1;
+              return (
+                <Link
+                  key={dayDates[index]}
+                  href={`/events?day=${d}${categorySlug ? `&category=${categorySlug}` : ""}`}
+                  className={dayClass(day === d)}
+                >
+                  {dayLabel(d)}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <h2 className="mt-10 font-display text-3xl">The Competition Schedule</h2>
+      <h2 className="mt-8 font-display text-2xl leading-none sm:mt-10 sm:text-3xl">
+        The Competition Schedule
+      </h2>
 
       {filtered.length ? (
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((event, i) => (
             <EventCard
               key={event.id}

@@ -13,20 +13,20 @@ export default async function EventsPage({ searchParams }: Props) {
   const [categories, events] = await Promise.all([getCategories(), getEvents()]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-6">
-        <div className="reveal">
-          <p className="text-xs tracking-[0.2em] text-accent uppercase">
-            Six categories. Endless possibilities.
-          </p>
-          <h1 className="mt-2 font-display text-5xl sm:text-6xl">The Event Lineup</h1>
-          <p className="mt-3 max-w-xl text-sm text-muted">
-            Find your next match, follow the action, and catch every result.
-          </p>
-        </div>
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+      <div className="reveal">
+        <p className="text-[10px] tracking-[0.2em] text-accent uppercase sm:text-xs">
+          Six categories. Endless possibilities.
+        </p>
+        <h1 className="mt-2 font-display text-4xl leading-none sm:text-6xl">
+          The Event Lineup
+        </h1>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
+          Find your next match, follow the action, and catch every result.
+        </p>
       </div>
 
-      <div className="dash-rule my-8" />
+      <div className="dash-rule my-6 sm:my-8" />
 
       <EventsLineup
         categories={categories}

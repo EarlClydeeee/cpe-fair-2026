@@ -44,45 +44,45 @@ export default async function TeamsPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-6">
-        <div className="reveal">
-          <p className="text-xs tracking-[0.2em] text-accent uppercase">
-            Eight teams. One shared ambition.
-          </p>
-          <h1 className="mt-2 font-display text-5xl sm:text-6xl">Meet the Teams</h1>
-          <p className="mt-3 max-w-xl text-sm text-muted">
-            Different colors. The same fighting spirit. Meet the teams taking the court.
-          </p>
-        </div>
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+      <div className="reveal">
+        <p className="text-[10px] tracking-[0.2em] text-accent uppercase sm:text-xs">
+          Eight teams. One shared ambition.
+        </p>
+        <h1 className="mt-2 font-display text-4xl leading-none sm:text-6xl">
+          Meet the Teams
+        </h1>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
+          Different colors. The same fighting spirit. Meet the teams taking the court.
+        </p>
       </div>
 
-      <div className="dash-rule my-8" />
+      <div className="dash-rule my-6 sm:my-8" />
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-8">
+      <div className="space-y-4 sm:space-y-5">
+        <div className="grid grid-cols-3 gap-3 border-b border-border/60 pb-4 sm:flex sm:flex-wrap sm:gap-8 sm:border-0 sm:pb-0">
           {[
             [String(list.length).padStart(2, "0"), "Teams"],
             [String(categories.length).padStart(2, "0"), "Categories"],
             ["01", "Champion"],
           ].map(([value, label]) => (
             <div key={label}>
-              <p className="font-display text-3xl text-accent sm:text-4xl">{value}</p>
+              <p className="font-display text-2xl text-accent sm:text-4xl">{value}</p>
               <p className="text-[10px] tracking-[0.18em] text-muted uppercase">{label}</p>
             </div>
           ))}
         </div>
-        <form className="flex flex-wrap gap-2">
+        <form className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           <input
             name="q"
             defaultValue={q}
             placeholder="Search teams..."
-            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm outline-none transition-colors duration-200 focus:border-accent"
+            className="col-span-2 min-h-11 w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-accent sm:w-auto sm:min-w-[12rem]"
           />
           <select
             name="affiliation"
             defaultValue={affiliation ?? ""}
-            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+            className="min-h-11 w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm sm:w-auto"
           >
             <option value="">All sections</option>
             {affiliations.map((value) => (
@@ -94,15 +94,15 @@ export default async function TeamsPage({ searchParams }: Props) {
           <select
             name="sort"
             defaultValue={sort ?? "rank"}
-            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+            className="min-h-11 w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm sm:w-auto"
           >
-            <option value="rank">Sort: Overall rank</option>
-            <option value="name">Sort: Alphabetical</option>
+            <option value="rank">Sort: Rank</option>
+            <option value="name">Sort: A–Z</option>
             <option value="points">Sort: Points</option>
           </select>
           <button
             type="submit"
-            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-muted transition-colors duration-200 hover:text-foreground"
+            className="col-span-2 min-h-11 rounded-lg border border-border bg-surface-2 px-4 py-2.5 text-sm text-muted transition-colors duration-200 hover:text-foreground sm:w-auto"
           >
             Apply
           </button>

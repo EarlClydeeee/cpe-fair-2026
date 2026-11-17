@@ -42,27 +42,27 @@ export function MatchSpotlight({
   return (
     <Link
       href={`/events/${event.id}`}
-      className="group block rounded-xl bg-[#ff6a00] p-6 text-black shadow-lg shadow-orange-950/20 transition-all duration-200 hover:brightness-105"
+      className="group block rounded-xl bg-[#ff6a00] p-4 text-black shadow-lg shadow-orange-950/20 transition-[filter] duration-200 hover:brightness-105 sm:p-6"
     >
       <p className="text-[10px] font-black tracking-[0.18em] text-black uppercase">
-        MATCH SPOTLIGHT
+        Match spotlight
       </p>
       <p className="mt-0.5 text-[10px] font-bold tracking-[0.16em] text-black/80 uppercase">
         {categoryLabel} / {eventStatusDisplay(status)}
       </p>
 
-      <h3 className="mt-3 font-display text-4xl font-black uppercase tracking-tight text-black sm:text-5xl">
+      <h3 className="mt-2.5 font-display text-3xl font-black tracking-tight text-black uppercase sm:mt-3 sm:text-5xl">
         {event.name}
       </h3>
 
       {isHeadToHead ? (
-        <div className="mt-5 flex items-center justify-between font-display text-base font-black tracking-wide uppercase sm:text-lg">
-          <span>{event.team_a?.name ?? "TBD"}</span>
-          <span className="text-xs font-semibold lowercase opacity-75">vs</span>
-          <span>{event.team_b?.name ?? "TBD"}</span>
+        <div className="mt-4 flex items-center justify-between gap-2 font-display text-sm font-black tracking-wide uppercase sm:mt-5 sm:text-lg">
+          <span className="min-w-0 truncate">{event.team_a?.name ?? "TBD"}</span>
+          <span className="shrink-0 text-xs font-semibold lowercase opacity-75">vs</span>
+          <span className="min-w-0 truncate text-right">{event.team_b?.name ?? "TBD"}</span>
         </div>
       ) : (
-        <p className="mt-5 font-display text-base font-black tracking-wide uppercase sm:text-lg">
+        <p className="mt-4 font-display text-sm font-black tracking-wide uppercase sm:mt-5 sm:text-lg">
           {event.match_format?.trim() || "All eight teams"}
         </p>
       )}

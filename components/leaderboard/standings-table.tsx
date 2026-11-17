@@ -9,30 +9,26 @@ function hexToRgb(hex: string) {
   return {
     r: (num >> 16) & 255,
     g: (num >> 8) & 255,
-    b: num & 255,
+    b: (num >> 0) & 255,
   };
 }
 
 function getBannerStyle(hex: string) {
   const rgb = hexToRgb(hex);
 
-  // Lighten start by ~22%
   const lr = Math.min(255, Math.round(rgb.r + (255 - rgb.r) * 0.22));
   const lg = Math.min(255, Math.round(rgb.g + (255 - rgb.g) * 0.22));
   const lb = Math.min(255, Math.round(rgb.b + (255 - rgb.b) * 0.22));
 
-  // Darken end by ~20%
   const dr = Math.round(rgb.r * 0.8);
   const dg = Math.round(rgb.g * 0.8);
   const db = Math.round(rgb.b * 0.8);
 
-  // Dark notch color (~45% brightness)
   const nr = Math.round(rgb.r * 0.45);
   const ng = Math.round(rgb.g * 0.45);
   const nb = Math.round(rgb.b * 0.45);
 
   const lum = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-  // Colors like red (#E11D48), blue (#3B82F6), and purple (#A855F7) look best with white text
   const isLight = lum > 0.52 && hex.toLowerCase() !== "#a855f7";
 
   return {
@@ -47,7 +43,6 @@ function getBannerStyle(hex: string) {
 export function StandingsTable({ rows }: { rows: StandingRow[] }) {
   return (
     <section className="space-y-3.5">
-      {/* Table Section Header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="font-display text-2xl font-black tracking-wide text-white uppercase sm:text-3xl">
@@ -62,19 +57,18 @@ export function StandingsTable({ rows }: { rows: StandingRow[] }) {
         </p>
       </div>
 
-      {/* Column Headers with exact track alignment to rows */}
-      <div className="flex items-center gap-2.5 px-0.5 text-[10px] font-bold tracking-[0.18em] text-neutral-400 uppercase select-none">
+      {/* Desktop column labels */}
+      <div className="hidden items-center gap-2.5 px-0.5 text-[10px] font-bold tracking-[0.18em] text-neutral-400 uppercase select-none sm:flex">
         <span className="w-[52px] shrink-0 text-center">Rank</span>
         <div className="grid flex-1 grid-cols-[minmax(0,1.8fr)_minmax(0,1.4fr)_100px_90px] items-center px-6">
           <span>Team Name</span>
-          <span className="hidden sm:block">Affiliation</span>
-          <span className="text-right sm:pr-4">To Leader</span>
-          <span className="text-right pr-1">Total</span>
+          <span>Affiliation</span>
+          <span className="pr-4 text-right">To Leader</span>
+          <span className="pr-1 text-right">Total</span>
         </div>
       </div>
 
-      {/* Standings List */}
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {rows.map((row, i) => {
           const isLeader = row.rank === 1;
           const style = getBannerStyle(row.team.color_hex);
@@ -83,11 +77,10 @@ export function StandingsTable({ rows }: { rows: StandingRow[] }) {
             <Link
               key={row.team.id}
               href={`/teams/${row.team.slug}`}
-              className="group flex items-center gap-2.5 transition-all duration-200 hover:translate-x-1.5 active:scale-[0.995]"
+              className="group flex items-stretch gap-2 transition-colors duration-200 sm:gap-2.5 sm:hover:translate-x-1"
             >
-              {/* Rank Block: Dark with team color accent border and subtle hover glow */}
               <div
-                className="flex h-[56px] w-[52px] shrink-0 items-center justify-center rounded-lg border bg-[#121316] font-display text-base font-black text-white shadow-sm transition-all duration-200 group-hover:scale-105 group-hover:border-white/50"
+                className="flex w-11 shrink-0 items-center justify-center rounded-lg border bg-[#121316] font-display text-sm font-black text-white sm:h-[56px] sm:w-[52px] sm:text-base"
                 style={{
                   borderColor: `${style.baseColor}66`,
                   boxShadow: `0 0 12px ${style.baseColor}15`,
@@ -96,75 +89,69 @@ export function StandingsTable({ rows }: { rows: StandingRow[] }) {
                 {String(row.rank).padStart(2, "0")}
               </div>
 
-              {/* Main Team Color Banner with subtle sweeps and interactive gleam */}
               <div
-                className="relative flex h-[56px] flex-1 items-center overflow-hidden rounded-l-lg shadow-md transition-all duration-200 group-hover:brightness-105 group-hover:shadow-lg"
+                className="relative min-w-0 flex-1 overflow-hidden rounded-lg sm:rounded-l-lg"
                 style={{
                   background: style.gradient,
                   clipPath:
-                    "polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%)",
+                    "polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)",
                   color: style.textColor,
                 }}
               >
-                {/* Chamfer corner accent notch */}
                 <div
-                  className="pointer-events-none absolute bottom-0 right-0 h-4 w-4"
+                  className="pointer-events-none absolute right-0 bottom-0 hidden h-3.5 w-3.5 sm:block"
                   style={{ background: style.notchColor }}
                   aria-hidden
                 />
-
-                {/* Staggered periodic subtle stadium light sweep */}
                 <div
-                  className="pointer-events-none absolute inset-y-0 w-32 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-subtle-sweep"
+                  className="pointer-events-none absolute inset-y-0 w-28 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-subtle-sweep"
                   style={{ animationDelay: `${i * 0.9}s` }}
                   aria-hidden
                 />
 
-                {/* Interactive cursor hover sheen sweep */}
-                <div
-                  className="pointer-events-none absolute inset-y-0 -left-[60%] w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[550%]"
-                  aria-hidden
-                />
-
-                {/* Ambient pulse aura for the current tournament Leader */}
-                {isLeader && (
-                  <div
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/5 opacity-50 animate-pulse"
-                    aria-hidden
-                  />
-                )}
-
-                <div className="relative z-10 grid h-full w-full grid-cols-[minmax(0,1.8fr)_minmax(0,1.4fr)_100px_90px] items-center px-6">
-                  {/* Team Name */}
-                  <div className="min-w-0 pr-3">
-                    <span className="block truncate font-display text-base font-black tracking-wide uppercase sm:text-lg">
+                {/* Phone row */}
+                <div className="relative z-10 flex items-center justify-between gap-3 px-3.5 py-3 sm:hidden">
+                  <div className="min-w-0">
+                    <p className="truncate font-display text-[15px] font-black tracking-wide uppercase">
                       {row.team.name}
-                    </span>
-                    <span
-                      className="block truncate text-[11px] font-semibold sm:hidden"
+                    </p>
+                    <p
+                      className="mt-0.5 truncate text-[11px] font-semibold"
                       style={{ color: style.subColor }}
                     >
-                      {row.team.affiliation}
+                      {row.team.affiliation || "Unaffiliated"}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-display text-2xl font-black leading-none">
+                      {formatPoints(row.total)}
+                    </p>
+                    <p
+                      className="mt-1 text-[10px] font-bold tracking-wider uppercase"
+                      style={{ color: style.subColor }}
+                    >
+                      {isLeader ? "Leader" : formatPoints(row.toLeader)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Desktop row */}
+                <div className="relative z-10 hidden h-[56px] w-full grid-cols-[minmax(0,1.8fr)_minmax(0,1.4fr)_100px_90px] items-center px-6 sm:grid">
+                  <div className="min-w-0 pr-3">
+                    <span className="block truncate font-display text-lg font-black tracking-wide uppercase">
+                      {row.team.name}
                     </span>
                   </div>
-
-                  {/* Affiliation */}
                   <div
-                    className="hidden min-w-0 pr-3 text-xs font-semibold sm:block md:text-sm"
+                    className="min-w-0 truncate pr-3 text-sm font-semibold"
                     style={{ color: style.subColor }}
                   >
-                    <span className="block truncate">
-                      {row.team.affiliation || "Unaffiliated"}
-                    </span>
+                    {row.team.affiliation || "Unaffiliated"}
                   </div>
-
-                  {/* To Leader */}
-                  <div className="text-right text-xs font-black tracking-wider uppercase sm:pr-4 md:text-sm">
-                    {isLeader ? "LEADER" : `${formatPoints(row.toLeader)}`}
+                  <div className="pr-4 text-right text-sm font-black tracking-wider uppercase">
+                    {isLeader ? "LEADER" : formatPoints(row.toLeader)}
                   </div>
-
-                  {/* Total Points */}
-                  <div className="text-right font-display text-2xl font-black leading-none pr-1 sm:text-3xl transition-transform duration-200 group-hover:scale-105">
+                  <div className="pr-1 text-right font-display text-3xl font-black leading-none">
                     {row.total}
                   </div>
                 </div>
