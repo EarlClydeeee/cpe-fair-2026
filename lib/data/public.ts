@@ -145,7 +145,10 @@ export async function getActiveSeason(): Promise<Season | null> {
   cacheLife({ stale: 60, revalidate: 60, expire: 300 });
   cacheTag(tags.season);
 
-  return query("getActiveSeason", DEFAULT_SEASON, () =>
+  // Never invent a fake season id when Supabase is configured — that hides live events.
+  if (!isSupabaseConfigured) return DEFAULT_SEASON;
+
+  return query("getActiveSeason", null, () =>
     createPublicClient()
       .from("seasons")
       .select("*")
@@ -231,12 +234,13 @@ export async function getEvents(filters?: {
   categorySlug?: string;
 }): Promise<FairEvent[]> {
   "use cache";
-  cacheLife("minutes");
+  // Short TTL so guest pages pick up admin creates/edits quickly.
+  cacheLife({ stale: 0, revalidate: 15, expire: 60 });
   cacheTag(tags.events);
 
   if (!isSupabaseConfigured) return DEFAULT_EVENTS;
   const season = await getActiveSeason();
-  if (!season) return DEFAULT_EVENTS;
+  if (!season) return [];
 
   const [categories, teams, rawEvents] = await Promise.all([
     getCategories(season.id),
@@ -251,8 +255,7 @@ export async function getEvents(filters?: {
     ),
   ]);
 
-  if (!rawEvents.length) return DEFAULT_EVENTS;
-
+  // Live project: never swap in sample fixtures — guests must see admin events.
   const catById = new Map(categories.map((c) => [c.id, c]));
   const teamById = new Map(teams.map((t) => [t.id, t]));
 
@@ -262,14 +265,40 @@ export async function getEvents(filters?: {
 
   if (filters?.categorySlug) {
     rows = rows.filter((e) => e.categories?.slug === filters.categorySlug);
-    return rows;
   }
-  return rows.length ? rows : DEFAULT_EVENTS;
+  return rows;
 }
 
 export async function getEvent(id: string): Promise<FairEvent | null> {
-  const events = await getEvents();
-  return events.find((e) => e.id === id) ?? null;
+  "use cache";
+  cacheLife({ stale: 0, revalidate: 15, expire: 60 });
+  cacheTag(tags.events);
+
+  if (!isSupabaseConfigured) {
+    return DEFAULT_EVENTS.find((e) => e.id === id) ?? null;
+  }
+
+  const season = await getActiveSeason();
+  if (!season) return null;
+
+  const event = await query("getEventById", null, () =>
+    createPublicClient()
+      .from("events")
+      .select("*")
+      .eq("id", id)
+      .eq("season_id", season.id)
+      .eq("is_archived", false)
+      .maybeSingle(),
+  );
+  if (!event) return null;
+
+  const [categories, teams] = await Promise.all([
+    getCategories(season.id),
+    getTeams(season.id),
+  ]);
+  const catById = new Map(categories.map((c) => [c.id, c]));
+  const teamById = new Map(teams.map((t) => [t.id, t]));
+  return mapEventJoins(event, catById, teamById);
 }
 
 export async function getEventsForTeam(teamId: string): Promise<FairEvent[]> {

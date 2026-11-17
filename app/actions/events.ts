@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { canManageEvents, requireStaff } from "@/lib/auth";
 import { ensureActiveSeason } from "@/lib/data/season";
@@ -18,12 +18,15 @@ import {
 } from "@/lib/validation/access";
 
 function revalidateEventPaths(eventId?: string | null) {
+  // Immediate for the admin action; tag revalidate so guest pages drop stale lists.
   updateTag(tags.events);
   updateTag(tags.audit);
+  revalidateTag(tags.events, "max");
   revalidatePath("/admin/events");
   revalidatePath("/events");
   revalidatePath("/leaderboard");
   revalidatePath("/admin");
+  revalidatePath("/", "layout");
   if (eventId) revalidatePath(`/events/${eventId}`);
 }
 
