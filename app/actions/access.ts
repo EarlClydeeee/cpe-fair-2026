@@ -5,8 +5,10 @@ import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { requireOwner } from "@/lib/auth";
 import { getActiveSeason } from "@/lib/data/public";
 import { tags } from "@/lib/data/tags";
-import { createClient } from "@/lib/supabase/server";
+import { hasServiceRole } from "@/lib/supabase/env";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
+  clearSeasonContentSchema,
   inviteAdminSchema,
   revokeInviteSchema,
   updateRoleSchema,
@@ -105,4 +107,49 @@ export async function revokeInvitation(
 
   revalidatePath("/admin/access");
   return { ok: true, message: "Invitation revoked." };
+}
+
+export async function clearSeasonContent(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireOwner();
+  const parsed = clearSeasonContentSchema.safeParse(formObject(formData));
+  if (!parsed.success) return fieldErrors(parsed.error);
+
+  if (!hasServiceRole) {
+    return {
+      ok: false,
+      message:
+        "Add SUPABASE_SERVICE_ROLE_KEY to .env.local before wiping season data.",
+    };
+  }
+
+  const supabase = createServiceClient();
+  const { error } = await supabase.rpc("clear_season_content");
+  if (error) return { ok: false, message: error.message };
+
+  updateTag(tags.season);
+  updateTag(tags.teams);
+  updateTag(tags.events);
+  updateTag(tags.scores);
+  updateTag(tags.drafts);
+  updateTag(tags.audit);
+  updateTag(tags.access);
+  revalidatePath("/admin");
+  revalidatePath("/admin/access");
+  revalidatePath("/admin/teams");
+  revalidatePath("/admin/categories");
+  revalidatePath("/admin/events");
+  revalidatePath("/admin/leaderboards");
+  revalidatePath("/");
+  revalidatePath("/leaderboard");
+  revalidatePath("/teams");
+  revalidatePath("/events");
+
+  return {
+    ok: true,
+    message:
+      "Season data wiped. Teams, categories, competitions, events, and scores are gone. Schema, grants, and admin login were kept.",
+  };
 }

@@ -1,11 +1,19 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { inviteAdmin, revokeInvitation, updateAdminRole } from "@/app/actions/access";
+import { useActionState, useEffect, useState } from "react";
+import {
+  clearSeasonContent,
+  revokeInvitation,
+  updateAdminRole,
+} from "@/app/actions/access";
 import { initialActionState } from "@/lib/action-state";
 import { roleLabel, type AdminRole } from "@/lib/roles";
+import {
+  CLEAR_SEASON_PHRASE_1,
+  CLEAR_SEASON_PHRASE_2,
+} from "@/lib/validation/access";
 import { FormMessage } from "../ui/form-message";
-import { SelectField, TextField } from "../ui/input";
+import { TextField } from "../ui/input";
 import { SubmitButton } from "../submit-button";
 import { Badge } from "../ui/badge";
 
@@ -13,7 +21,7 @@ const roleHelp: Record<AdminRole, string> = {
   owner: "All fair content, publishing, and administrator access.",
   site_admin: "Events, teams, and public page content.",
   scoring_admin:
-    "Can edit category scores, save drafts, and publish leaderboard updates. Cannot invite administrators or change access roles.",
+    "Can edit category scores, save drafts, and publish leaderboard updates. Cannot wipe season data or change access roles.",
   events_editor: "Fixtures, venues, schedules, and event status.",
 };
 
@@ -31,10 +39,12 @@ export function AccessPanel({
   invites: { id: string; email: string; role: AdminRole; status: string }[];
   isOwner: boolean;
 }) {
-  const [inviteState, inviteAction] = useActionState(inviteAdmin, initialActionState);
   const [roleState, roleAction] = useActionState(updateAdminRole, initialActionState);
   const [revokeState, revokeAction] = useActionState(revokeInvitation, initialActionState);
-  const [selectedInviteRole, setSelectedInviteRole] = useState<AdminRole>("scoring_admin");
+  const [wipeState, wipeAction] = useActionState(clearSeasonContent, initialActionState);
+  const [wipeStep, setWipeStep] = useState<1 | 2>(1);
+  const [phrase1, setPhrase1] = useState("");
+  const [phrase2, setPhrase2] = useState("");
   const [roleDrafts, setRoleDrafts] = useState<Record<string, AdminRole>>(() =>
     Object.fromEntries(
       profiles
@@ -43,15 +53,25 @@ export function AccessPanel({
     ),
   );
 
+  useEffect(() => {
+    if (wipeState.ok) {
+      setWipeStep(1);
+      setPhrase1("");
+      setPhrase2("");
+    }
+  }, [wipeState.ok, wipeState.message]);
+
   return (
     <div className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
       <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {[
             ["Active admins", String(profiles.length).padStart(2, "0")],
-            ["Pending invitation", String(invites.length).padStart(2, "0")],
             ["Access roles", "04"],
-            ["Workspace owner", String(profiles.filter((p) => p.role === "owner").length).padStart(2, "0")],
+            [
+              "Workspace owner",
+              String(profiles.filter((p) => p.role === "owner").length).padStart(2, "0"),
+            ],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border border-border bg-surface p-4">
               <p className="text-[10px] tracking-wide text-muted uppercase">{label}</p>
@@ -148,47 +168,96 @@ export function AccessPanel({
         </div>
       </div>
 
-      <aside className="rounded-2xl border border-border bg-surface p-5">
-        <h2 className="font-display text-2xl">Invite administrator</h2>
+      <aside className="rounded-2xl border border-accent/40 bg-surface p-5">
+        <p className="text-[10px] font-bold tracking-[0.18em] text-accent uppercase">
+          Danger zone
+        </p>
+        <h2 className="mt-1 font-display text-2xl">Clear season data</h2>
         {isOwner ? (
-          <form action={inviteAction} className="mt-4 space-y-3">
-            <TextField
-              label="Email address"
-              name="email"
-              type="email"
-              placeholder="name@example.com"
-              required
-              error={inviteState.errors?.email?.[0]}
-            />
-            <SelectField
-              label="Role"
-              name="role"
-              value={selectedInviteRole}
-              onChange={(e) => setSelectedInviteRole(e.target.value as AdminRole)}
-              error={inviteState.errors?.role?.[0]}
-            >
-              <option value="scoring_admin">Scoring admin</option>
-              <option value="site_admin">Site admin</option>
-              <option value="events_editor">Events editor</option>
-              <option value="owner">Owner</option>
-            </SelectField>
-
-            {/* Real-time permission description that updates as you change the role dropdown */}
-            <div className="rounded-xl bg-accent-soft p-3 text-xs leading-5 text-accent transition-all">
-              <span className="block font-semibold uppercase tracking-wider text-[10px] text-accent/80 mb-1">
-                {roleLabel(selectedInviteRole)} Permissions
-              </span>
-              {roleHelp[selectedInviteRole]}
-            </div>
-
-            <FormMessage state={inviteState} />
-            <SubmitButton className="w-full">Send invitation</SubmitButton>
-            <p className="text-xs text-muted">
-              Invitation preview only — no email is sent. They must sign up with this address.
-            </p>
-          </form>
+          <div className="mt-4 space-y-4">
+            {wipeStep === 1 ? (
+              <>
+                <p className="text-sm leading-6 text-muted">
+                  Permanently deletes teams, categories, competitions, events, scores,
+                  drafts, invitations, and audit history for this fair. Schema, grants,
+                  the active season row, and admin login stay intact.
+                </p>
+                <p className="rounded-xl border border-border bg-surface-2 px-3 py-2 text-xs leading-5 text-foreground">
+                  Step 1 of 2 — type{" "}
+                  <span className="font-mono font-semibold text-accent">
+                    {CLEAR_SEASON_PHRASE_1}
+                  </span>{" "}
+                  to continue.
+                </p>
+                <TextField
+                  label="Confirmation phrase"
+                  name="confirm_phrase_1_preview"
+                  value={phrase1}
+                  onChange={(event) => setPhrase1(event.target.value)}
+                  placeholder={CLEAR_SEASON_PHRASE_1}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  disabled={phrase1 !== CLEAR_SEASON_PHRASE_1}
+                  onClick={() => setWipeStep(2)}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-accent bg-accent/10 px-4 text-sm font-semibold text-accent transition disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Continue to final confirmation
+                </button>
+              </>
+            ) : (
+              <form action={wipeAction} className="space-y-4">
+                <input type="hidden" name="confirm_phrase_1" value={CLEAR_SEASON_PHRASE_1} />
+                <p className="text-sm leading-6 text-muted">
+                  This cannot be undone. Public leaderboard and admin lists will go empty
+                  until organizers add data again.
+                </p>
+                <p className="rounded-xl border border-accent/50 bg-accent/10 px-3 py-2 text-xs leading-5 text-accent">
+                  Step 2 of 2 — type{" "}
+                  <span className="font-mono font-semibold">
+                    {CLEAR_SEASON_PHRASE_2}
+                  </span>{" "}
+                  to wipe the data.
+                </p>
+                <TextField
+                  label="Final confirmation phrase"
+                  name="confirm_phrase_2"
+                  value={phrase2}
+                  onChange={(event) => setPhrase2(event.target.value)}
+                  placeholder={CLEAR_SEASON_PHRASE_2}
+                  autoComplete="off"
+                  spellCheck={false}
+                  error={wipeState.errors?.confirm_phrase_2?.[0]}
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWipeStep(1);
+                      setPhrase2("");
+                    }}
+                    className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium text-muted transition hover:text-foreground"
+                  >
+                    Back
+                  </button>
+                  <SubmitButton
+                    variant="danger"
+                    className="flex-1"
+                    disabled={phrase2 !== CLEAR_SEASON_PHRASE_2}
+                  >
+                    Wipe season data
+                  </SubmitButton>
+                </div>
+              </form>
+            )}
+            <FormMessage state={wipeState} />
+          </div>
         ) : (
-          <p className="mt-4 text-sm text-muted">Only the workspace owner can invite administrators.</p>
+          <p className="mt-4 text-sm text-muted">
+            Only the workspace owner can clear season data.
+          </p>
         )}
       </aside>
     </div>

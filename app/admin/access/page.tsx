@@ -20,7 +20,8 @@ async function AccessContent() {
           Admin Access
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Invite trusted organizers and keep control-room permissions clear.
+          Review control-room roles and clear season data when the organization needs a
+          clean slate.
         </p>
       </div>
       <AccessPanel

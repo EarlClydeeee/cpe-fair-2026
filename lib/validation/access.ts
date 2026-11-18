@@ -22,6 +22,18 @@ export const revokeInviteSchema = z.object({
   id: uuidSchema,
 });
 
+export const CLEAR_SEASON_PHRASE_1 = "DELETE THIS SEASON";
+export const CLEAR_SEASON_PHRASE_2 = "BYE DATA FOR CPE FAIR 2026";
+
+export const clearSeasonContentSchema = z.object({
+  confirm_phrase_1: z.literal(CLEAR_SEASON_PHRASE_1, {
+    error: `Type ${CLEAR_SEASON_PHRASE_1} exactly.`,
+  }),
+  confirm_phrase_2: z.literal(CLEAR_SEASON_PHRASE_2, {
+    error: `Type ${CLEAR_SEASON_PHRASE_2} exactly.`,
+  }),
+});
+
 export const scoreDraftSchema = z.object({
   team_id: uuidSchema,
   competition_id: uuidSchema,

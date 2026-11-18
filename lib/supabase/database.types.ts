@@ -279,6 +279,10 @@ export type Database = {
         Args: { p_draft_ids: string[] };
         Returns: number;
       };
+      clear_season_content: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
     };
     Enums: {
       admin_role: "owner" | "site_admin" | "scoring_admin" | "events_editor";

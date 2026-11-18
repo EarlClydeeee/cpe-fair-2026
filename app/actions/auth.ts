@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { ADMIN_ACCESS_CODE } from "@/lib/auth-credentials";
-import { hasServiceRole } from "@/lib/supabase/env";
 import { createAuthClient } from "@/lib/supabase/server";
 import { signInSchema } from "@/lib/validation/auth";
 
@@ -23,14 +22,6 @@ export async function signIn(
 
   if (parsed.data.password !== ADMIN_ACCESS_CODE) {
     return { ok: false, message: "Invalid access code." };
-  }
-
-  if (!hasServiceRole) {
-    return {
-      ok: false,
-      message:
-        "Add SUPABASE_SERVICE_ROLE_KEY to .env.local (Supabase → Project Settings → API → service_role secret).",
-    };
   }
 
   const cookieStore = await cookies();
