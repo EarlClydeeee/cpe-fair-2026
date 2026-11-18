@@ -96,6 +96,7 @@ async function ReviewPublishContent() {
                 draftId={diff.draft.id}
                 teamName={diff.team.name}
                 categoryName={diff.category.name}
+                competitionName={diff.competition.name}
                 publishedPoints={diff.publishedPoints}
                 draftPoints={diff.draft.draft_points}
                 delta={diff.delta}

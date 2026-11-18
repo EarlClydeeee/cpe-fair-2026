@@ -36,17 +36,20 @@ const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const MINUTES = ["00", "15", "30", "45"];
 
 type CategoryOption = { id: string; name: string; slug?: string };
+type CompetitionOption = { id: string; name: string; category_id: string };
 type TeamOption = { id: string; name: string; color_hex?: string };
 
 export function EventManager({
   events,
   categories,
+  competitions,
   teams,
   initialStatusFilter = "all",
   initialSelectedId,
 }: {
   events: FairEvent[];
   categories: CategoryOption[];
+  competitions: CompetitionOption[];
   teams: TeamOption[];
   initialStatusFilter?: string;
   initialSelectedId?: string;
@@ -63,14 +66,16 @@ export function EventManager({
     "all" | "upcoming" | "ongoing" | "ended" | "needs_winner"
   >(
     initialStatusFilter === "needs_winner" ||
-    initialStatusFilter === "upcoming" ||
-    initialStatusFilter === "ongoing" ||
-    initialStatusFilter === "ended"
-      ? (initialStatusFilter as any)
+      initialStatusFilter === "upcoming" ||
+      initialStatusFilter === "ongoing" ||
+      initialStatusFilter === "ended"
+      ? initialStatusFilter
       : "all",
   );
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [focus, setFocus] = useState<"list" | "editor">(initialSelectedId ? "editor" : "list");
+  const [focus, setFocus] = useState<"list" | "editor">(
+    initialSelectedId ? "editor" : "list",
+  );
 
   const isCreating = selectedId === NEW_EVENT;
   const selected = useMemo(
@@ -81,7 +86,10 @@ export function EventManager({
   // Controlled real-time form state
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [matchType, setMatchType] = useState<"head_to_head" | "all_teams">("head_to_head");
+  const [formCompetitionId, setFormCompetitionId] = useState("");
+  const [matchType, setMatchType] = useState<"head_to_head" | "all_teams">(
+    "head_to_head",
+  );
   const [teamAId, setTeamAId] = useState("");
   const [teamBId, setTeamBId] = useState("");
   const [venue, setVenue] = useState("");
@@ -94,7 +102,9 @@ export function EventManager({
   const [endMinute, setEndMinute] = useState("30");
   const [endPeriod, setEndPeriod] = useState<"AM" | "PM">("PM");
   const [isHighlighted, setIsHighlighted] = useState(false);
-  const [statusMode, setStatusMode] = useState<"upcoming" | "ongoing" | "ended">("upcoming");
+  const [statusMode, setStatusMode] = useState<"upcoming" | "ongoing" | "ended">(
+    "upcoming",
+  );
   const [winnerTeamId, setWinnerTeamId] = useState("");
   const [resultNote, setResultNote] = useState("");
 
@@ -102,7 +112,15 @@ export function EventManager({
   useEffect(() => {
     if (selected) {
       setName(selected.name);
-      setCategoryId(selected.category_id);
+      const nextCategoryId = selected.category_id;
+      setCategoryId(nextCategoryId);
+      const comps = competitions.filter((c) => c.category_id === nextCategoryId);
+      setFormCompetitionId(
+        selected.competition_id &&
+          comps.some((c) => c.id === selected.competition_id)
+          ? selected.competition_id
+          : (comps[0]?.id ?? ""),
+      );
       setMatchType(selected.match_type ?? "head_to_head");
       setTeamAId(selected.team_a_id ?? "");
       setTeamBId(selected.team_b_id ?? "");
@@ -128,8 +146,12 @@ export function EventManager({
       setWinnerTeamId(selected.winner_team_id ?? "");
       setResultNote(selected.result_note ?? "");
     } else {
+      const nextCategoryId = categories[0]?.id ?? "";
       setName("");
-      setCategoryId(categories[0]?.id ?? "");
+      setCategoryId(nextCategoryId);
+      setFormCompetitionId(
+        competitions.find((c) => c.category_id === nextCategoryId)?.id ?? "",
+      );
       setMatchType("head_to_head");
       setTeamAId(teams[0]?.id ?? "");
       setTeamBId(teams[1]?.id ?? "");
@@ -147,9 +169,13 @@ export function EventManager({
       setWinnerTeamId("");
       setResultNote("");
     }
-  }, [selectedId, selected, categories, teams]);
+  }, [selectedId, selected, categories, competitions, teams]);
 
-  // Count events needing winner for badge
+  const formCompetitions = useMemo(
+    () => competitions.filter((c) => c.category_id === categoryId),
+    [competitions, categoryId],
+  );
+
   const needsWinnerCount = useMemo(() => {
     return events.filter(
       (e) => e.status_override === "ended" && !e.winner_team_id,
@@ -165,7 +191,9 @@ export function EventManager({
         return false;
       }
       if (statusFilter === "needs_winner") {
-        if (!(event.status_override === "ended" && !event.winner_team_id)) return false;
+        if (!(event.status_override === "ended" && !event.winner_team_id)) {
+          return false;
+        }
       } else if (statusFilter !== "all" && status !== statusFilter) {
         return false;
       }
@@ -183,7 +211,7 @@ export function EventManager({
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [events, query, categoryFilter, statusFilter, now]);
+  }, [events, query, categoryFilter, statusFilter, now, selectedId]);
 
   const [saveState, saveAction] = useActionState(saveEvent, initialActionState);
   const [archiveState, archiveAction] = useActionState(
@@ -211,7 +239,6 @@ export function EventManager({
 
   const canSetWinner = statusMode === "ended";
 
-  // Real-time labels for the preview
   const currentCategory = categories.find((c) => c.id === categoryId);
   const teamA = teams.find((t) => t.id === teamAId);
   const teamB = teams.find((t) => t.id === teamBId);
@@ -224,9 +251,7 @@ export function EventManager({
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
-      {/* Left Column: Filter Bar & Events List */}
       <div className={`space-y-4 ${focus === "editor" ? "hidden xl:block" : ""}`}>
-        {/* Quick Filter Tabs */}
         <div className="flex flex-wrap items-center gap-1.5 border-b border-border pb-3">
           {[
             { id: "all" as const, label: `All (${events.length})`, highlight: false },
@@ -235,7 +260,7 @@ export function EventManager({
             { id: "ended" as const, label: "Ended", highlight: false },
             {
               id: "needs_winner" as const,
-              label: `⚠️ Needs Winner${needsWinnerCount > 0 ? ` (${needsWinnerCount})` : ""}`,
+              label: `Needs Winner${needsWinnerCount > 0 ? ` (${needsWinnerCount})` : ""}`,
               highlight: needsWinnerCount > 0,
             },
           ].map((tab) => (
@@ -256,7 +281,6 @@ export function EventManager({
           ))}
         </div>
 
-        {/* Search, Category Filter, and Add Event */}
         <div className="flex flex-wrap items-center gap-2">
           <input
             value={query}
@@ -290,7 +314,6 @@ export function EventManager({
           </button>
         </div>
 
-        {/* Events Table / Card List */}
         <div className="overflow-hidden rounded-2xl border border-border bg-surface">
           <div className="grid grid-cols-[1.6fr_1.3fr_0.8fr_1fr] gap-2 border-b border-border px-4 py-3 text-[10px] tracking-wide text-muted uppercase">
             <span>Event</span>
@@ -309,18 +332,29 @@ export function EventManager({
                 ? statusMode
                 : getComputedEventStatus(event, now);
 
-              const displayName = isSelected ? (name.trim() || event.name) : event.name;
+              const displayName = isSelected
+                ? name.trim() || event.name
+                : event.name;
               const displayCategory = isSelected
                 ? (currentCategory?.name ?? "Category")
                 : event.categories?.name;
-              const displayVenue = isSelected ? (venue.trim() || "—") : (event.venue || "—");
+              const displayVenue = isSelected
+                ? venue.trim() || "—"
+                : event.venue || "—";
               const displaySchedule = isSelected
                 ? formatEventWindow(
-                    manilaIsoFromParts(eventDate, startHour, startMinute, startPeriod),
+                    manilaIsoFromParts(
+                      eventDate,
+                      startHour,
+                      startMinute,
+                      startPeriod,
+                    ),
                     manilaIsoFromParts(eventDate, endHour, endMinute, endPeriod),
                   )
                 : formatEventWindow(event.start_at, event.end_at);
-              const spotlight = isSelected ? isHighlighted : Boolean(event.is_highlighted);
+              const spotlight = isSelected
+                ? isHighlighted
+                : Boolean(event.is_highlighted);
               const needsWinner = isSelected
                 ? statusMode === "ended" && !winnerTeamId
                 : event.status_override === "ended" && !event.winner_team_id;
@@ -331,7 +365,9 @@ export function EventManager({
                 : eventMatchupLabel(event);
 
               const winner = isSelected
-                ? canSetWinner && winnerTeam ? `Winner: ${winnerTeam.name}` : null
+                ? canSetWinner && winnerTeam
+                  ? `Winner: ${winnerTeam.name}`
+                  : null
                 : eventWinnerLabel(event);
 
               return (
@@ -340,13 +376,11 @@ export function EventManager({
                   type="button"
                   onClick={() => openEvent(event.id)}
                   className={`grid w-full grid-cols-[1.6fr_1.3fr_0.8fr_1fr] items-start gap-2 border-b border-border/60 px-4 py-3 text-left text-sm transition-colors ${
-                    isSelected
-                      ? "bg-accent-soft"
-                      : "hover:bg-surface-2"
+                    isSelected ? "bg-accent-soft" : "hover:bg-surface-2"
                   }`}
                 >
                   <span className="min-w-0 pr-2">
-                    <span className="font-medium truncate block">
+                    <span className="block truncate font-medium">
                       {displayName}
                       {isSelected ? (
                         <span className="ml-2 rounded bg-accent/20 px-1.5 py-0.5 text-[9px] font-semibold text-accent uppercase">
@@ -359,7 +393,9 @@ export function EventManager({
                       {matchup ? ` · ${matchup}` : ""}
                     </span>
                     {winner ? (
-                      <span className="mt-1 block text-xs font-semibold text-info">{winner}</span>
+                      <span className="mt-1 block text-xs font-semibold text-info">
+                        {winner}
+                      </span>
                     ) : null}
                   </span>
                   <span className="text-xs text-muted">{displaySchedule}</span>
@@ -378,8 +414,9 @@ export function EventManager({
         </div>
       </div>
 
-      {/* Right Column: Live Event Editor */}
-      <div className={`rounded-2xl border border-border bg-surface p-5 ${focus === "list" ? "hidden xl:block" : ""}`}>
+      <div
+        className={`rounded-2xl border border-border bg-surface p-5 ${focus === "list" ? "hidden xl:block" : ""}`}
+      >
         <button
           type="button"
           onClick={() => setFocus("list")}
@@ -391,15 +428,14 @@ export function EventManager({
           <h2 className="font-display text-2xl">
             {isCreating ? "Create event" : "Edit event"}
           </h2>
-          <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted">
+          <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[10px] font-semibold tracking-wider text-muted uppercase">
             Live Preview
           </span>
         </div>
 
-        {/* Real-time Interactive Event Preview Card */}
         <div className="mt-3.5 rounded-xl border border-accent/30 bg-surface-2 p-4 shadow-sm">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-accent">
+            <span className="text-[10px] font-bold tracking-wider text-accent uppercase">
               {currentCategory?.name ?? "CATEGORY"}
             </span>
             <div className="flex items-center gap-1.5">
@@ -426,28 +462,30 @@ export function EventManager({
           </p>
 
           <p className="mt-2 text-xs text-muted">
-            {eventDate} · {startHour}:{startMinute} {startPeriod} – {endHour}:{endMinute} {endPeriod}
+            {eventDate} · {startHour}:{startMinute} {startPeriod} – {endHour}:
+            {endMinute} {endPeriod}
             {venue ? ` · ${venue}` : ""}
           </p>
 
-          {canSetWinner && (
+          {canSetWinner ? (
             <div className="mt-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs">
               <span className="font-semibold text-info">
-                {winnerTeam ? `Winner: ${winnerTeam.name}` : "Winner: Not yet announced"}
+                {winnerTeam
+                  ? `Winner: ${winnerTeam.name}`
+                  : "Winner: Not yet announced"}
               </span>
               {resultNote ? (
                 <span className="ml-2 text-muted">({resultNote})</span>
               ) : null}
             </div>
-          )}
+          ) : null}
         </div>
 
         <form action={saveAction} className="mt-4 space-y-4">
           {selected ? <input type="hidden" name="id" value={selected.id} /> : null}
 
-          {/* Basic Details */}
           <section className="space-y-3">
-            <p className="text-[10px] tracking-[0.16em] text-muted uppercase font-semibold">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-muted uppercase">
               Basic details
             </p>
             <TextField
@@ -463,13 +501,41 @@ export function EventManager({
               name="category_id"
               value={categoryId}
               required
-              onChange={(e) => setCategoryId(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setCategoryId(next);
+                setFormCompetitionId(
+                  competitions.find((c) => c.category_id === next)?.id ?? "",
+                );
+              }}
             >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              {categories.length === 0 ? (
+                <option value="">No categories — create one first</option>
+              ) : (
+                categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))
+              )}
+            </SelectField>
+            <SelectField
+              label="Competition"
+              name="competition_id"
+              value={formCompetitionId}
+              required
+              error={saveState.errors?.competition_id?.[0]}
+              onChange={(e) => setFormCompetitionId(e.target.value)}
+            >
+              {formCompetitions.length === 0 ? (
+                <option value="">No competitions in this category</option>
+              ) : (
+                formCompetitions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))
+              )}
             </SelectField>
 
             <fieldset className="space-y-2">
@@ -477,7 +543,7 @@ export function EventManager({
                 Matchup type
               </legend>
               <div className="flex flex-wrap gap-2">
-                <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm cursor-pointer">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
                   <input
                     type="radio"
                     name="match_type"
@@ -487,7 +553,7 @@ export function EventManager({
                   />
                   Head-to-Head
                 </label>
-                <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm cursor-pointer">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
                   <input
                     type="radio"
                     name="match_type"
@@ -555,9 +621,8 @@ export function EventManager({
             />
           </section>
 
-          {/* Schedule Window */}
           <section className="space-y-3">
-            <p className="text-[10px] tracking-[0.16em] text-muted uppercase font-semibold">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-muted uppercase">
               Schedule window
             </p>
             <TextField
@@ -603,7 +668,9 @@ export function EventManager({
                   <select
                     name="start_period"
                     value={startPeriod}
-                    onChange={(e) => setStartPeriod(e.target.value as "AM" | "PM")}
+                    onChange={(e) =>
+                      setStartPeriod(e.target.value as "AM" | "PM")
+                    }
                     className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2.5 text-sm"
                     required
                   >
@@ -647,7 +714,9 @@ export function EventManager({
                   <select
                     name="end_period"
                     value={endPeriod}
-                    onChange={(e) => setEndPeriod(e.target.value as "AM" | "PM")}
+                    onChange={(e) =>
+                      setEndPeriod(e.target.value as "AM" | "PM")
+                    }
                     className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2.5 text-sm"
                     required
                   >
@@ -659,12 +728,11 @@ export function EventManager({
             </div>
           </section>
 
-          {/* Spotlight & Status */}
           <section className="space-y-3">
-            <p className="text-[10px] tracking-[0.16em] text-muted uppercase font-semibold">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-muted uppercase">
               Spotlight & status
             </p>
-            <label className="flex items-start gap-3 rounded-lg border border-border bg-surface-2 px-3 py-3 text-sm cursor-pointer">
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-2 px-3 py-3 text-sm">
               <input
                 type="checkbox"
                 name="is_highlighted"
@@ -686,7 +754,9 @@ export function EventManager({
               label="Status mode"
               name="status_override"
               value={statusMode}
-              onChange={(e) => setStatusMode(e.target.value as "upcoming" | "ongoing" | "ended")}
+              onChange={(e) =>
+                setStatusMode(e.target.value as "upcoming" | "ongoing" | "ended")
+              }
               hint="Upcoming / Ongoing have no winner. Set to Ended when finished, then choose the winner."
             >
               <option value="upcoming">Upcoming</option>
@@ -695,9 +765,8 @@ export function EventManager({
             </SelectField>
           </section>
 
-          {/* Match Result & Winner */}
           <section className="space-y-3">
-            <p className="text-[10px] tracking-[0.16em] text-muted uppercase font-semibold">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-muted uppercase">
               Match result
             </p>
             {canSetWinner ? (
@@ -711,13 +780,25 @@ export function EventManager({
                 <option value="">Not announced yet</option>
                 {matchType === "head_to_head" && (teamA || teamB) ? (
                   <optgroup label="Match Participants">
-                    {teamA ? <option value={teamA.id}>{teamA.name}</option> : null}
-                    {teamB ? <option value={teamB.id}>{teamB.name}</option> : null}
+                    {teamA ? (
+                      <option value={teamA.id}>{teamA.name}</option>
+                    ) : null}
+                    {teamB ? (
+                      <option value={teamB.id}>{teamB.name}</option>
+                    ) : null}
                   </optgroup>
                 ) : null}
-                <optgroup label={matchType === "head_to_head" ? "Other Teams" : "All Teams"}>
+                <optgroup
+                  label={
+                    matchType === "head_to_head" ? "Other Teams" : "All Teams"
+                  }
+                >
                   {teams
-                    .filter((t) => matchType !== "head_to_head" || (t.id !== teamAId && t.id !== teamBId))
+                    .filter(
+                      (t) =>
+                        matchType !== "head_to_head" ||
+                        (t.id !== teamAId && t.id !== teamBId),
+                    )
                     .map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.name}
@@ -727,9 +808,12 @@ export function EventManager({
               </SelectField>
             ) : (
               <div className="rounded-lg border border-dashed border-border bg-surface-2 px-3 py-3 text-sm">
-                <p className="text-xs tracking-wide text-muted uppercase">Winner</p>
-                <p className="mt-1 text-muted text-xs">
-                  Winner is only selectable after setting Status mode to Ended above.
+                <p className="text-xs tracking-wide text-muted uppercase">
+                  Winner
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  Winner is only selectable after setting Status mode to Ended
+                  above.
                 </p>
                 <input type="hidden" name="winner_team_id" value="" />
               </div>

@@ -56,9 +56,20 @@ const links = [
     ),
   },
   {
+    href: "/admin/categories",
+    label: "Categories",
+    n: "04",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
+        <path d="M7 7h.01" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/teams",
     label: "Teams",
-    n: "04",
+    n: "05",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -71,7 +82,7 @@ const links = [
   {
     href: "/admin/access",
     label: "Admin access",
-    n: "05",
+    n: "06",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
@@ -105,6 +116,8 @@ function getBreadcrumbs(pathname: string) {
     }
   } else if (pathname === "/admin/events") {
     crumbs.push({ label: "Events" });
+  } else if (pathname.startsWith("/admin/categories")) {
+    crumbs.push({ label: "Categories" });
   } else if (pathname === "/admin/teams") {
     crumbs.push({ label: "Teams" });
   } else if (pathname === "/admin/access") {
@@ -182,7 +195,6 @@ function NavLinks({
               <span className="font-mono text-[10px] opacity-60">{link.n}</span>
             </Link>
 
-            {/* Sub-links for deeper sections */}
             {showSubLinks && link.subLinks ? (
               <div className="ml-5 space-y-1 border-l border-border/80 pl-3 pt-0.5">
                 {link.subLinks.map((sub) => {
@@ -320,13 +332,11 @@ export function AdminShell({
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Desktop rail */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-6 md:flex">
         <SidebarChrome role={role} seasonName={seasonName} pathname={pathname} />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Phone top bar */}
         <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md pt-[env(safe-area-inset-top)] md:hidden">
           <div className="flex h-14 items-center justify-between gap-3 px-4">
             <Link href="/admin" className="flex min-w-0 items-center gap-2.5">
@@ -377,7 +387,6 @@ export function AdminShell({
           </div>
         </header>
 
-        {/* Phone drawer */}
         {open ? (
           <div className="fixed inset-0 z-50 md:hidden" role="presentation">
             <button
@@ -400,7 +409,6 @@ export function AdminShell({
           </div>
         ) : null}
 
-        {/* Desktop top bar with dynamic breadcrumbs */}
         <div className="hidden items-center justify-between gap-3 border-b border-border px-6 py-3.5 md:flex">
           <BreadcrumbBar pathname={pathname} />
           <div className="flex items-center gap-2.5">
@@ -419,7 +427,6 @@ export function AdminShell({
           </div>
         </div>
 
-        {/* Phone utility strip with breadcrumb */}
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2 md:hidden">
           <BreadcrumbBar pathname={pathname} />
           <Link

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Category } from "@/lib/data/public";
 
 function tabClass(active: boolean) {
-  return `whitespace-nowrap rounded-lg px-3.5 py-2.5 text-[11px] tracking-[0.12em] uppercase font-semibold transition-colors duration-200 sm:px-4 sm:text-xs ${
+  return `inline-flex flex-1 items-center justify-center rounded-lg px-2 py-2.5 text-center text-[10px] tracking-[0.1em] uppercase font-semibold transition-colors duration-200 sm:px-3 sm:text-[11px] md:text-xs md:tracking-[0.12em] ${
     active
       ? "bg-[#ff6a00] text-black shadow-[0_2px_12px_rgba(255,106,0,0.25)]"
       : "bg-[#18191c] border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700"
@@ -20,39 +20,25 @@ export function CategoryTabs({
   showSampleBadge?: boolean;
   basePath?: string;
 }) {
-  const hasLiteracy = categories.some((c) => c.slug === "literacy");
-  const tabList = hasLiteracy
-    ? categories
-    : [
-        ...categories,
-        {
-          id: "cat-7",
-          season_id: "default",
-          slug: "literacy",
-          name: "Literacy",
-          sort_order: 7,
-          created_at: "",
-          updated_at: "",
-        },
-      ];
-
   return (
     <div className="space-y-2">
-      <div className="-mx-4 scroll-rail-edge px-4 sm:mx-0 sm:px-0">
-        <div className="scroll-rail flex-nowrap" role="tablist" aria-label="Categories">
-          <Link href={basePath} className={tabClass(!activeSlug)}>
-            Overall
+      <div
+        className="flex w-full gap-1.5 sm:gap-2"
+        role="tablist"
+        aria-label="Categories"
+      >
+        <Link href={basePath} className={tabClass(!activeSlug)}>
+          Overall
+        </Link>
+        {categories.map((cat) => (
+          <Link
+            key={cat.id}
+            href={`${basePath}?category=${cat.slug}`}
+            className={tabClass(activeSlug === cat.slug)}
+          >
+            {cat.name}
           </Link>
-          {tabList.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`${basePath}?category=${cat.slug}`}
-              className={tabClass(activeSlug === cat.slug)}
-            >
-              {cat.name}
-            </Link>
-          ))}
-        </div>
+        ))}
       </div>
       {showSampleBadge ? (
         <p className="text-[10px] font-bold tracking-[0.16em] text-neutral-500 uppercase">

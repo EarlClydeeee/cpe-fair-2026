@@ -72,22 +72,6 @@ export function EventsLineup({
     setSelectedEvent(null);
   }, []);
 
-  const hasLiteracy = categories.some((c) => c.slug === "literacy");
-  const categoryFilters = hasLiteracy
-    ? categories
-    : [
-        ...categories,
-        {
-          id: "cat-7",
-          season_id: "default",
-          slug: "literacy",
-          name: "Literacy",
-          sort_order: 7,
-          created_at: "",
-          updated_at: "",
-        },
-      ];
-
   return (
     <>
       {featured ? (
@@ -105,7 +89,7 @@ export function EventsLineup({
             >
               All events
             </Link>
-            {categoryFilters.map((cat) => (
+            {categories.map((cat) => (
               <Link
                 key={cat.id}
                 href={`/events?category=${cat.slug}${day ? `&day=${day}` : ""}`}

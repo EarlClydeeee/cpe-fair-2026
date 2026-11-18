@@ -59,6 +59,7 @@ export type Database = {
           slug: string;
           name: string;
           sort_order: number;
+          is_archived: boolean;
         } & Timestamps;
         Insert: {
           id?: string;
@@ -66,8 +67,31 @@ export type Database = {
           slug: string;
           name: string;
           sort_order?: number;
+          is_archived?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["categories"]["Insert"]>;
+        Relationships: [];
+      };
+      competitions: {
+        Row: {
+          id: string;
+          season_id: string;
+          category_id: string;
+          slug: string;
+          name: string;
+          sort_order: number;
+          is_archived: boolean;
+        } & Timestamps;
+        Insert: {
+          id?: string;
+          season_id: string;
+          category_id: string;
+          slug: string;
+          name: string;
+          sort_order?: number;
+          is_archived?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["competitions"]["Insert"]>;
         Relationships: [];
       };
       competition_teams: {
@@ -101,6 +125,7 @@ export type Database = {
           id: string;
           season_id: string;
           category_id: string;
+          competition_id: string;
           name: string;
           match_type: Database["public"]["Enums"]["event_match_type"];
           team_a_id: string | null;
@@ -119,6 +144,7 @@ export type Database = {
           id?: string;
           season_id: string;
           category_id: string;
+          competition_id: string;
           name: string;
           match_type?: Database["public"]["Enums"]["event_match_type"];
           team_a_id?: string | null;
@@ -141,6 +167,7 @@ export type Database = {
           id: string;
           team_id: string;
           category_id: string;
+          competition_id: string;
           points: number;
           published_at: string;
           published_by: string | null;
@@ -149,6 +176,7 @@ export type Database = {
           id?: string;
           team_id: string;
           category_id: string;
+          competition_id: string;
           points?: number;
           published_at?: string;
           published_by?: string | null;
@@ -161,6 +189,7 @@ export type Database = {
           id: string;
           team_id: string;
           category_id: string;
+          competition_id: string;
           draft_points: number;
           reason: string;
           saved_by: string | null;
@@ -170,6 +199,7 @@ export type Database = {
           id?: string;
           team_id: string;
           category_id: string;
+          competition_id: string;
           draft_points: number;
           reason?: string;
           saved_by?: string | null;
@@ -239,7 +269,7 @@ export type Database = {
       save_score_draft: {
         Args: {
           p_team_id: string;
-          p_category_id: string;
+          p_competition_id: string;
           p_draft_points: number;
           p_reason: string;
         };

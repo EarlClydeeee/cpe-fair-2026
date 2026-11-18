@@ -24,7 +24,7 @@ export async function saveScoreDraft(
   const supabase = await createClient();
   const { error } = await supabase.rpc("save_score_draft", {
     p_team_id: parsed.data.team_id,
-    p_category_id: parsed.data.category_id,
+    p_competition_id: parsed.data.competition_id,
     p_draft_points: parsed.data.draft_points,
     p_reason: parsed.data.reason,
   });

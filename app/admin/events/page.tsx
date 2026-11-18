@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { EventManager } from "@/components/admin/event-manager";
 import { getAdminEvents } from "@/lib/data/admin";
-import { getCategories, getTeams } from "@/lib/data/public";
+import { getCategories, getCompetitions, getTeams } from "@/lib/data/public";
 
 export const metadata: Metadata = { title: "Event management" };
+export const instant = false;
 
 type Props = { searchParams: Promise<{ status?: string; id?: string }> };
 
-export default async function AdminEventsPage({ searchParams }: Props) {
+async function EventsContent({ searchParams }: Props) {
+  await connection();
   const { status, id } = (await searchParams) ?? {};
-  const [events, categories, teams] = await Promise.all([
+  const [events, categories, competitions, teams] = await Promise.all([
     getAdminEvents(),
     getCategories(),
+    getCompetitions(),
     getTeams(),
   ]);
 
@@ -32,10 +37,33 @@ export default async function AdminEventsPage({ searchParams }: Props) {
           name: c.name,
           slug: c.slug,
         }))}
-        teams={teams.map((t) => ({ id: t.id, name: t.name, color_hex: t.color_hex }))}
+        competitions={competitions.map((c) => ({
+          id: c.id,
+          name: c.name,
+          category_id: c.category_id,
+        }))}
+        teams={teams.map((t) => ({
+          id: t.id,
+          name: t.name,
+          color_hex: t.color_hex,
+        }))}
         initialStatusFilter={status}
         initialSelectedId={id}
       />
     </div>
+  );
+}
+
+export default function AdminEventsPage(props: Props) {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
+          Loading events…
+        </div>
+      }
+    >
+      <EventsContent {...props} />
+    </Suspense>
   );
 }

@@ -96,10 +96,25 @@ export async function saveEvent(
     }
   }
 
+  const { data: competition, error: competitionError } = await supabase
+    .from("competitions")
+    .select("id, category_id, season_id, is_archived")
+    .eq("id", data.competition_id)
+    .eq("season_id", season.id)
+    .maybeSingle();
+  if (competitionError) return { ok: false, message: competitionError.message };
+  if (!competition || competition.is_archived) {
+    return { ok: false, message: "Select a valid competition." };
+  }
+  if (competition.category_id !== data.category_id) {
+    return { ok: false, message: "Competition must belong to the selected category." };
+  }
+
   const row = {
     season_id: season.id,
     name: data.name,
-    category_id: data.category_id,
+    category_id: competition.category_id,
+    competition_id: competition.id,
     match_type,
     team_a_id,
     team_b_id,
