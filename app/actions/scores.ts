@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { canScore, requireStaff } from "@/lib/auth";
+import { confirmAccessCode } from "@/lib/confirm-access-code";
 import { tags } from "@/lib/data/tags";
 import { hasServiceRole } from "@/lib/supabase/env";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -96,6 +97,14 @@ export async function publishPendingScoreDrafts(
 
   const parsed = publishDraftsSchema.safeParse(formObject(formData));
   if (!parsed.success) return fieldErrors(parsed.error);
+
+  if (!confirmAccessCode(parsed.data.confirm_access_code)) {
+    return {
+      ok: false,
+      message: "Access code incorrect.",
+      errors: { confirm_access_code: ["Access code incorrect."] },
+    };
+  }
 
   let data: number | null = null;
   try {

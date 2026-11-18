@@ -3,6 +3,10 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
+import {
+  ADMIN_SESSION_COOKIE,
+  verifyAdminSessionToken,
+} from "@/lib/admin-session";
 import type { Database } from "./database.types";
 import {
   hasServiceRole,
@@ -11,7 +15,7 @@ import {
   supabaseUrl,
 } from "./env";
 
-/** Privileged client — bypasses RLS. Only for hardcoded admin cookie sessions. */
+/** Privileged client — bypasses RLS. Only for verified signed admin sessions. */
 export function createServiceClient() {
   if (!hasServiceRole) {
     throw new Error(
@@ -49,9 +53,9 @@ export async function createClient() {
   const cookieStore = await cookies();
   await connection();
 
-  // Hardcoded control-room session: use service role so table grants/RLS don't block.
+  // Signed control-room session: service role only after HMAC verification.
   if (
-    cookieStore.get("cpe_admin_session")?.value === "authenticated" &&
+    verifyAdminSessionToken(cookieStore.get(ADMIN_SESSION_COOKIE)?.value) &&
     hasServiceRole
   ) {
     return createServiceClient();

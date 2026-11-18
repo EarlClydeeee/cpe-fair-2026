@@ -21,6 +21,7 @@ const ACTIONS = [
   { value: "published", label: "Published" },
   { value: "event_updated", label: "Event updated" },
   { value: "team_updated", label: "Team updated" },
+  { value: "admin_login", label: "Admin login" },
 ];
 
 export function HistoryBrowser({

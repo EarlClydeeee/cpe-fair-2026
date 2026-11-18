@@ -297,7 +297,8 @@ export type Database = {
         | "team_updated"
         | "admin_invited"
         | "role_changed"
-        | "invitation_revoked";
+        | "invitation_revoked"
+        | "admin_login";
     };
     CompositeTypes: Record<string, never>;
   };

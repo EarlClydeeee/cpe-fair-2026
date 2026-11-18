@@ -231,6 +231,14 @@ export function AccessPanel({
                   spellCheck={false}
                   error={wipeState.errors?.confirm_phrase_2?.[0]}
                 />
+                <TextField
+                  label="Re-enter access code"
+                  name="confirm_access_code"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  error={wipeState.errors?.confirm_access_code?.[0]}
+                />
                 <div className="flex gap-2">
                   <button
                     type="button"

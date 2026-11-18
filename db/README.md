@@ -32,7 +32,8 @@ Apply **in order**, skip superseded files:
 | 8 | `migrations/0013_competitions_grants_and_season.sql` | Grants + season + owner bootstrap |
 | 9 | `migrations/0014_clear_season_content.sql` | Season wipe RPC |
 | 10 | `migrations/0015_service_role_scoring.sql` | Canonical scoring RPCs |
-| 11 | `seed.sql` | Ensure active season |
+| 11 | `migrations/0016_admin_login_audit.sql` | `admin_login` audit enum |
+| 12 | `seed.sql` | Ensure active season |
 
 Already applied projects: only run migrations you have **not** run yet (usually `0014` / `0015`).
 
@@ -61,9 +62,11 @@ Control-room access-code login needs:
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...   # service_role secret, not publishable
+ADMIN_ACCESS_CODE=...           # strong unique code (required on Vercel)
+ADMIN_SESSION_SECRET=...        # HMAC secret for signed sessions (required on Vercel)
 ```
 
-Set the same three on Vercel for production.
+Set the same vars on Vercel for production. Rotate `ADMIN_ACCESS_CODE` if it was ever shared or defaulted to `Admin1234`. After deploy, old `cpe_admin_session=authenticated` cookies are rejected automatically.
 
 ---
 

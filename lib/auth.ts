@@ -3,6 +3,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { Enums } from "./supabase/database.types";
+import {
+  ADMIN_SESSION_COOKIE,
+  verifyAdminSessionToken,
+} from "./admin-session";
 import { ADMIN_LOGIN_EMAIL } from "./auth-credentials";
 import { isSupabaseConfigured } from "./supabase/env";
 import { createClient } from "./supabase/server";
@@ -20,9 +24,15 @@ function isHardcodedAdminEmail(email: string | null | undefined) {
   return (email ?? "").trim().toLowerCase() === ADMIN_LOGIN_EMAIL.toLowerCase();
 }
 
-export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+export async function hasVerifiedAdminSession(): Promise<boolean> {
   const cookieStore = await cookies();
-  if (cookieStore.get("cpe_admin_session")?.value === "authenticated") {
+  return verifyAdminSessionToken(
+    cookieStore.get(ADMIN_SESSION_COOKIE)?.value,
+  );
+}
+
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  if (await hasVerifiedAdminSession()) {
     return {
       id: "hardcoded-admin",
       email: ADMIN_LOGIN_EMAIL,

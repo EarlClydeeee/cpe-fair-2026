@@ -1,5 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  ADMIN_SESSION_COOKIE,
+  verifyAdminSessionToken,
+} from "@/lib/admin-session";
 import { ADMIN_LOGIN_EMAIL } from "@/lib/auth-credentials";
 import type { Database } from "./database.types";
 import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "./env";
@@ -8,23 +12,61 @@ function isHardcodedAdminEmail(email: string | null | undefined) {
   return (email ?? "").trim().toLowerCase() === ADMIN_LOGIN_EMAIL.toLowerCase();
 }
 
+function applySecurityHeaders(response: NextResponse) {
+  const supabaseHost = (() => {
+    try {
+      return supabaseUrl ? new URL(supabaseUrl).origin : "";
+    } catch {
+      return "";
+    }
+  })();
+
+  const connectSrc = ["'self'", supabaseHost, "https://*.supabase.co"]
+    .filter(Boolean)
+    .join(" ");
+
+  response.headers.set(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      `connect-src ${connectSrc}`,
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join("; "),
+  );
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  return response;
+}
+
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  let response = applySecurityHeaders(NextResponse.next({ request }));
   const { pathname } = request.nextUrl;
   const needsAuth = pathname.startsWith("/admin");
-  const hasAdminSession =
-    request.cookies.get("cpe_admin_session")?.value === "authenticated";
+  const hasAdminSession = verifyAdminSessionToken(
+    request.cookies.get(ADMIN_SESSION_COOKIE)?.value,
+  );
 
   if (hasAdminSession) {
     if (pathname === "/login") {
-      return redirectWithCookies(request, response, "/admin");
+      return applySecurityHeaders(
+        redirectWithCookies(request, response, "/admin"),
+      );
     }
     return response;
   }
 
   if (!isSupabaseConfigured) {
     if (needsAuth) {
-      return redirectWithCookies(request, response, "/login", pathname);
+      return applySecurityHeaders(
+        redirectWithCookies(request, response, "/login", pathname),
+      );
     }
     return response;
   }
@@ -38,7 +80,7 @@ export async function updateSession(request: NextRequest) {
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value),
         );
-        response = NextResponse.next({ request });
+        response = applySecurityHeaders(NextResponse.next({ request }));
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options),
         );
@@ -52,7 +94,9 @@ export async function updateSession(request: NextRequest) {
     typeof data?.claims?.email === "string" ? data.claims.email : null;
 
   if (needsAuth && !userId) {
-    return redirectWithCookies(request, response, "/login", pathname);
+    return applySecurityHeaders(
+      redirectWithCookies(request, response, "/login", pathname),
+    );
   }
 
   if (pathname.startsWith("/admin") && userId) {
@@ -64,12 +108,14 @@ export async function updateSession(request: NextRequest) {
         .maybeSingle();
 
       if (!profile?.role) {
-        return redirectWithCookies(
-          request,
-          response,
-          "/login",
-          pathname,
-          "unauthorized",
+        return applySecurityHeaders(
+          redirectWithCookies(
+            request,
+            response,
+            "/login",
+            pathname,
+            "unauthorized",
+          ),
         );
       }
     }
@@ -77,7 +123,9 @@ export async function updateSession(request: NextRequest) {
 
   if (pathname === "/login" && userId) {
     if (isHardcodedAdminEmail(claimEmail)) {
-      return redirectWithCookies(request, response, "/admin");
+      return applySecurityHeaders(
+        redirectWithCookies(request, response, "/admin"),
+      );
     }
     const { data: profile } = await supabase
       .from("profiles")
@@ -85,7 +133,9 @@ export async function updateSession(request: NextRequest) {
       .eq("id", userId)
       .maybeSingle();
     if (profile?.role) {
-      return redirectWithCookies(request, response, "/admin");
+      return applySecurityHeaders(
+        redirectWithCookies(request, response, "/admin"),
+      );
     }
   }
 

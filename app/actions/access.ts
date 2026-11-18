@@ -5,6 +5,7 @@ import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { requireOwner } from "@/lib/auth";
 import { getActiveSeason } from "@/lib/data/public";
 import { tags } from "@/lib/data/tags";
+import { confirmAccessCode } from "@/lib/confirm-access-code";
 import { hasServiceRole } from "@/lib/supabase/env";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
@@ -116,6 +117,14 @@ export async function clearSeasonContent(
   await requireOwner();
   const parsed = clearSeasonContentSchema.safeParse(formObject(formData));
   if (!parsed.success) return fieldErrors(parsed.error);
+
+  if (!confirmAccessCode(parsed.data.confirm_access_code)) {
+    return {
+      ok: false,
+      message: "Access code incorrect.",
+      errors: { confirm_access_code: ["Access code incorrect."] },
+    };
+  }
 
   if (!hasServiceRole) {
     return {

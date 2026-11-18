@@ -32,6 +32,7 @@ export const clearSeasonContentSchema = z.object({
   confirm_phrase_2: z.literal(CLEAR_SEASON_PHRASE_2, {
     error: `Type ${CLEAR_SEASON_PHRASE_2} exactly.`,
   }),
+  confirm_access_code: z.string().min(1, { error: "Re-enter the access code." }),
 });
 
 export const scoreDraftSchema = z.object({
@@ -79,6 +80,7 @@ export const publishDraftsSchema = z.object({
     .string()
     .transform((v) => v.split(",").map((s) => s.trim()).filter(Boolean))
     .pipe(z.array(uuidSchema).min(1)),
+  confirm_access_code: z.string().min(1, { error: "Re-enter the access code." }),
 });
 
 const optionalUuid = z

@@ -5,6 +5,7 @@ import { publishDrafts } from "@/app/actions/scores";
 import { initialActionState } from "@/lib/action-state";
 import type { ReviewChangeLine } from "@/lib/review-types";
 import { FormMessage } from "../ui/form-message";
+import { TextField } from "../ui/input";
 import { SubmitButton } from "../submit-button";
 import { LinkButton } from "../ui/button";
 
@@ -19,7 +20,12 @@ export function PublishForm({
 }) {
   const [state, action] = useActionState(publishDrafts, initialActionState);
   const [checks, setChecks] = useState([false, false, false]);
-  const ready = canPublish && checks.every(Boolean) && draftIds.length > 0;
+  const [accessCode, setAccessCode] = useState("");
+  const ready =
+    canPublish &&
+    checks.every(Boolean) &&
+    draftIds.length > 0 &&
+    accessCode.trim().length > 0;
 
   return (
     <form action={action} className="space-y-4 rounded-2xl border border-border bg-surface p-5">
@@ -72,6 +78,17 @@ export function PublishForm({
         </div>
       </div>
 
+      <TextField
+        label="Re-enter access code"
+        name="confirm_access_code"
+        type="password"
+        autoComplete="current-password"
+        value={accessCode}
+        onChange={(event) => setAccessCode(event.target.value)}
+        required
+        error={state.errors?.confirm_access_code?.[0]}
+      />
+
       <FormMessage state={state} />
       <fieldset disabled={!ready} className="disabled:opacity-50">
         <SubmitButton className="w-full" variant="primary">
@@ -83,7 +100,9 @@ export function PublishForm({
       ) : draftIds.length === 0 ? (
         <p className="text-xs text-muted">Select drafts on the left to enable publishing.</p>
       ) : !ready ? (
-        <p className="text-xs text-muted">Check all boxes to enable publishing.</p>
+        <p className="text-xs text-muted">
+          Check all boxes and re-enter the access code to publish.
+        </p>
       ) : null}
       <LinkButton href="/admin/leaderboards" variant="secondary" className="w-full">
         Return to editing
