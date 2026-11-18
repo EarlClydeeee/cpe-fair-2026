@@ -27,9 +27,13 @@ export function PublishForm({
       <input type="hidden" name="draft_ids" value={draftIds.join(",")} />
 
       <div className="rounded-xl bg-accent-soft p-4">
-        <p className="text-[10px] tracking-wide text-accent uppercase">This will change</p>
+        <p className="text-[10px] tracking-wide text-accent uppercase">
+          Selected drafts will change
+        </p>
         {draftIds.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">No pending drafts to publish.</p>
+          <p className="mt-2 text-sm text-muted">
+            Select at least one draft card to publish.
+          </p>
         ) : (
           <ul className="mt-2 space-y-2 text-sm text-accent">
             {changeLines.map((line) => (
@@ -76,7 +80,9 @@ export function PublishForm({
       </fieldset>
       {!canPublish ? (
         <p className="text-xs text-muted">Scoring admin or owner role required to publish.</p>
-      ) : !ready && draftIds.length > 0 ? (
+      ) : draftIds.length === 0 ? (
+        <p className="text-xs text-muted">Select drafts on the left to enable publishing.</p>
+      ) : !ready ? (
         <p className="text-xs text-muted">Check all boxes to enable publishing.</p>
       ) : null}
       <LinkButton href="/admin/leaderboards" variant="secondary" className="w-full">

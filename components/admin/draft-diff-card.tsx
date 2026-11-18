@@ -19,6 +19,8 @@ export function DraftDiffCard({
   reason,
   preparedByName,
   preparedByRole,
+  selected = true,
+  onSelectedChange,
 }: {
   draftId: string;
   teamName: string;
@@ -30,6 +32,8 @@ export function DraftDiffCard({
   reason: string;
   preparedByName: string | null;
   preparedByRole: AdminRole | null;
+  selected?: boolean;
+  onSelectedChange?: (selected: boolean) => void;
 }) {
   const [discardState, discardAction] = useActionState(discardDraft, initialActionState);
   const preparedLabel = preparedByName
@@ -37,11 +41,31 @@ export function DraftDiffCard({
     : "Unknown admin";
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5">
+    <div
+      className={`rounded-2xl border bg-surface p-5 transition ${
+        selected
+          ? "border-accent/40 shadow-[0_0_0_1px_rgba(255,107,33,0.12)]"
+          : "border-border opacity-70"
+      }`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="text-xs text-muted">
-          {teamName} / {categoryName} / {competitionName} / Saved draft
-        </p>
+        <label className="flex min-w-0 cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={(e) => onSelectedChange?.(e.target.checked)}
+            className="mt-0.5 size-4 shrink-0 accent-accent"
+            aria-label={`Include ${teamName} ${competitionName} in publish`}
+          />
+          <span className="min-w-0">
+            <span className="block text-xs text-muted">
+              {teamName} / {categoryName} / {competitionName} / Saved draft
+            </span>
+            <span className="mt-1 block text-[10px] font-semibold tracking-wide text-accent uppercase">
+              {selected ? "Included in publish" : "Skipped for now"}
+            </span>
+          </span>
+        </label>
         <form action={discardAction}>
           <input type="hidden" name="draft_id" value={draftId} />
           <SubmitButton variant="ghost" className="h-8 px-2 text-xs">
