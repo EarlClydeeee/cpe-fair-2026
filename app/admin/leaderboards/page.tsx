@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { LeaderboardNav } from "@/components/admin/leaderboard-nav";
 import { ScorePanel } from "@/components/admin/score-panel";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
@@ -9,11 +10,15 @@ import { getAuditLog } from "@/lib/data/admin";
 import { getScoreMatrix } from "@/lib/data/standings";
 import { formatDateTime, formatPoints } from "@/lib/format";
 
-export const metadata: Metadata = { title: "Leaderboard control" };
+export const metadata: Metadata = { title: "Scores" };
 export const instant = false;
 
 type Props = {
-  searchParams: Promise<{ team?: string; category?: string; competition?: string }>;
+  searchParams: Promise<{
+    team?: string;
+    category?: string;
+    competition?: string;
+  }>;
 };
 
 async function LeaderboardsContent({ searchParams }: Props) {
@@ -23,7 +28,8 @@ async function LeaderboardsContent({ searchParams }: Props) {
     category: categoryId,
     competition: competitionId,
   } = await searchParams;
-  const { categories, competitions, rows, drafts, draftMap } = await getScoreMatrix();
+  const { categories, competitions, rows, drafts, draftMap } =
+    await getScoreMatrix();
   const recent = await getAuditLog();
 
   const matrixRows = rows
@@ -42,7 +48,10 @@ async function LeaderboardsContent({ searchParams }: Props) {
           return [c.slug, points];
         }),
       ) as Record<string, number>;
-      const total = categories.reduce((sum, c) => sum + (byCategory[c.slug] ?? 0), 0);
+      const total = categories.reduce(
+        (sum, c) => sum + (byCategory[c.slug] ?? 0),
+        0,
+      );
       return { ...row, byCategory, total };
     })
     .sort((a, b) => b.total - a.total || a.team.sort_order - b.team.sort_order)
@@ -69,7 +78,7 @@ async function LeaderboardsContent({ searchParams }: Props) {
     : undefined;
   const publishedPoints =
     publishedSource && selectedCompetition
-      ? publishedSource.byCompetition[selectedCompetition.id] ?? 0
+      ? (publishedSource.byCompetition[selectedCompetition.id] ?? 0)
       : 0;
   const publishedTeamTotal = publishedSource?.total ?? 0;
 
@@ -78,35 +87,47 @@ async function LeaderboardsContent({ searchParams }: Props) {
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div>
           <h1 className="font-display text-3xl leading-none sm:text-5xl">
-            Leaderboard Control
+            Scores
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Edit competition scores as drafts. Matrix shows category rollups.
+            Pick a cell, edit the draft, then continue to review before it goes
+            public. Matrix shows category rollups from competition scores.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-          <LinkButton href="/api/admin/scores/export" variant="secondary" className="min-h-11">
+          <LinkButton
+            href="/api/admin/scores/export"
+            variant="secondary"
+            className="min-h-11"
+          >
             Export
           </LinkButton>
           <LinkButton href="/admin/leaderboards/review" className="min-h-11">
-            Review ({drafts.length})
+            Next: Review ({drafts.length})
           </LinkButton>
         </div>
       </div>
+
+      <LeaderboardNav draftCount={drafts.length} />
 
       <div className="-mx-4 px-4 sm:mx-0 sm:px-0">
         <div className="flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 xl:grid-cols-4 sm:gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {[
             ["Teams", String(matrixRows.length).padStart(2, "0")],
             ["Categories", String(categories.length).padStart(2, "0")],
-            ["Draft matrix total", formatPoints(matrixRows.reduce((s, r) => s + r.total, 0))],
+            [
+              "Draft matrix total",
+              formatPoints(matrixRows.reduce((s, r) => s + r.total, 0)),
+            ],
             ["Saved draft", String(drafts.length).padStart(2, "0")],
           ].map(([label, value]) => (
             <div
               key={label}
               className="min-w-[9.5rem] shrink-0 rounded-xl border border-border bg-surface p-3.5 sm:min-w-0 sm:shrink sm:p-4"
             >
-              <p className="text-[10px] tracking-wide text-muted uppercase">{label}</p>
+              <p className="text-[10px] tracking-wide text-muted uppercase">
+                {label}
+              </p>
               <p className="mt-1 font-display text-2xl sm:text-3xl">{value}</p>
             </div>
           ))}
@@ -118,7 +139,10 @@ async function LeaderboardsContent({ searchParams }: Props) {
           <div className="xl:order-2">
             <ScorePanel
               key={`${selectedTeam.id}-${selectedCompetition.id}`}
-              teams={matrixRows.map((r) => ({ id: r.team.id, name: r.team.name }))}
+              teams={matrixRows.map((r) => ({
+                id: r.team.id,
+                name: r.team.name,
+              }))}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
               competitions={competitions.map((c) => ({
                 id: c.id,
@@ -168,7 +192,9 @@ async function LeaderboardsContent({ searchParams }: Props) {
                 {matrixRows.map((row) => {
                   const selected = selectedTeam?.id === row.team.id;
                   const hasAnyDraft = competitions.some((c) =>
-                    draftMap.has(`${row.team.id}:${c.id}` as `${string}:${string}`),
+                    draftMap.has(
+                      `${row.team.id}:${c.id}` as `${string}:${string}`,
+                    ),
                   );
                   const stickyBg = selected ? "bg-[#2a1a12]" : "bg-surface";
                   return (
@@ -235,7 +261,10 @@ async function LeaderboardsContent({ searchParams }: Props) {
       <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-display text-xl sm:text-2xl">Recent changes</h2>
-          <Link href="/admin/leaderboards/history" className="shrink-0 text-sm text-accent">
+          <Link
+            href="/admin/leaderboards/history"
+            className="shrink-0 text-sm text-accent"
+          >
             History →
           </Link>
         </div>
@@ -250,7 +279,9 @@ async function LeaderboardsContent({ searchParams }: Props) {
                 <Badge tone={item.action === "published" ? "success" : "accent"}>
                   {item.action.replaceAll("_", " ")}
                 </Badge>
-                <span className="text-xs text-muted">{formatDateTime(item.created_at)}</span>
+                <span className="text-xs text-muted">
+                  {formatDateTime(item.created_at)}
+                </span>
               </div>
             </li>
           ))}

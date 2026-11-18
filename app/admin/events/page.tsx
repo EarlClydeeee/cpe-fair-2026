@@ -8,8 +8,11 @@ import { getCategories, getCompetitions, getTeams } from "@/lib/data/public";
 export const metadata: Metadata = { title: "Event management" };
 export const instant = false;
 
-async function EventsContent() {
+type Props = { searchParams: Promise<{ status?: string; id?: string }> };
+
+async function EventsContent({ searchParams }: Props) {
   await connection();
+  const { status, id } = (await searchParams) ?? {};
   const [events, categories, competitions, teams] = await Promise.all([
     getAdminEvents(),
     getCategories(),
@@ -39,13 +42,19 @@ async function EventsContent() {
           name: c.name,
           category_id: c.category_id,
         }))}
-        teams={teams.map((t) => ({ id: t.id, name: t.name }))}
+        teams={teams.map((t) => ({
+          id: t.id,
+          name: t.name,
+          color_hex: t.color_hex,
+        }))}
+        initialStatusFilter={status}
+        initialSelectedId={id}
       />
     </div>
   );
 }
 
-export default function AdminEventsPage() {
+export default function AdminEventsPage(props: Props) {
   return (
     <Suspense
       fallback={
@@ -54,7 +63,7 @@ export default function AdminEventsPage() {
         </div>
       }
     >
-      <EventsContent />
+      <EventsContent {...props} />
     </Suspense>
   );
 }

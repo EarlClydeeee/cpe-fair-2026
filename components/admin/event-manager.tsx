@@ -21,6 +21,7 @@ import {
 import {
   formatEventWindow,
   manilaDateInputValue,
+  manilaIsoFromParts,
   manilaTwelveHour,
 } from "@/lib/format";
 import { useNow } from "@/lib/hooks/use-now";
@@ -36,98 +37,45 @@ const MINUTES = ["00", "15", "30", "45"];
 
 type CategoryOption = { id: string; name: string; slug?: string };
 type CompetitionOption = { id: string; name: string; category_id: string };
-type TeamOption = { id: string; name: string };
-
-function TimeFields({
-  prefix,
-  label,
-  defaults,
-}: {
-  prefix: "start" | "end";
-  label: string;
-  defaults: { hour: string; minute: string; period: "AM" | "PM" };
-}) {
-  return (
-    <fieldset className="space-y-1.5">
-      <legend className="text-xs font-medium tracking-wide text-muted uppercase">
-        {label}
-      </legend>
-      <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
-        <select
-          name={`${prefix}_hour`}
-          defaultValue={defaults.hour}
-          className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm"
-          required
-        >
-          {HOURS.map((h) => (
-            <option key={h} value={h}>
-              {h}
-            </option>
-          ))}
-        </select>
-        <select
-          name={`${prefix}_minute`}
-          defaultValue={defaults.minute}
-          className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm"
-          required
-        >
-          {MINUTES.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-          {!MINUTES.includes(defaults.minute) ? (
-            <option value={defaults.minute}>{defaults.minute}</option>
-          ) : null}
-        </select>
-        <select
-          name={`${prefix}_period`}
-          defaultValue={defaults.period}
-          className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm"
-          required
-        >
-          <option value="AM">AM</option>
-          <option value="PM">PM</option>
-        </select>
-      </div>
-    </fieldset>
-  );
-}
+type TeamOption = { id: string; name: string; color_hex?: string };
 
 export function EventManager({
   events,
   categories,
   competitions,
   teams,
+  initialStatusFilter = "all",
+  initialSelectedId,
 }: {
   events: FairEvent[];
   categories: CategoryOption[];
   competitions: CompetitionOption[];
   teams: TeamOption[];
+  initialStatusFilter?: string;
+  initialSelectedId?: string;
 }) {
   const router = useRouter();
   const now = useNow(30_000);
+
   const [selectedId, setSelectedId] = useState<string>(
-    events[0]?.id ?? NEW_EVENT,
+    initialSelectedId ?? events[0]?.id ?? NEW_EVENT,
   );
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | ComputedEventStatus>(
-    "all",
-  );
-  const [matchType, setMatchType] = useState<"head_to_head" | "all_teams">(
-    "head_to_head",
-  );
-  const [statusMode, setStatusMode] = useState<"upcoming" | "ongoing" | "ended">(
-    "upcoming",
-  );
-  const [formCategoryId, setFormCategoryId] = useState(
-    events[0]?.category_id ?? categories[0]?.id ?? "",
-  );
-  const [formCompetitionId, setFormCompetitionId] = useState(
-    events[0]?.competition_id ?? "",
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "upcoming" | "ongoing" | "ended" | "needs_winner"
+  >(
+    initialStatusFilter === "needs_winner" ||
+      initialStatusFilter === "upcoming" ||
+      initialStatusFilter === "ongoing" ||
+      initialStatusFilter === "ended"
+      ? initialStatusFilter
+      : "all",
   );
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [focus, setFocus] = useState<"list" | "editor">(
+    initialSelectedId ? "editor" : "list",
+  );
 
   const isCreating = selectedId === NEW_EVENT;
   const selected = useMemo(
@@ -135,52 +83,120 @@ export function EventManager({
     [events, selectedId, isCreating],
   );
 
-  // Remount when saved fields change so defaultValues pick up server refresh.
-  const formKey = `${selected?.id ?? NEW_EVENT}:${selected?.status_override ?? "upcoming"}:${selected?.winner_team_id ?? "none"}:${selected?.updated_at ?? selected?.end_at ?? ""}`;
+  // Controlled real-time form state
+  const [name, setName] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [formCompetitionId, setFormCompetitionId] = useState("");
+  const [matchType, setMatchType] = useState<"head_to_head" | "all_teams">(
+    "head_to_head",
+  );
+  const [teamAId, setTeamAId] = useState("");
+  const [teamBId, setTeamBId] = useState("");
+  const [venue, setVenue] = useState("");
+  const [matchFormat, setMatchFormat] = useState("");
+  const [eventDate, setEventDate] = useState("2026-11-23");
+  const [startHour, setStartHour] = useState("3");
+  const [startMinute, setStartMinute] = useState("30");
+  const [startPeriod, setStartPeriod] = useState<"AM" | "PM">("PM");
+  const [endHour, setEndHour] = useState("5");
+  const [endMinute, setEndMinute] = useState("30");
+  const [endPeriod, setEndPeriod] = useState<"AM" | "PM">("PM");
+  const [isHighlighted, setIsHighlighted] = useState(false);
+  const [statusMode, setStatusMode] = useState<"upcoming" | "ongoing" | "ended">(
+    "upcoming",
+  );
+  const [winnerTeamId, setWinnerTeamId] = useState("");
+  const [resultNote, setResultNote] = useState("");
 
-  const syncSelection = (event?: FairEvent) => {
-    setMatchType(event?.match_type ?? "head_to_head");
-  };
-
+  // Populate controlled state whenever selected event changes
   useEffect(() => {
-    setMatchType(selected?.match_type ?? "head_to_head");
-    const override = selected?.status_override;
-    setStatusMode(
-      override === "ongoing" || override === "ended" ? override : "upcoming",
-    );
-    const nextCategoryId =
-      selected?.category_id ?? categories[0]?.id ?? "";
-    setFormCategoryId(nextCategoryId);
-    const comps = competitions.filter((c) => c.category_id === nextCategoryId);
-    setFormCompetitionId(
-      selected?.competition_id &&
-        comps.some((c) => c.id === selected.competition_id)
-        ? selected.competition_id
-        : (comps[0]?.id ?? ""),
-    );
-  }, [
-    formKey,
-    selected?.match_type,
-    selected?.status_override,
-    selected?.category_id,
-    selected?.competition_id,
-    categories,
-    competitions,
-  ]);
+    if (selected) {
+      setName(selected.name);
+      const nextCategoryId = selected.category_id;
+      setCategoryId(nextCategoryId);
+      const comps = competitions.filter((c) => c.category_id === nextCategoryId);
+      setFormCompetitionId(
+        selected.competition_id &&
+          comps.some((c) => c.id === selected.competition_id)
+          ? selected.competition_id
+          : (comps[0]?.id ?? ""),
+      );
+      setMatchType(selected.match_type ?? "head_to_head");
+      setTeamAId(selected.team_a_id ?? "");
+      setTeamBId(selected.team_b_id ?? "");
+      setVenue(selected.venue ?? "");
+      setMatchFormat(selected.match_format ?? "");
+      setEventDate(manilaDateInputValue(selected.start_at));
+
+      const s = manilaTwelveHour(selected.start_at);
+      setStartHour(s.hour);
+      setStartMinute(s.minute);
+      setStartPeriod(s.period);
+
+      const e = manilaTwelveHour(selected.end_at);
+      setEndHour(e.hour);
+      setEndMinute(e.minute);
+      setEndPeriod(e.period);
+
+      setIsHighlighted(Boolean(selected.is_highlighted));
+      const override = selected.status_override;
+      setStatusMode(
+        override === "ongoing" || override === "ended" ? override : "upcoming",
+      );
+      setWinnerTeamId(selected.winner_team_id ?? "");
+      setResultNote(selected.result_note ?? "");
+    } else {
+      const nextCategoryId = categories[0]?.id ?? "";
+      setName("");
+      setCategoryId(nextCategoryId);
+      setFormCompetitionId(
+        competitions.find((c) => c.category_id === nextCategoryId)?.id ?? "",
+      );
+      setMatchType("head_to_head");
+      setTeamAId(teams[0]?.id ?? "");
+      setTeamBId(teams[1]?.id ?? "");
+      setVenue("Main court");
+      setMatchFormat("Best of three");
+      setEventDate("2026-11-23");
+      setStartHour("3");
+      setStartMinute("30");
+      setStartPeriod("PM");
+      setEndHour("5");
+      setEndMinute("30");
+      setEndPeriod("PM");
+      setIsHighlighted(false);
+      setStatusMode("upcoming");
+      setWinnerTeamId("");
+      setResultNote("");
+    }
+  }, [selectedId, selected, categories, competitions, teams]);
 
   const formCompetitions = useMemo(
-    () => competitions.filter((c) => c.category_id === formCategoryId),
-    [competitions, formCategoryId],
+    () => competitions.filter((c) => c.category_id === categoryId),
+    [competitions, categoryId],
   );
+
+  const needsWinnerCount = useMemo(() => {
+    return events.filter(
+      (e) => e.status_override === "ended" && !e.winner_team_id,
+    ).length;
+  }, [events]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return events.filter((event) => {
+      if (event.id === selectedId) return true;
       const status = getComputedEventStatus(event, now);
       if (categoryFilter !== "all" && event.category_id !== categoryFilter) {
         return false;
       }
-      if (statusFilter !== "all" && status !== statusFilter) return false;
+      if (statusFilter === "needs_winner") {
+        if (!(event.status_override === "ended" && !event.winner_team_id)) {
+          return false;
+        }
+      } else if (statusFilter !== "all" && status !== statusFilter) {
+        return false;
+      }
       if (!q) return true;
       const haystack = [
         event.name,
@@ -195,7 +211,7 @@ export function EventManager({
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [events, query, categoryFilter, statusFilter, now]);
+  }, [events, query, categoryFilter, statusFilter, now, selectedId]);
 
   const [saveState, saveAction] = useActionState(saveEvent, initialActionState);
   const [archiveState, archiveAction] = useActionState(
@@ -221,33 +237,61 @@ export function EventManager({
     router,
   ]);
 
-  const startDefaults = selected
-    ? manilaTwelveHour(selected.start_at)
-    : { hour: "3", minute: "30", period: "PM" as const };
-  const endDefaults = selected
-    ? manilaTwelveHour(selected.end_at)
-    : { hour: "5", minute: "30", period: "PM" as const };
-
-  const selectedStatus = selected
-    ? getComputedEventStatus(selected, now)
-    : null;
-  // Winner is only for admin-set Ended — not for Upcoming (even if schedule is past).
   const canSetWinner = statusMode === "ended";
+
+  const currentCategory = categories.find((c) => c.id === categoryId);
+  const teamA = teams.find((t) => t.id === teamAId);
+  const teamB = teams.find((t) => t.id === teamBId);
+  const winnerTeam = teams.find((t) => t.id === winnerTeamId);
+
+  function openEvent(id: string) {
+    setSelectedId(id);
+    setFocus("editor");
+  }
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
-      <div className="space-y-4">
+      <div className={`space-y-4 ${focus === "editor" ? "hidden xl:block" : ""}`}>
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-border pb-3">
+          {[
+            { id: "all" as const, label: `All (${events.length})`, highlight: false },
+            { id: "upcoming" as const, label: "Upcoming", highlight: false },
+            { id: "ongoing" as const, label: "Ongoing", highlight: false },
+            { id: "ended" as const, label: "Ended", highlight: false },
+            {
+              id: "needs_winner" as const,
+              label: `Needs Winner${needsWinnerCount > 0 ? ` (${needsWinnerCount})` : ""}`,
+              highlight: needsWinnerCount > 0,
+            },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setStatusFilter(tab.id)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                statusFilter === tab.id
+                  ? "bg-accent text-black shadow-xs"
+                  : tab.highlight
+                    ? "border border-info/40 bg-info/10 text-info hover:bg-info/20"
+                    : "border border-border bg-surface text-muted hover:border-border hover:text-foreground"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search event or team..."
-            className="min-w-[12rem] flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+            placeholder="Search event, venue, or team..."
+            className="min-w-[12rem] flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-muted/60"
           />
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground"
           >
             <option value="all">All categories</option>
             {categories.map((c) => (
@@ -256,27 +300,13 @@ export function EventManager({
               </option>
             ))}
           </select>
-          <select
-            value={statusFilter}
-            onChange={(e) =>
-              setStatusFilter(e.target.value as "all" | ComputedEventStatus)
-            }
-            className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm"
-          >
-            <option value="all">All statuses</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="ended">Ended</option>
-          </select>
+
           <button
             type="button"
-            onClick={() => {
-              setSelectedId(NEW_EVENT);
-              syncSelection();
-            }}
-            className={`rounded-lg border px-3 py-2 text-sm transition ${
+            onClick={() => openEvent(NEW_EVENT)}
+            className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
               isCreating
-                ? "border-accent bg-accent-soft text-foreground"
+                ? "border-accent bg-accent-soft text-accent"
                 : "border-border bg-surface-2 text-foreground hover:bg-surface"
             }`}
           >
@@ -297,47 +327,85 @@ export function EventManager({
             </p>
           ) : (
             filtered.map((event) => {
-              const status = getComputedEventStatus(event, now);
-              const matchup = eventMatchupLabel(event);
-              const winner = eventWinnerLabel(event);
+              const isSelected = selected?.id === event.id;
+              const status = isSelected
+                ? statusMode
+                : getComputedEventStatus(event, now);
+
+              const displayName = isSelected
+                ? name.trim() || event.name
+                : event.name;
+              const displayCategory = isSelected
+                ? (currentCategory?.name ?? "Category")
+                : event.categories?.name;
+              const displayVenue = isSelected
+                ? venue.trim() || "—"
+                : event.venue || "—";
+              const displaySchedule = isSelected
+                ? formatEventWindow(
+                    manilaIsoFromParts(
+                      eventDate,
+                      startHour,
+                      startMinute,
+                      startPeriod,
+                    ),
+                    manilaIsoFromParts(eventDate, endHour, endMinute, endPeriod),
+                  )
+                : formatEventWindow(event.start_at, event.end_at);
+              const spotlight = isSelected
+                ? isHighlighted
+                : Boolean(event.is_highlighted);
+              const needsWinner = isSelected
+                ? statusMode === "ended" && !winnerTeamId
+                : event.status_override === "ended" && !event.winner_team_id;
+              const matchup = isSelected
+                ? matchType === "head_to_head" && teamA && teamB
+                  ? `${teamA.name} vs ${teamB.name}`
+                  : "All eight teams"
+                : eventMatchupLabel(event);
+
+              const winner = isSelected
+                ? canSetWinner && winnerTeam
+                  ? `Winner: ${winnerTeam.name}`
+                  : null
+                : eventWinnerLabel(event);
+
               return (
                 <button
                   key={event.id}
                   type="button"
-                  onClick={() => {
-                    setSelectedId(event.id);
-                    syncSelection(event);
-                  }}
-                  className={`grid w-full grid-cols-[1.6fr_1.3fr_0.8fr_1fr] items-start gap-2 border-b border-border/60 px-4 py-3 text-left text-sm ${
-                    selected?.id === event.id
-                      ? "bg-accent-soft"
-                      : "hover:bg-surface-2"
+                  onClick={() => openEvent(event.id)}
+                  className={`grid w-full grid-cols-[1.6fr_1.3fr_0.8fr_1fr] items-start gap-2 border-b border-border/60 px-4 py-3 text-left text-sm transition-colors ${
+                    isSelected ? "bg-accent-soft" : "hover:bg-surface-2"
                   }`}
                 >
-                  <span>
-                    <span className="font-medium">{event.name}</span>
-                    <span className="mt-0.5 block text-xs text-muted">
-                      {event.categories?.name}
+                  <span className="min-w-0 pr-2">
+                    <span className="block truncate font-medium">
+                      {displayName}
+                      {isSelected ? (
+                        <span className="ml-2 rounded bg-accent/20 px-1.5 py-0.5 text-[9px] font-semibold text-accent uppercase">
+                          Editing
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-muted">
+                      {displayCategory}
                       {matchup ? ` · ${matchup}` : ""}
                     </span>
                     {winner ? (
-                      <span className="mt-1 block text-xs text-info">{winner}</span>
+                      <span className="mt-1 block text-xs font-semibold text-info">
+                        {winner}
+                      </span>
                     ) : null}
                   </span>
-                  <span className="text-xs text-muted">
-                    {formatEventWindow(event.start_at, event.end_at)}
-                  </span>
-                  <span className="text-xs text-muted">{event.venue || "—"}</span>
+                  <span className="text-xs text-muted">{displaySchedule}</span>
+                  <span className="text-xs text-muted">{displayVenue}</span>
                   <span className="flex flex-wrap gap-1">
-                    <Badge tone={eventStatusTone(status)}>
-                      {eventAdminStatusDisplay(status)}
+                    <Badge tone={eventStatusTone(status as ComputedEventStatus)}>
+                      {eventAdminStatusDisplay(status as ComputedEventStatus)}
                     </Badge>
-                    {event.is_highlighted ? (
-                      <Badge tone="accent">Spotlight</Badge>
-                    ) : null}
-                    {event.status_override === "ended" && !event.winner_team_id ? (
-                      <Badge tone="info">Needs winner</Badge>
-                    ) : null}
+                    {spotlight ? <Badge tone="accent">Spotlight</Badge> : null}
+                    {needsWinner ? <Badge tone="info">Needs winner</Badge> : null}
                   </span>
                 </button>
               );
@@ -346,58 +414,99 @@ export function EventManager({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        <h2 className="font-display text-2xl">
-          {isCreating ? "Create event" : "Edit event"}
-        </h2>
-        <form
-          key={formKey}
-          action={saveAction}
-          className="mt-4 space-y-4"
-          onChange={(e) => {
-            const target = e.target;
-            if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
-              return;
-            }
-            if (
-              target.name === "match_type" &&
-              (target.value === "head_to_head" || target.value === "all_teams")
-            ) {
-              setMatchType(target.value);
-            }
-            if (
-              target.name === "status_override" &&
-              (target.value === "upcoming" ||
-                target.value === "ongoing" ||
-                target.value === "ended")
-            ) {
-              setStatusMode(target.value);
-            }
-          }}
+      <div
+        className={`rounded-2xl border border-border bg-surface p-5 ${focus === "list" ? "hidden xl:block" : ""}`}
+      >
+        <button
+          type="button"
+          onClick={() => setFocus("list")}
+          className="mb-3 inline-flex min-h-10 items-center text-sm font-medium text-accent xl:hidden"
         >
+          ← Back to events
+        </button>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-2xl">
+            {isCreating ? "Create event" : "Edit event"}
+          </h2>
+          <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[10px] font-semibold tracking-wider text-muted uppercase">
+            Live Preview
+          </span>
+        </div>
+
+        <div className="mt-3.5 rounded-xl border border-accent/30 bg-surface-2 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold tracking-wider text-accent uppercase">
+              {currentCategory?.name ?? "CATEGORY"}
+            </span>
+            <div className="flex items-center gap-1.5">
+              {isHighlighted ? <Badge tone="accent">Spotlight</Badge> : null}
+              <Badge tone={eventStatusTone(statusMode)}>
+                {eventAdminStatusDisplay(statusMode)}
+              </Badge>
+            </div>
+          </div>
+
+          <h3 className="mt-1.5 font-display text-2xl font-black text-foreground">
+            {name.trim() || "Untitled Event"}
+          </h3>
+
+          <p className="mt-1 text-xs text-muted">
+            {matchType === "head_to_head" ? (
+              <span className="font-medium text-foreground">
+                {teamA?.name ?? "Team A"} vs {teamB?.name ?? "Team B"}
+              </span>
+            ) : (
+              <span>All Eight Teams</span>
+            )}
+            {matchFormat ? ` · ${matchFormat}` : ""}
+          </p>
+
+          <p className="mt-2 text-xs text-muted">
+            {eventDate} · {startHour}:{startMinute} {startPeriod} – {endHour}:
+            {endMinute} {endPeriod}
+            {venue ? ` · ${venue}` : ""}
+          </p>
+
+          {canSetWinner ? (
+            <div className="mt-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs">
+              <span className="font-semibold text-info">
+                {winnerTeam
+                  ? `Winner: ${winnerTeam.name}`
+                  : "Winner: Not yet announced"}
+              </span>
+              {resultNote ? (
+                <span className="ml-2 text-muted">({resultNote})</span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        <form action={saveAction} className="mt-4 space-y-4">
           {selected ? <input type="hidden" name="id" value={selected.id} /> : null}
 
           <section className="space-y-3">
-            <p className="text-[10px] tracking-[0.16em] text-muted uppercase">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-muted uppercase">
               Basic details
             </p>
             <TextField
               label="Event name"
               name="name"
-              defaultValue={selected?.name}
+              value={name}
+              placeholder="e.g. VOLLEYBALL FINALS"
               required
+              onChange={(e) => setName(e.target.value)}
             />
             <SelectField
               label="Category"
               name="category_id"
-              value={formCategoryId}
+              value={categoryId}
               required
               onChange={(e) => {
                 const next = e.target.value;
-                setFormCategoryId(next);
-                const first =
-                  competitions.find((c) => c.category_id === next)?.id ?? "";
-                setFormCompetitionId(first);
+                setCategoryId(next);
+                setFormCompetitionId(
+                  competitions.find((c) => c.category_id === next)?.id ?? "",
+                );
               }}
             >
               {categories.length === 0 ? (
@@ -434,21 +543,23 @@ export function EventManager({
                 Matchup type
               </legend>
               <div className="flex flex-wrap gap-2">
-                <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
                   <input
                     type="radio"
                     name="match_type"
                     value="head_to_head"
-                    defaultChecked={matchType === "head_to_head"}
+                    checked={matchType === "head_to_head"}
+                    onChange={() => setMatchType("head_to_head")}
                   />
                   Head-to-Head
                 </label>
-                <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm">
                   <input
                     type="radio"
                     name="match_type"
                     value="all_teams"
-                    defaultChecked={matchType === "all_teams"}
+                    checked={matchType === "all_teams"}
+                    onChange={() => setMatchType("all_teams")}
                   />
                   All Eight Teams
                 </label>
@@ -460,8 +571,9 @@ export function EventManager({
                 <SelectField
                   label="Team A"
                   name="team_a_id"
-                  defaultValue={selected?.team_a_id ?? ""}
+                  value={teamAId}
                   required
+                  onChange={(e) => setTeamAId(e.target.value)}
                 >
                   <option value="">Select team</option>
                   {teams.map((t) => (
@@ -470,16 +582,18 @@ export function EventManager({
                     </option>
                   ))}
                 </SelectField>
+
                 <SelectField
                   label="Team B"
                   name="team_b_id"
-                  defaultValue={selected?.team_b_id ?? ""}
+                  value={teamBId}
                   required
+                  onChange={(e) => setTeamBId(e.target.value)}
                 >
                   <option value="">Select team</option>
                   {teams.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
+                    <option key={t.id} value={t.id} disabled={t.id === teamAId}>
+                      {t.name} {t.id === teamAId ? "(Already Team A)" : ""}
                     </option>
                   ))}
                 </SelectField>
@@ -494,127 +608,231 @@ export function EventManager({
             <TextField
               label="Venue"
               name="venue"
-              defaultValue={selected?.venue ?? ""}
+              value={venue}
+              placeholder="e.g. Main court or Strategy hall"
+              onChange={(e) => setVenue(e.target.value)}
             />
             <TextField
               label="Match format"
               name="match_format"
-              defaultValue={selected?.match_format ?? ""}
+              value={matchFormat}
               placeholder="Best of three"
+              onChange={(e) => setMatchFormat(e.target.value)}
             />
           </section>
 
           <section className="space-y-3">
-            <p className="text-[10px] tracking-[0.16em] text-muted uppercase">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-muted uppercase">
               Schedule window
             </p>
             <TextField
               label="Date"
               name="event_date"
               type="date"
-              defaultValue={
-                selected
-                  ? manilaDateInputValue(selected.start_at)
-                  : "2026-11-23"
-              }
+              value={eventDate}
               required
+              onChange={(e) => setEventDate(e.target.value)}
             />
             <div className="grid gap-3 sm:grid-cols-2">
-              <TimeFields prefix="start" label="Start time" defaults={startDefaults} />
-              <TimeFields prefix="end" label="End time" defaults={endDefaults} />
+              <fieldset className="space-y-1.5">
+                <legend className="text-xs font-medium tracking-wide text-muted uppercase">
+                  Start time
+                </legend>
+                <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                  <select
+                    name="start_hour"
+                    value={startHour}
+                    onChange={(e) => setStartHour(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2.5 text-sm"
+                    required
+                  >
+                    {HOURS.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    name="start_minute"
+                    value={startMinute}
+                    onChange={(e) => setStartMinute(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2.5 text-sm"
+                    required
+                  >
+                    {MINUTES.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    name="start_period"
+                    value={startPeriod}
+                    onChange={(e) =>
+                      setStartPeriod(e.target.value as "AM" | "PM")
+                    }
+                    className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2.5 text-sm"
+                    required
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </fieldset>
+
+              <fieldset className="space-y-1.5">
+                <legend className="text-xs font-medium tracking-wide text-muted uppercase">
+                  End time
+                </legend>
+                <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                  <select
+                    name="end_hour"
+                    value={endHour}
+                    onChange={(e) => setEndHour(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2.5 text-sm"
+                    required
+                  >
+                    {HOURS.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    name="end_minute"
+                    value={endMinute}
+                    onChange={(e) => setEndMinute(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2.5 text-sm"
+                    required
+                  >
+                    {MINUTES.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    name="end_period"
+                    value={endPeriod}
+                    onChange={(e) =>
+                      setEndPeriod(e.target.value as "AM" | "PM")
+                    }
+                    className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2.5 text-sm"
+                    required
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </fieldset>
             </div>
           </section>
 
           <section className="space-y-3">
-            <p className="text-[10px] tracking-[0.16em] text-muted uppercase">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-muted uppercase">
               Spotlight & status
             </p>
-            <label className="flex items-start gap-3 rounded-lg border border-border bg-surface-2 px-3 py-3 text-sm">
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-2 px-3 py-3 text-sm">
               <input
                 type="checkbox"
                 name="is_highlighted"
-                defaultChecked={selected?.is_highlighted ?? false}
+                checked={isHighlighted}
+                onChange={(e) => setIsHighlighted(e.target.checked)}
                 className="mt-0.5 size-4 rounded border-border accent-accent"
               />
               <span>
                 <span className="font-medium text-foreground">
-                  Pin as Highlighted Event
+                  Pin as Highlighted Event (Spotlight)
                 </span>
                 <span className="mt-1 block text-xs text-muted">
-                  Overrides automatic selection on the public Events hero banner
-                  and Leaderboard spotlight.
+                  Displays on public hero banner and leaderboard spotlight.
                 </span>
               </span>
             </label>
+
             <SelectField
               label="Status mode"
               name="status_override"
-              defaultValue={
-                selected?.status_override && selected.status_override !== "auto"
-                  ? selected.status_override
-                  : "upcoming"
+              value={statusMode}
+              onChange={(e) =>
+                setStatusMode(e.target.value as "upcoming" | "ongoing" | "ended")
               }
-              hint="Upcoming / Ongoing have no winner. Switch to Ended when the match is finished, then pick who won."
+              hint="Upcoming / Ongoing have no winner. Set to Ended when finished, then choose the winner."
             >
               <option value="upcoming">Upcoming</option>
               <option value="ongoing">Ongoing</option>
               <option value="ended">Ended</option>
             </SelectField>
-            {selectedStatus ? (
-              <p className="text-xs text-muted">
-                Public badge now:{" "}
-                <span className="font-semibold text-foreground">
-                  {eventAdminStatusDisplay(selectedStatus)}
-                </span>
-                {statusMode !== "ended" && selectedStatus === "ended"
-                  ? " · schedule is past end — set Status to Ended to announce a winner"
-                  : null}
-              </p>
-            ) : null}
           </section>
 
           <section className="space-y-3">
-            <p className="text-[10px] tracking-[0.16em] text-muted uppercase">
+            <p className="text-[10px] font-semibold tracking-[0.16em] text-muted uppercase">
               Match result
             </p>
             {canSetWinner ? (
               <SelectField
                 label="Winner"
                 name="winner_team_id"
-                defaultValue={selected?.winner_team_id ?? ""}
-                hint="Required to announce on the public event page. Points still publish from Leaderboard Control."
+                value={winnerTeamId}
+                onChange={(e) => setWinnerTeamId(e.target.value)}
+                hint="Announces winner on public schedule. Points publish from Leaderboard Control."
               >
                 <option value="">Not announced yet</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
+                {matchType === "head_to_head" && (teamA || teamB) ? (
+                  <optgroup label="Match Participants">
+                    {teamA ? (
+                      <option value={teamA.id}>{teamA.name}</option>
+                    ) : null}
+                    {teamB ? (
+                      <option value={teamB.id}>{teamB.name}</option>
+                    ) : null}
+                  </optgroup>
+                ) : null}
+                <optgroup
+                  label={
+                    matchType === "head_to_head" ? "Other Teams" : "All Teams"
+                  }
+                >
+                  {teams
+                    .filter(
+                      (t) =>
+                        matchType !== "head_to_head" ||
+                        (t.id !== teamAId && t.id !== teamBId),
+                    )
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                </optgroup>
               </SelectField>
             ) : (
               <div className="rounded-lg border border-dashed border-border bg-surface-2 px-3 py-3 text-sm">
-                <p className="text-xs tracking-wide text-muted uppercase">Winner</p>
-                <p className="mt-1 text-muted">
-                  No winner while Status is Upcoming or Ongoing.
+                <p className="text-xs tracking-wide text-muted uppercase">
+                  Winner
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  Winner is only selectable after setting Status mode to Ended
+                  above.
                 </p>
                 <input type="hidden" name="winner_team_id" value="" />
               </div>
             )}
+
             <TextField
               label="Score / Result note"
               name="result_note"
-              defaultValue={selected?.result_note ?? ""}
-              placeholder="2-1 or 25-21, 25-19"
-              hint={
-                canSetWinner
-                  ? undefined
-                  : "Optional note. Winner is only set after Status is Ended."
-              }
+              value={resultNote}
+              placeholder="e.g. 2-1 or 25-21, 25-19"
+              onChange={(e) => setResultNote(e.target.value)}
+              hint="Optional score details or notes."
             />
           </section>
 
           <FormMessage state={saveState} />
-          <SubmitButton className="w-full">Save event</SubmitButton>
+          <SubmitButton className="w-full">
+            {isCreating ? "Create event" : "Save event"}
+          </SubmitButton>
         </form>
 
         {selected ? (
@@ -633,8 +851,7 @@ export function EventManager({
               onClick={() => setPreviewOpen(true)}
               className="w-full rounded-lg border border-accent/40 bg-accent-soft px-4 py-2.5 text-sm font-medium text-foreground transition hover:border-accent"
             >
-              Preview status
-              {canSetWinner ? " · Assign winner" : ""}
+              Full preview & assign winner modal
             </button>
             <form action={archiveAction}>
               <input type="hidden" name="id" value={selected.id} />
