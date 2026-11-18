@@ -191,7 +191,10 @@ export async function getAuditLog(filters?: { action?: string; q?: string }) {
   }
 
   const { data, error } = await q;
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[data] getAuditLog:", error.message);
+    return [];
+  }
 
   let rows = data ?? [];
   if (filters?.q) {

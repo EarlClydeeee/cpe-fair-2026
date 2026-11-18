@@ -89,7 +89,10 @@ export async function getDrafts(): Promise<Tables<"score_drafts">[]> {
     .from("score_drafts")
     .select("*")
     .order("saved_at", { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[data] getDrafts:", error.message);
+    return [];
+  }
   return data ?? [];
 }
 

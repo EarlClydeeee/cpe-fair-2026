@@ -35,7 +35,6 @@ function EnterTerminalButton() {
 export function LoginForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/admin";
-  const unauthorized = searchParams.get("error") === "unauthorized";
   const [state, action] = useActionState(signIn, initialActionState);
 
   return (
@@ -67,12 +66,6 @@ export function LoginForm() {
         <p className="mt-1.5 text-center text-xs font-medium text-neutral-400">
           Restricted Access: Irminsul Admins Only
         </p>
-
-        {unauthorized ? (
-          <p className="mt-4 rounded-lg bg-danger/15 px-3 py-2 text-center text-xs text-danger">
-            This account is not authorized for the control room.
-          </p>
-        ) : null}
 
         {/* Form */}
         <form action={action} className="mt-7 space-y-4">

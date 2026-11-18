@@ -1,13 +1,30 @@
 import "server-only";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import type { Database } from "./database.types";
-import { supabaseKey, supabaseUrl } from "./env";
+import {
+  hasServiceRole,
+  supabaseKey,
+  supabaseServiceRoleKey,
+  supabaseUrl,
+} from "./env";
 
-export async function createClient() {
+/** Privileged client — bypasses RLS. Only for hardcoded admin cookie sessions. */
+export function createServiceClient() {
+  if (!hasServiceRole) {
+    throw new Error(
+      "Missing SUPABASE_SERVICE_ROLE_KEY. Add it to .env.local from Supabase → Project Settings → API.",
+    );
+  }
+  return createSupabaseClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+async function createUserServerClient() {
   const cookieStore = await cookies();
-  // Supabase auth session expiry checks call Date.now(); wait for the request first.
   await connection();
 
   return createServerClient<Database>(supabaseUrl, supabaseKey, {
@@ -26,4 +43,23 @@ export async function createClient() {
       },
     },
   });
+}
+
+export async function createClient() {
+  const cookieStore = await cookies();
+  await connection();
+
+  // Hardcoded control-room session: use service role so table grants/RLS don't block.
+  if (
+    cookieStore.get("cpe_admin_session")?.value === "authenticated" &&
+    hasServiceRole
+  ) {
+    return createServiceClient();
+  }
+
+  return createUserServerClient();
+}
+
+export async function createAuthClient() {
+  return createUserServerClient();
 }

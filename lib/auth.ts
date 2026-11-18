@@ -16,6 +16,10 @@ export type CurrentUser = {
   role: AdminRole | null;
 };
 
+function isHardcodedAdminEmail(email: string | null | undefined) {
+  return (email ?? "").trim().toLowerCase() === ADMIN_LOGIN_EMAIL.toLowerCase();
+}
+
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const cookieStore = await cookies();
   if (cookieStore.get("cpe_admin_session")?.value === "authenticated") {
@@ -39,6 +43,16 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     .select("id, email, full_name, role")
     .eq("id", id)
     .maybeSingle();
+
+  const email = profile?.email ?? data?.claims?.email;
+  if (isHardcodedAdminEmail(typeof email === "string" ? email : null)) {
+    return {
+      id,
+      email: ADMIN_LOGIN_EMAIL,
+      fullName: profile?.full_name || "Admin",
+      role: "owner",
+    };
+  }
 
   if (!profile) return null;
 

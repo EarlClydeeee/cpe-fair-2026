@@ -3,15 +3,15 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
-import {
-  ADMIN_ACCESS_CODE,
-  ADMIN_LOGIN_EMAIL,
-} from "@/lib/auth-credentials";
-import { createClient } from "@/lib/supabase/server";
+import { ADMIN_ACCESS_CODE } from "@/lib/auth-credentials";
+import { hasServiceRole } from "@/lib/supabase/env";
+import { createAuthClient } from "@/lib/supabase/server";
 import { signInSchema } from "@/lib/validation/auth";
 
 function safeNext(next: string | undefined) {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/admin";
+  return next && next.startsWith("/") && !next.startsWith("//")
+    ? next
+    : "/admin";
 }
 
 export async function signIn(
@@ -25,31 +25,32 @@ export async function signIn(
     return { ok: false, message: "Invalid access code." };
   }
 
+  if (!hasServiceRole) {
+    return {
+      ok: false,
+      message:
+        "Add SUPABASE_SERVICE_ROLE_KEY to .env.local (Supabase → Project Settings → API → service_role secret).",
+    };
+  }
+
   const cookieStore = await cookies();
-  cookieStore.set("cpe_admin_session", "authenticated", {
+  cookieStore.set({
+    name: "cpe_admin_session",
+    value: "authenticated",
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure:
+      process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL),
     path: "/",
+    maxAge: 60 * 60 * 24 * 30,
   });
-
-  // Best-effort Supabase session so RPCs can run as authenticated when the user exists.
-  try {
-    const supabase = await createClient();
-    await supabase.auth.signInWithPassword({
-      email: ADMIN_LOGIN_EMAIL,
-      password: ADMIN_ACCESS_CODE,
-    });
-  } catch {
-    // Cookie session is enough for control-room UI access.
-  }
 
   redirect(safeNext(parsed.data.next));
 }
 
 export async function signOut() {
   try {
-    const supabase = await createClient();
+    const supabase = await createAuthClient();
     await supabase.auth.signOut();
   } catch {
     // ignore
