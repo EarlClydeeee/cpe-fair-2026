@@ -8,8 +8,22 @@ export function PublicHeader() {
 }
 
 export async function PublicFooter() {
-  const { source } = await getStandings();
+  const { source, categories, rows } = await getStandings();
   const isSample = source === "sample";
+  const teamCount = rows.length;
+  const categoryCount = categories.length;
+  const rosterLine =
+    teamCount > 0 || categoryCount > 0
+      ? [
+          teamCount > 0 ? `${teamCount} ${teamCount === 1 ? "team" : "teams"}` : null,
+          categoryCount > 0
+            ? `${categoryCount} ${categoryCount === 1 ? "category" : "categories"}`
+            : null,
+          "one champion",
+        ]
+          .filter(Boolean)
+          .join(" / ")
+      : "Teams and categories set by the control room";
 
   return (
     <footer className="mt-auto border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
@@ -29,7 +43,7 @@ export async function PublicFooter() {
             Fly high. Play as one.
           </p>
           <p className="mt-3 max-w-sm text-sm leading-6 text-muted sm:mt-4">
-            ACCESS CPE Fair 2026 — eight teams, seven categories, one champion.
+            ACCESS CPE Fair 2026 — live standings from the season roster.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-8 sm:contents">
@@ -53,18 +67,22 @@ export async function PublicFooter() {
           </div>
           <div className="hidden space-y-2 text-sm sm:block">
             <p className="text-[10px] tracking-[0.18em] text-muted uppercase">The competition</p>
-            {["Sports", "Logic & Board", "Esports", "Academics", "Talents", "Mini Games", "Literacy"].map((c) => (
-              <p key={c} className="text-muted">
-                {c}
-              </p>
-            ))}
+            {categories.length > 0 ? (
+              categories.map((c) => (
+                <p key={c.id} className="text-muted">
+                  {c.name}
+                </p>
+              ))
+            ) : (
+              <p className="text-muted">Categories appear when admins add them.</p>
+            )}
           </div>
         </div>
       </div>
       <div className="border-t border-border px-4 py-4 text-xs text-muted sm:px-6">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <span>© 2026 ACCESS · CPE Fair</span>
-          <span className="tracking-[0.12em] uppercase">8 teams / 7 categories / one champion</span>
+          <span className="tracking-[0.12em] uppercase">{rosterLine}</span>
           {isSample ? <span>Sample content · For UI preview only</span> : null}
         </div>
       </div>

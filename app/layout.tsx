@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     default: "ACCESS CPE Fair 2026",
     template: "%s · ACCESS CPE Fair 2026",
   },
-  description: "Eight teams. Six categories. One champion. Fly high. Play as one.",
+  description: "ACCESS CPE Fair 2026 leaderboard. Fly high. Play as one.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
