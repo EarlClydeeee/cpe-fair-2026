@@ -220,20 +220,20 @@ export function CategoryManager({
           <FormMessage state={catSaveState} />
           <div className="flex flex-wrap gap-2">
             <SubmitButton>{isCreatingCategory ? "Create category" : "Save category"}</SubmitButton>
-            {selectedCategory ? (
-              <button
-                type="submit"
-                formAction={catArchiveAction}
-                name="id"
-                value={selectedCategory.id}
-                className="rounded-lg border border-border px-3 py-2 text-sm text-muted hover:text-foreground"
-              >
-                Archive
-              </button>
-            ) : null}
           </div>
-          <FormMessage state={catArchiveState} />
         </form>
+        {selectedCategory ? (
+          <form action={catArchiveAction} className="mt-2">
+            <input type="hidden" name="id" value={selectedCategory.id} />
+            <FormMessage state={catArchiveState} />
+            <button
+              type="submit"
+              className="rounded-lg border border-border px-3 py-2 text-sm text-muted hover:text-foreground"
+            >
+              Archive
+            </button>
+          </form>
+        ) : null}
       </section>
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
@@ -329,21 +329,21 @@ export function CategoryManager({
               <SubmitButton>
                 {isCreatingCompetition ? "Create competition" : "Save competition"}
               </SubmitButton>
-              {selectedCompetition ? (
-                <button
-                  type="submit"
-                  formAction={compArchiveAction}
-                  name="id"
-                  value={selectedCompetition.id}
-                  className="rounded-lg border border-border px-3 py-2 text-sm text-muted hover:text-foreground"
-                >
-                  Archive
-                </button>
-              ) : null}
             </div>
-            <FormMessage state={compArchiveState} />
           </form>
         )}
+        {selectedCategory && selectedCompetition ? (
+          <form action={compArchiveAction} className="mt-2">
+            <input type="hidden" name="id" value={selectedCompetition.id} />
+            <FormMessage state={compArchiveState} />
+            <button
+              type="submit"
+              className="rounded-lg border border-border px-3 py-2 text-sm text-muted hover:text-foreground"
+            >
+              Archive
+            </button>
+          </form>
+        ) : null}
       </section>
     </div>
   );
