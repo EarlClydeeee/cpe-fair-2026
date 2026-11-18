@@ -1,27 +1,78 @@
 # Database — ACCESS CPE Fair 2026
 
-| File | Contents |
+Two layouts:
+
+| Path | Use when |
 | --- | --- |
-| `migrations/0001_init.sql` | Enums + tables (drops legacy fair schema first) |
-| `migrations/0002_rls.sql` | Role helpers + RLS |
-| `migrations/0003_triggers.sql` | Profile trigger, draft/publish RPCs |
-| `migrations/0005_team_artwork_storage.sql` | Public `team-artwork` storage bucket + policies |
-| `migrations/0008_realtime.sql` | Realtime publication for live page updates |
-| `migrations/0010_competitions.sql` | Competitions table; scores/events keyed by `competition_id` |
-| `migrations/0014_clear_season_content.sql` | RPC to wipe fair content (keeps schema / seasons / profiles) |
-| `migrations/0015_service_role_scoring.sql` | Allow access-code admin (service_role) to save/publish drafts |
-| `seed.sql` | Active season only — categories/competitions/scores/events via admin |
+| [`migrations/`](migrations/) | **Existing / live** Supabase project (incremental history) |
+| [`greenfield/`](greenfield/) | **Brand-new** empty project only (squashed final schema) |
+| [`seed.sql`](seed.sql) | Active season row (safe to re-run; idempotent) |
 
-## Apply
+**Never** run `greenfield/` against a DB that already applied `migrations/` — it will collide with existing types/tables.
 
-Run migrations in order, then seed, in the Supabase SQL editor — or copy into `supabase/migrations/` and `supabase db push`.
+---
 
-## First owner
+## A) Live project (incremental)
 
-Create an Auth user with email `admin@gmail.com` (or set `ADMIN_LOGIN_EMAIL`), then apply `migrations/0004_admin.sql` so the profile is `owner`. Login uses access code only; the server supplies that email automatically.
+Apply **in order**, skip superseded files:
 
-```sql
-update public.profiles set role = 'owner' where email = 'admin@gmail.com';
+| Order | File | Notes |
+| --- | --- | --- |
+| 1 | `migrations/0001_init.sql` | Core tables |
+| 2 | `migrations/0002_rls.sql` | RLS + role helpers |
+| 3 | `migrations/0003_triggers.sql` | Triggers (RPC bodies later replaced) |
+| — | ~~`0004_admin.sql`~~ | **Skip** — broken fixed-UUID profile insert |
+| 4 | `migrations/0005_team_artwork_storage.sql` | Storage bucket |
+| 5 | `migrations/0006_events_scheduling.sql` | Events reshape |
+| — | ~~`0007_publish_lock.sql`~~ | **Skip** — superseded by 0015 |
+| 6 | `migrations/0008_realtime.sql` | Realtime |
+| 7 | `migrations/0010_competitions.sql` | Competitions + score grain |
+| — | ~~`0011_score_draft_grants.sql`~~ | **Skip** if 0013 + 0015 applied |
+| — | ~~`0012_bootstrap_admin_profile.sql`~~ | **Skip** if 0013 applied |
+| 8 | `migrations/0013_competitions_grants_and_season.sql` | Grants + season + owner bootstrap |
+| 9 | `migrations/0014_clear_season_content.sql` | Season wipe RPC |
+| 10 | `migrations/0015_service_role_scoring.sql` | Canonical scoring RPCs |
+| 11 | `seed.sql` | Ensure active season |
+
+Already applied projects: only run migrations you have **not** run yet (usually `0014` / `0015`).
+
+---
+
+## B) Greenfield (new empty project)
+
+In the Supabase SQL editor, run **in order**:
+
+1. `greenfield/01_schema.sql`
+2. `greenfield/02_rls.sql`
+3. `greenfield/03_triggers_functions.sql`
+4. `greenfield/04_storage_realtime.sql`
+5. `greenfield/05_grants_bootstrap.sql`
+6. `seed.sql` (optional; season already inserted in step 5)
+
+This squash folds away overlapping history (`0004`, `0007`, `0011`, `0012`) and ships final scoring + wipe RPCs in one place.
+
+---
+
+## App env
+
+Control-room access-code login needs:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...   # service_role secret, not publishable
 ```
 
-Or insert a pending invitation before signup so `handle_new_user` assigns the role automatically.
+Set the same three on Vercel for production.
+
+---
+
+## Safe content wipe (keep schema)
+
+Prefer **Admin → Admin access → Clear season data**, or:
+
+```sql
+select public.clear_season_content();
+```
+
+Do **not** `drop table` / re-run `0001` on a live project unless you intend a full rebuild.
