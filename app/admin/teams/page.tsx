@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { TeamManager } from "@/components/admin/team-manager";
 import { getAdminTeams } from "@/lib/data/admin";
 import { getStandings } from "@/lib/data/public";
 
 export const metadata: Metadata = { title: "Team management" };
+export const instant = false;
 
-export default async function AdminTeamsPage() {
+async function TeamsContent() {
+  await connection();
   const [teams, { rows }] = await Promise.all([getAdminTeams(), getStandings()]);
   const totals = Object.fromEntries(rows.map((r) => [r.team.id, r.total]));
 
@@ -21,5 +25,19 @@ export default async function AdminTeamsPage() {
       </div>
       <TeamManager teams={teams} totals={totals} />
     </div>
+  );
+}
+
+export default function AdminTeamsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
+          Loading teams…
+        </div>
+      }
+    >
+      <TeamsContent />
+    </Suspense>
   );
 }

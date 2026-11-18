@@ -12,6 +12,7 @@ import {
 import { formatPoints, formatTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Admin overview" };
+export const instant = false;
 
 async function AdminOverviewContent() {
   const { stats, diffs, activity, unannouncedWinners } = await getOverview();

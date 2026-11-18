@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { HistoryBrowser } from "@/components/admin/history-browser";
 import { LeaderboardNav } from "@/components/admin/leaderboard-nav";
 import { LinkButton } from "@/components/ui/button";
@@ -9,7 +11,8 @@ export const instant = false;
 
 type Props = { searchParams: Promise<{ q?: string; action?: string; id?: string }> };
 
-export default async function ChangeHistoryPage({ searchParams }: Props) {
+async function HistoryContent({ searchParams }: Props) {
+  await connection();
   const { q, action = "all", id } = await searchParams;
   const rows = await getAuditLog();
 
@@ -47,5 +50,19 @@ export default async function ChangeHistoryPage({ searchParams }: Props) {
         initialId={id}
       />
     </div>
+  );
+}
+
+export default function ChangeHistoryPage(props: Props) {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
+          Loading history…
+        </div>
+      }
+    >
+      <HistoryContent {...props} />
+    </Suspense>
   );
 }

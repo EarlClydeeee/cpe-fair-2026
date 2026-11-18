@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { AccessPanel } from "@/components/admin/access-panel";
 import { requireStaff } from "@/lib/auth";
 import { getAccessDirectory } from "@/lib/data/admin";
 
 export const metadata: Metadata = { title: "Admin access" };
+export const instant = false;
 
-export default async function AdminAccessPage() {
+async function AccessContent() {
+  await connection();
   const user = await requireStaff("/admin/access");
   const { profiles, invites } = await getAccessDirectory();
 
@@ -25,5 +29,19 @@ export default async function AdminAccessPage() {
         isOwner={user.role === "owner"}
       />
     </div>
+  );
+}
+
+export default function AdminAccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
+          Loading access…
+        </div>
+      }
+    >
+      <AccessContent />
+    </Suspense>
   );
 }

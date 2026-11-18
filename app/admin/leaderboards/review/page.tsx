@@ -13,6 +13,7 @@ import {
 import { formatPoints } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Review & publish" };
+export const instant = false;
 
 function rankArrow(rankDelta: number) {
   if (rankDelta > 0) return { symbol: "↑", className: "text-accent" };
