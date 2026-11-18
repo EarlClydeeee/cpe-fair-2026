@@ -1,5 +1,4 @@
 import "server-only";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import type { Enums } from "./supabase/database.types";
@@ -16,18 +15,8 @@ export type CurrentUser = {
 };
 
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  const cookieStore = await cookies();
-  const adminSession = cookieStore.get("cpe_admin_session")?.value;
-
-  if (adminSession === "authenticated") {
-    return {
-      id: "irminsul-admin",
-      email: "admin@cpefair.internal",
-      fullName: "Irminsul Admin",
-      role: "owner",
-    };
-  }
-
+  // Legacy cpe_admin_session cookie is ignored (cleared in proxy / signOut).
+  // App auth must use a real Supabase JWT so RPCs run as authenticated.
   if (!isSupabaseConfigured) return null;
 
   const supabase = await createClient();

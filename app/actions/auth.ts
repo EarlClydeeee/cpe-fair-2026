@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { fieldErrors, formObject, type ActionState } from "@/lib/action-state";
 import { ADMIN_LOGIN_EMAIL } from "@/lib/auth-credentials";
@@ -44,5 +45,7 @@ export async function signIn(_prev: ActionState, formData: FormData): Promise<Ac
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  const cookieStore = await cookies();
+  cookieStore.delete("cpe_admin_session");
   redirect("/");
 }
