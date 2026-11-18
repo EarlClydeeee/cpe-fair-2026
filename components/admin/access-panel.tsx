@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { inviteAdmin, revokeInvitation, updateAdminRole } from "@/app/actions/access";
 import { initialActionState } from "@/lib/action-state";
 import { roleLabel, type AdminRole } from "@/lib/roles";
@@ -34,7 +34,14 @@ export function AccessPanel({
   const [inviteState, inviteAction] = useActionState(inviteAdmin, initialActionState);
   const [roleState, roleAction] = useActionState(updateAdminRole, initialActionState);
   const [revokeState, revokeAction] = useActionState(revokeInvitation, initialActionState);
-  const selectedRoleDefault: AdminRole = "scoring_admin";
+  const [selectedInviteRole, setSelectedInviteRole] = useState<AdminRole>("scoring_admin");
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, AdminRole>>(() =>
+    Object.fromEntries(
+      profiles
+        .filter((profile) => profile.role)
+        .map((profile) => [profile.id, profile.role as AdminRole]),
+    ),
+  );
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
@@ -69,7 +76,7 @@ export function AccessPanel({
                 <p className="font-medium">{profile.full_name || "Unnamed"}</p>
                 <p className="text-xs text-muted">{profile.email}</p>
               </div>
-              <span>{profile.role ? roleLabel(profile.role) : "—"}</span>
+              <span>{roleDrafts[profile.id] ? roleLabel(roleDrafts[profile.id]) : "—"}</span>
               <Badge tone="success">Active</Badge>
               <div>
                 {isOwner && profile.role !== "owner" ? (
@@ -77,8 +84,14 @@ export function AccessPanel({
                     <input type="hidden" name="profile_id" value={profile.id} />
                     <select
                       name="role"
-                      defaultValue={profile.role ?? "site_admin"}
-                      className="rounded border border-border bg-surface-2 px-1 py-1 text-xs"
+                      value={roleDrafts[profile.id] ?? profile.role ?? "site_admin"}
+                      onChange={(event) =>
+                        setRoleDrafts((current) => ({
+                          ...current,
+                          [profile.id]: event.target.value as AdminRole,
+                        }))
+                      }
+                      className="rounded border border-border bg-surface-2 px-1 py-1 text-xs text-foreground"
                     >
                       <option value="site_admin">Site admin</option>
                       <option value="scoring_admin">Scoring admin</option>
@@ -150,7 +163,8 @@ export function AccessPanel({
             <SelectField
               label="Role"
               name="role"
-              defaultValue={selectedRoleDefault}
+              value={selectedInviteRole}
+              onChange={(e) => setSelectedInviteRole(e.target.value as AdminRole)}
               error={inviteState.errors?.role?.[0]}
             >
               <option value="scoring_admin">Scoring admin</option>
@@ -158,9 +172,15 @@ export function AccessPanel({
               <option value="events_editor">Events editor</option>
               <option value="owner">Owner</option>
             </SelectField>
-            <div className="rounded-xl bg-accent-soft p-3 text-xs leading-5 text-accent">
-              {roleHelp.scoring_admin}
+
+            {/* Real-time permission description that updates as you change the role dropdown */}
+            <div className="rounded-xl bg-accent-soft p-3 text-xs leading-5 text-accent transition-all">
+              <span className="block font-semibold uppercase tracking-wider text-[10px] text-accent/80 mb-1">
+                {roleLabel(selectedInviteRole)} Permissions
+              </span>
+              {roleHelp[selectedInviteRole]}
             </div>
+
             <FormMessage state={inviteState} />
             <SubmitButton className="w-full">Send invitation</SubmitButton>
             <p className="text-xs text-muted">

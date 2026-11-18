@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { DraftDiffCard } from "@/components/admin/draft-diff-card";
+import { LeaderboardNav } from "@/components/admin/leaderboard-nav";
 import { PublishForm } from "@/components/admin/publish-form";
-import { LinkButton } from "@/components/ui/button";
 import { canScore, requireStaff } from "@/lib/auth";
 import {
   getDraftDiffs,
@@ -63,16 +63,15 @@ async function ReviewPublishContent() {
             Confirm before the public board updates
           </p>
           <h1 className="mt-2 font-display text-3xl leading-none sm:text-5xl">
-            Review & Publish
+            Review & publish
           </h1>
           <p className="mt-2 text-sm text-muted">
-            Confirm the score change and its impact before updating the public leaderboard.
+            This is step 2. Confirm the impact, then publish. Use the steps above to go back to scores or on to history.
           </p>
         </div>
-        <LinkButton href="/admin/leaderboards" variant="secondary">
-          Back to scores
-        </LinkButton>
       </div>
+
+      <LeaderboardNav draftCount={diffs.length} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi) => (
