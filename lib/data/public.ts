@@ -40,21 +40,10 @@ export const DEFAULT_SEASON: Season = {
   updated_at: NOW,
 };
 
-/** No sample taxonomy — admins create categories/competitions. */
+/** No sample taxonomy — admins create categories/competitions/teams. */
 export const DEFAULT_CATEGORIES: Category[] = [];
 export const DEFAULT_COMPETITIONS: Competition[] = [];
-
-export const DEFAULT_TEAMS: CompetitionTeam[] = [
-  { id: "33333333-3333-3333-3333-333333333301", season_id: DEFAULT_SEASON.id, name: "Karasuno", slug: "karasuno", affiliation: "Section 2", color_hex: "#3B82F6", sort_order: 1, visibility: "active", artwork_url: "/teams/karasuno.png", created_at: NOW, updated_at: NOW },
-  { id: "33333333-3333-3333-3333-333333333302", season_id: DEFAULT_SEASON.id, name: "Nekoma", slug: "nekoma", affiliation: "Section 5", color_hex: "#E11D48", sort_order: 2, visibility: "active", artwork_url: "/teams/nekoma.png", created_at: NOW, updated_at: NOW },
-  { id: "33333333-3333-3333-3333-333333333303", season_id: DEFAULT_SEASON.id, name: "Aoba Johsai", slug: "aoba-johsai", affiliation: "Section 7", color_hex: "#14B8A6", sort_order: 3, visibility: "active", artwork_url: "/teams/aoba-johsai.png", created_at: NOW, updated_at: NOW },
-  { id: "33333333-3333-3333-3333-333333333304", season_id: DEFAULT_SEASON.id, name: "Inarizaki", slug: "inarizaki", affiliation: "Section 1", color_hex: "#EAB308", sort_order: 4, visibility: "active", artwork_url: "/teams/inarizaki.png", created_at: NOW, updated_at: NOW },
-  { id: "33333333-3333-3333-3333-333333333305", season_id: DEFAULT_SEASON.id, name: "Shiratorizawa", slug: "shiratorizawa", affiliation: "Section 6", color_hex: "#A855F7", sort_order: 5, visibility: "active", artwork_url: "/teams/shiratorizawa.png", created_at: NOW, updated_at: NOW },
-  { id: "33333333-3333-3333-3333-333333333306", season_id: DEFAULT_SEASON.id, name: "Kamomedai", slug: "kamomedai", affiliation: "Section 3", color_hex: "#3B82F6", sort_order: 6, visibility: "active", artwork_url: "/teams/kamomedai.png", created_at: NOW, updated_at: NOW },
-  { id: "33333333-3333-3333-3333-333333333307", season_id: DEFAULT_SEASON.id, name: "Itachiyama Institute", slug: "itachiyama", affiliation: "Section 4", color_hex: "#84CC16", sort_order: 7, visibility: "active", artwork_url: "/teams/itachiyama.png", created_at: NOW, updated_at: NOW },
-  { id: "33333333-3333-3333-3333-333333333308", season_id: DEFAULT_SEASON.id, name: "Fukurodani", slug: "fukurodani", affiliation: "Ladderized / Transferees / Shiftees", color_hex: "#94A3B8", sort_order: 8, visibility: "active", artwork_url: "/teams/fukurodani.png", created_at: NOW, updated_at: NOW },
-];
-
+export const DEFAULT_TEAMS: CompetitionTeam[] = [];
 export const DEFAULT_STANDINGS: StandingRow[] = [];
 export const DEFAULT_EVENTS: FairEvent[] = [];
 
@@ -152,10 +141,12 @@ export async function getTeams(seasonId?: string): Promise<CompetitionTeam[]> {
   cacheLife({ stale: 60, revalidate: 60, expire: 300 });
   cacheTag(tags.teams);
 
-  const season = seasonId ? { id: seasonId } : await getActiveSeason();
-  if (!season) return DEFAULT_TEAMS;
+  if (!isSupabaseConfigured) return DEFAULT_TEAMS;
 
-  const data = await query("getTeams", [] as CompetitionTeam[], () =>
+  const season = seasonId ? { id: seasonId } : await getActiveSeason();
+  if (!season) return [];
+
+  return query("getTeams", [] as CompetitionTeam[], () =>
     createPublicClient()
       .from("competition_teams")
       .select("*")
@@ -163,8 +154,6 @@ export async function getTeams(seasonId?: string): Promise<CompetitionTeam[]> {
       .eq("visibility", "active")
       .order("sort_order"),
   );
-
-  return data.length ? data : DEFAULT_TEAMS;
 }
 
 export async function getTeamBySlug(slug: string): Promise<CompetitionTeam | null> {
