@@ -24,9 +24,38 @@ export const revokeInviteSchema = z.object({
 
 export const scoreDraftSchema = z.object({
   team_id: uuidSchema,
-  category_id: uuidSchema,
+  competition_id: uuidSchema,
   draft_points: z.coerce.number().int().min(0).max(100000),
   reason: z.string().trim().max(500).default(""),
+});
+
+export const categorySchema = z.object({
+  id: uuidSchema.optional(),
+  name: z.string().trim().min(2).max(80),
+  slug: z
+    .string()
+    .trim()
+    .min(2)
+    .max(80)
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, { error: "Use lowercase-hyphen slugs." }),
+  sort_order: z.coerce.number().int().default(0),
+});
+
+export const competitionSchema = z.object({
+  id: uuidSchema.optional(),
+  category_id: uuidSchema,
+  name: z.string().trim().min(2).max(120),
+  slug: z
+    .string()
+    .trim()
+    .min(2)
+    .max(80)
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, { error: "Use lowercase-hyphen slugs." }),
+  sort_order: z.coerce.number().int().default(0),
+});
+
+export const archiveByIdSchema = z.object({
+  id: uuidSchema,
 });
 
 export const discardDraftSchema = z.object({
@@ -58,6 +87,7 @@ export const eventSchema = z
     id: uuidSchema.optional(),
     name: z.string().trim().min(2).max(160),
     category_id: uuidSchema,
+    competition_id: uuidSchema,
     match_type: z.enum(["head_to_head", "all_teams"]),
     team_a_id: optionalUuid,
     team_b_id: optionalUuid,

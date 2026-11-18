@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { AdminShell } from "@/components/admin-shell";
 import { requireStaff } from "@/lib/auth";
-import { getActiveSeason } from "@/lib/data/public";
+import { ensureActiveSeason } from "@/lib/data/season";
+import { createClient } from "@/lib/supabase/server";
 
 export const instant = false;
 
@@ -23,7 +24,8 @@ async function AdminAuthenticatedShell({ children }: { children: React.ReactNode
   // Exclude Supabase auth (uses Date.now for session expiry) from Cache Components prerender.
   await connection();
   const user = await requireStaff();
-  const season = await getActiveSeason();
+  const supabase = await createClient();
+  const season = await ensureActiveSeason(supabase);
 
   return (
     <AdminShell role={user.role} seasonName={season?.name ?? "CPE Fair 2026"}>

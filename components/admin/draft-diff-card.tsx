@@ -12,6 +12,7 @@ export function DraftDiffCard({
   draftId,
   teamName,
   categoryName,
+  competitionName,
   publishedPoints,
   draftPoints,
   delta,
@@ -22,6 +23,7 @@ export function DraftDiffCard({
   draftId: string;
   teamName: string;
   categoryName: string;
+  competitionName: string;
   publishedPoints: number;
   draftPoints: number;
   delta: number;
@@ -38,7 +40,7 @@ export function DraftDiffCard({
     <div className="rounded-2xl border border-border bg-surface p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="text-xs text-muted">
-          {teamName} / {categoryName} / Saved draft
+          {teamName} / {categoryName} / {competitionName} / Saved draft
         </p>
         <form action={discardAction}>
           <input type="hidden" name="draft_id" value={draftId} />

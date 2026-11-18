@@ -35,6 +35,7 @@ const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const MINUTES = ["00", "15", "30", "45"];
 
 type CategoryOption = { id: string; name: string; slug?: string };
+type CompetitionOption = { id: string; name: string; category_id: string };
 type TeamOption = { id: string; name: string };
 
 function TimeFields({
@@ -96,10 +97,12 @@ function TimeFields({
 export function EventManager({
   events,
   categories,
+  competitions,
   teams,
 }: {
   events: FairEvent[];
   categories: CategoryOption[];
+  competitions: CompetitionOption[];
   teams: TeamOption[];
 }) {
   const router = useRouter();
@@ -117,6 +120,12 @@ export function EventManager({
   );
   const [statusMode, setStatusMode] = useState<"upcoming" | "ongoing" | "ended">(
     "upcoming",
+  );
+  const [formCategoryId, setFormCategoryId] = useState(
+    events[0]?.category_id ?? categories[0]?.id ?? "",
+  );
+  const [formCompetitionId, setFormCompetitionId] = useState(
+    events[0]?.competition_id ?? "",
   );
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -139,7 +148,30 @@ export function EventManager({
     setStatusMode(
       override === "ongoing" || override === "ended" ? override : "upcoming",
     );
-  }, [formKey, selected?.match_type, selected?.status_override]);
+    const nextCategoryId =
+      selected?.category_id ?? categories[0]?.id ?? "";
+    setFormCategoryId(nextCategoryId);
+    const comps = competitions.filter((c) => c.category_id === nextCategoryId);
+    setFormCompetitionId(
+      selected?.competition_id &&
+        comps.some((c) => c.id === selected.competition_id)
+        ? selected.competition_id
+        : (comps[0]?.id ?? ""),
+    );
+  }, [
+    formKey,
+    selected?.match_type,
+    selected?.status_override,
+    selected?.category_id,
+    selected?.competition_id,
+    categories,
+    competitions,
+  ]);
+
+  const formCompetitions = useMemo(
+    () => competitions.filter((c) => c.category_id === formCategoryId),
+    [competitions, formCategoryId],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -358,14 +390,43 @@ export function EventManager({
             <SelectField
               label="Category"
               name="category_id"
-              defaultValue={selected?.category_id ?? categories[0]?.id}
+              value={formCategoryId}
               required
+              onChange={(e) => {
+                const next = e.target.value;
+                setFormCategoryId(next);
+                const first =
+                  competitions.find((c) => c.category_id === next)?.id ?? "";
+                setFormCompetitionId(first);
+              }}
             >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              {categories.length === 0 ? (
+                <option value="">No categories — create one first</option>
+              ) : (
+                categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))
+              )}
+            </SelectField>
+            <SelectField
+              label="Competition"
+              name="competition_id"
+              value={formCompetitionId}
+              required
+              error={saveState.errors?.competition_id?.[0]}
+              onChange={(e) => setFormCompetitionId(e.target.value)}
+            >
+              {formCompetitions.length === 0 ? (
+                <option value="">No competitions in this category</option>
+              ) : (
+                formCompetitions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))
+              )}
             </SelectField>
 
             <fieldset className="space-y-2">

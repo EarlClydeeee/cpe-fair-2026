@@ -12,21 +12,34 @@ import { formatDateTime, formatPoints } from "@/lib/format";
 export const metadata: Metadata = { title: "Leaderboard control" };
 export const instant = false;
 
-type Props = { searchParams: Promise<{ team?: string; category?: string }> };
+type Props = {
+  searchParams: Promise<{ team?: string; category?: string; competition?: string }>;
+};
 
 async function LeaderboardsContent({ searchParams }: Props) {
   await connection();
-  const { team: teamId, category: categoryId } = await searchParams;
-  const { categories, rows, drafts, draftMap } = await getScoreMatrix();
+  const {
+    team: teamId,
+    category: categoryId,
+    competition: competitionId,
+  } = await searchParams;
+  const { categories, competitions, rows, drafts, draftMap } = await getScoreMatrix();
   const recent = await getAuditLog();
 
   const matrixRows = rows
     .map((row) => {
       const byCategory = Object.fromEntries(
         categories.map((c) => {
-          const key = `${row.team.id}:${c.id}` as `${string}:${string}`;
-          const draft = draftMap.get(key);
-          return [c.slug, draft ? draft.draft_points : (row.byCategory[c.slug] ?? 0)];
+          const comps = competitions.filter((comp) => comp.category_id === c.id);
+          const points = comps.reduce((sum, comp) => {
+            const key = `${row.team.id}:${comp.id}` as `${string}:${string}`;
+            const draft = draftMap.get(key);
+            return (
+              sum +
+              (draft ? draft.draft_points : (row.byCompetition[comp.id] ?? 0))
+            );
+          }, 0);
+          return [c.slug, points];
         }),
       ) as Record<string, number>;
       const total = categories.reduce((sum, c) => sum + (byCategory[c.slug] ?? 0), 0);
@@ -39,16 +52,24 @@ async function LeaderboardsContent({ searchParams }: Props) {
     matrixRows.find((r) => r.team.id === teamId)?.team ?? matrixRows[0]?.team;
   const selectedCategory =
     categories.find((c) => c.id === categoryId) ?? categories[0];
+  const compsInCategory = competitions.filter(
+    (c) => c.category_id === selectedCategory?.id,
+  );
+  const selectedCompetition =
+    compsInCategory.find((c) => c.id === competitionId) ?? compsInCategory[0];
+
   const draft =
-    selectedTeam && selectedCategory
-      ? draftMap.get(`${selectedTeam.id}:${selectedCategory.id}` as `${string}:${string}`)
+    selectedTeam && selectedCompetition
+      ? draftMap.get(
+          `${selectedTeam.id}:${selectedCompetition.id}` as `${string}:${string}`,
+        )
       : undefined;
   const publishedSource = selectedTeam
     ? rows.find((r) => r.team.id === selectedTeam.id)
     : undefined;
   const publishedPoints =
-    publishedSource && selectedCategory
-      ? publishedSource.byCategory[selectedCategory.slug] ?? 0
+    publishedSource && selectedCompetition
+      ? publishedSource.byCompetition[selectedCompetition.id] ?? 0
       : 0;
   const publishedTeamTotal = publishedSource?.total ?? 0;
 
@@ -60,7 +81,7 @@ async function LeaderboardsContent({ searchParams }: Props) {
             Leaderboard Control
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Edit category scores as drafts, then review before going public.
+            Edit competition scores as drafts. Matrix shows category rollups.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -93,14 +114,20 @@ async function LeaderboardsContent({ searchParams }: Props) {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.6fr_0.9fr]">
-        {selectedTeam && selectedCategory ? (
+        {selectedTeam && selectedCategory && selectedCompetition ? (
           <div className="xl:order-2">
             <ScorePanel
-              key={`${selectedTeam.id}-${selectedCategory.id}`}
+              key={`${selectedTeam.id}-${selectedCompetition.id}`}
               teams={matrixRows.map((r) => ({ id: r.team.id, name: r.team.name }))}
               categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+              competitions={competitions.map((c) => ({
+                id: c.id,
+                name: c.name,
+                category_id: c.category_id,
+              }))}
               selectedTeamId={selectedTeam.id}
               selectedCategoryId={selectedCategory.id}
+              selectedCompetitionId={selectedCompetition.id}
               publishedPoints={publishedPoints}
               teamTotal={publishedTeamTotal}
               draftPoints={draft?.draft_points}
@@ -108,77 +135,100 @@ async function LeaderboardsContent({ searchParams }: Props) {
               reason={draft?.reason ?? ""}
             />
           </div>
-        ) : null}
+        ) : (
+          <div className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted xl:order-2">
+            Create categories and competitions under{" "}
+            <Link href="/admin/categories" className="text-accent">
+              Categories
+            </Link>{" "}
+            to start scoring.
+          </div>
+        )}
 
         <div className="overflow-x-auto rounded-2xl border border-border bg-surface xl:order-1">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-[10px] tracking-wide text-muted uppercase">
-                <th className="sticky left-0 z-10 bg-surface px-3 py-3">#</th>
-                <th className="sticky left-8 z-10 bg-surface px-3 py-3 sm:left-10">
-                  Team
-                </th>
-                {categories.map((c) => (
-                  <th key={c.id} className="whitespace-nowrap px-3 py-3">
-                    {c.name}
+          {categories.length === 0 ? (
+            <p className="p-5 text-sm text-muted">No categories yet.</p>
+          ) : (
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-[10px] tracking-wide text-muted uppercase">
+                  <th className="sticky left-0 z-10 bg-surface px-3 py-3">#</th>
+                  <th className="sticky left-8 z-10 bg-surface px-3 py-3 sm:left-10">
+                    Team
                   </th>
-                ))}
-                <th className="px-3 py-3">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {matrixRows.map((row) => {
-                const selected = selectedTeam?.id === row.team.id;
-                const hasAnyDraft = categories.some((c) =>
-                  draftMap.has(`${row.team.id}:${c.id}` as `${string}:${string}`),
-                );
-                const stickyBg = selected ? "bg-[#2a1a12]" : "bg-surface";
-                return (
-                  <tr
-                    key={row.team.id}
-                    className={`border-b border-border/60 ${selected ? "bg-accent-soft" : ""}`}
-                  >
-                    <td
-                      className={`sticky left-0 z-10 px-3 py-3 font-mono text-xs text-muted ${stickyBg}`}
+                  {categories.map((c) => (
+                    <th key={c.id} className="whitespace-nowrap px-3 py-3">
+                      {c.name}
+                    </th>
+                  ))}
+                  <th className="px-3 py-3">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {matrixRows.map((row) => {
+                  const selected = selectedTeam?.id === row.team.id;
+                  const hasAnyDraft = competitions.some((c) =>
+                    draftMap.has(`${row.team.id}:${c.id}` as `${string}:${string}`),
+                  );
+                  const stickyBg = selected ? "bg-[#2a1a12]" : "bg-surface";
+                  return (
+                    <tr
+                      key={row.team.id}
+                      className={`border-b border-border/60 ${selected ? "bg-accent-soft" : ""}`}
                     >
-                      {String(row.rank).padStart(2, "0")}
-                    </td>
-                    <td
-                      className={`sticky left-8 z-10 whitespace-nowrap px-3 py-3 font-medium sm:left-10 ${stickyBg}`}
-                    >
-                      {row.team.name}
-                    </td>
-                    {categories.map((c) => {
-                      const key = `${row.team.id}:${c.id}` as `${string}:${string}`;
-                      const hasDraft = draftMap.has(key);
-                      const points = row.byCategory[c.slug] ?? 0;
-                      return (
-                        <td key={c.id} className="px-3 py-3">
-                          <Link
-                            href={`/admin/leaderboards?team=${row.team.id}&category=${c.id}`}
-                            className={
-                              hasDraft
-                                ? "inline-flex min-h-9 min-w-9 items-center font-semibold text-accent"
-                                : "inline-flex min-h-9 min-w-9 items-center text-foreground"
-                            }
-                          >
-                            {points}
-                            {hasDraft ? " *" : ""}
-                          </Link>
-                        </td>
-                      );
-                    })}
-                    <td
-                      className={`whitespace-nowrap px-3 py-3 font-display text-lg ${hasAnyDraft ? "text-accent" : ""}`}
-                    >
-                      {formatPoints(row.total)}
-                      {hasAnyDraft ? " *" : ""}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <td
+                        className={`sticky left-0 z-10 px-3 py-3 font-mono text-xs text-muted ${stickyBg}`}
+                      >
+                        {String(row.rank).padStart(2, "0")}
+                      </td>
+                      <td
+                        className={`sticky left-8 z-10 whitespace-nowrap px-3 py-3 font-medium sm:left-10 ${stickyBg}`}
+                      >
+                        {row.team.name}
+                      </td>
+                      {categories.map((c) => {
+                        const firstComp = competitions.find(
+                          (comp) => comp.category_id === c.id,
+                        );
+                        const hasDraft = competitions
+                          .filter((comp) => comp.category_id === c.id)
+                          .some((comp) =>
+                            draftMap.has(
+                              `${row.team.id}:${comp.id}` as `${string}:${string}`,
+                            ),
+                          );
+                        const points = row.byCategory[c.slug] ?? 0;
+                        const href = firstComp
+                          ? `/admin/leaderboards?team=${row.team.id}&category=${c.id}&competition=${firstComp.id}`
+                          : `/admin/categories`;
+                        return (
+                          <td key={c.id} className="px-3 py-3">
+                            <Link
+                              href={href}
+                              className={
+                                hasDraft
+                                  ? "inline-flex min-h-9 min-w-9 items-center font-semibold text-accent"
+                                  : "inline-flex min-h-9 min-w-9 items-center text-foreground"
+                              }
+                            >
+                              {points}
+                              {hasDraft ? " *" : ""}
+                            </Link>
+                          </td>
+                        );
+                      })}
+                      <td
+                        className={`whitespace-nowrap px-3 py-3 font-display text-lg ${hasAnyDraft ? "text-accent" : ""}`}
+                      >
+                        {formatPoints(row.total)}
+                        {hasAnyDraft ? " *" : ""}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

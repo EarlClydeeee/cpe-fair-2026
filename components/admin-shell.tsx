@@ -12,8 +12,9 @@ const links = [
   { href: "/admin", label: "Overview", n: "01" },
   { href: "/admin/leaderboards", label: "Leaderboards", n: "02" },
   { href: "/admin/events", label: "Events", n: "03" },
-  { href: "/admin/teams", label: "Teams", n: "04" },
-  { href: "/admin/access", label: "Admin access", n: "05" },
+  { href: "/admin/categories", label: "Categories", n: "04" },
+  { href: "/admin/teams", label: "Teams", n: "05" },
+  { href: "/admin/access", label: "Admin access", n: "06" },
 ];
 
 function useClientPathname() {

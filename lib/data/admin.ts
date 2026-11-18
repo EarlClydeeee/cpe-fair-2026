@@ -8,12 +8,16 @@ import type { Tables } from "@/lib/supabase/database.types";
 import {
   getActiveSeason,
   getCategories,
+  getCompetitions,
   getEvents,
   getStandings,
   getTeams,
+  type Category,
+  type Competition,
   type FairEvent,
   type FairEventTeam,
 } from "./public";
+import { ensureActiveSeason } from "./season";
 import { getDraftDiffs } from "./standings";
 
 function toTeam(
@@ -73,11 +77,12 @@ export async function getOverview() {
 export async function getAdminEvents(): Promise<FairEvent[]> {
   await requireStaff("/admin/events");
   const supabase = await createClient();
-  const season = await getActiveSeason();
+  const season = (await ensureActiveSeason(supabase)) ?? (await getActiveSeason());
   if (!season) return [];
 
-  const [categories, teams, { data, error }] = await Promise.all([
+  const [categories, competitions, teams, { data, error }] = await Promise.all([
     getCategories(season.id),
+    getCompetitions({ seasonId: season.id }),
     getTeams(season.id),
     supabase
       .from("events")
@@ -89,13 +94,16 @@ export async function getAdminEvents(): Promise<FairEvent[]> {
   if (error) throw new Error(error.message);
 
   const catById = new Map(categories.map((c) => [c.id, c]));
+  const compById = new Map(competitions.map((c) => [c.id, c]));
   const teamById = new Map(teams.map((t) => [t.id, t]));
 
   return (data ?? []).map((event) => {
     const cat = catById.get(event.category_id);
+    const comp = compById.get(event.competition_id);
     return {
       ...event,
       categories: cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null,
+      competitions: comp ? { id: comp.id, name: comp.name, slug: comp.slug } : null,
       team_a: toTeam(event.team_a_id ? teamById.get(event.team_a_id) : null),
       team_b: toTeam(event.team_b_id ? teamById.get(event.team_b_id) : null),
       winner_team: toTeam(
@@ -103,6 +111,37 @@ export async function getAdminEvents(): Promise<FairEvent[]> {
       ),
     };
   });
+}
+
+export async function getAdminCategories(): Promise<{
+  categories: Category[];
+  competitions: Competition[];
+}> {
+  await requireStaff("/admin/categories");
+  if (!isSupabaseConfigured) return { categories: [], competitions: [] };
+  const supabase = await createClient();
+  const season = (await ensureActiveSeason(supabase)) ?? (await getActiveSeason());
+  if (!season) return { categories: [], competitions: [] };
+
+  const [{ data: categories, error: cErr }, { data: competitions, error: pErr }] =
+    await Promise.all([
+      supabase
+        .from("categories")
+        .select("*")
+        .eq("season_id", season.id)
+        .eq("is_archived", false)
+        .order("sort_order"),
+      supabase
+        .from("competitions")
+        .select("*")
+        .eq("season_id", season.id)
+        .eq("is_archived", false)
+        .order("sort_order"),
+    ]);
+
+  if (cErr) throw new Error(cErr.message);
+  if (pErr) throw new Error(pErr.message);
+  return { categories: categories ?? [], competitions: competitions ?? [] };
 }
 
 export async function getAdminTeams() {

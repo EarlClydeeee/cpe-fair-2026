@@ -7,11 +7,13 @@ import { tags } from "./tags";
 
 export type Season = Tables<"seasons">;
 export type Category = Tables<"categories">;
+export type Competition = Tables<"competitions">;
 export type CompetitionTeam = Tables<"competition_teams">;
 export type FairEventTeam = Pick<CompetitionTeam, "id" | "name" | "slug" | "color_hex">;
 
 export type FairEvent = Tables<"events"> & {
   categories?: Pick<Category, "id" | "name" | "slug"> | null;
+  competitions?: Pick<Competition, "id" | "name" | "slug"> | null;
   team_a?: FairEventTeam | null;
   team_b?: FairEventTeam | null;
   winner_team?: FairEventTeam | null;
@@ -21,6 +23,7 @@ export type StandingRow = {
   team: CompetitionTeam;
   total: number;
   byCategory: Record<string, number>;
+  byCompetition: Record<string, number>;
   toLeader: number;
   rank: number;
 };
@@ -37,15 +40,9 @@ export const DEFAULT_SEASON: Season = {
   updated_at: NOW,
 };
 
-export const DEFAULT_CATEGORIES: Category[] = [
-  { id: "cat-1", season_id: DEFAULT_SEASON.id, slug: "sports", name: "Sports", sort_order: 1, created_at: NOW, updated_at: NOW },
-  { id: "cat-2", season_id: DEFAULT_SEASON.id, slug: "logic-board", name: "Logic & Board", sort_order: 2, created_at: NOW, updated_at: NOW },
-  { id: "cat-3", season_id: DEFAULT_SEASON.id, slug: "esports", name: "Esports", sort_order: 3, created_at: NOW, updated_at: NOW },
-  { id: "cat-4", season_id: DEFAULT_SEASON.id, slug: "academics", name: "Academics", sort_order: 4, created_at: NOW, updated_at: NOW },
-  { id: "cat-5", season_id: DEFAULT_SEASON.id, slug: "talents", name: "Talents", sort_order: 5, created_at: NOW, updated_at: NOW },
-  { id: "cat-6", season_id: DEFAULT_SEASON.id, slug: "mini-games", name: "Mini Games", sort_order: 6, created_at: NOW, updated_at: NOW },
-  { id: "cat-7", season_id: DEFAULT_SEASON.id, slug: "literacy", name: "Literacy", sort_order: 7, created_at: NOW, updated_at: NOW },
-];
+/** No sample taxonomy — admins create categories/competitions. */
+export const DEFAULT_CATEGORIES: Category[] = [];
+export const DEFAULT_COMPETITIONS: Competition[] = [];
 
 export const DEFAULT_TEAMS: CompetitionTeam[] = [
   { id: "33333333-3333-3333-3333-333333333301", season_id: DEFAULT_SEASON.id, name: "Karasuno", slug: "karasuno", affiliation: "Section 2", color_hex: "#3B82F6", sort_order: 1, visibility: "active", artwork_url: "/teams/karasuno.png", created_at: NOW, updated_at: NOW },
@@ -58,67 +55,8 @@ export const DEFAULT_TEAMS: CompetitionTeam[] = [
   { id: "33333333-3333-3333-3333-333333333308", season_id: DEFAULT_SEASON.id, name: "Fukurodani", slug: "fukurodani", affiliation: "Ladderized / Transferees / Shiftees", color_hex: "#94A3B8", sort_order: 8, visibility: "active", artwork_url: "/teams/fukurodani.png", created_at: NOW, updated_at: NOW },
 ];
 
-export const DEFAULT_STANDINGS: StandingRow[] = [
-  { team: DEFAULT_TEAMS[0], total: 1280, byCategory: { sports: 320, "logic-board": 210, esports: 250, academics: 180, talents: 160, "mini-games": 160, literacy: 0 }, toLeader: 0, rank: 1 },
-  { team: DEFAULT_TEAMS[1], total: 1150, byCategory: { sports: 280, "logic-board": 200, esports: 240, academics: 170, talents: 140, "mini-games": 120, literacy: 0 }, toLeader: -130, rank: 2 },
-  { team: DEFAULT_TEAMS[2], total: 1040, byCategory: { sports: 250, "logic-board": 190, esports: 200, academics: 160, talents: 130, "mini-games": 110, literacy: 0 }, toLeader: -240, rank: 3 },
-  { team: DEFAULT_TEAMS[3], total: 980, byCategory: { sports: 230, "logic-board": 180, esports: 190, academics: 150, talents: 120, "mini-games": 110, literacy: 0 }, toLeader: -300, rank: 4 },
-  { team: DEFAULT_TEAMS[4], total: 920, byCategory: { sports: 210, "logic-board": 170, esports: 180, academics: 140, talents: 110, "mini-games": 110, literacy: 0 }, toLeader: -360, rank: 5 },
-  { team: DEFAULT_TEAMS[5], total: 860, byCategory: { sports: 190, "logic-board": 160, esports: 170, academics: 130, talents: 110, "mini-games": 100, literacy: 0 }, toLeader: -420, rank: 6 },
-  { team: DEFAULT_TEAMS[6], total: 790, byCategory: { sports: 180, "logic-board": 150, esports: 150, academics: 120, talents: 100, "mini-games": 90, literacy: 0 }, toLeader: -490, rank: 7 },
-  { team: DEFAULT_TEAMS[7], total: 720, byCategory: { sports: 160, "logic-board": 140, esports: 140, academics: 110, talents: 90, "mini-games": 80, literacy: 0 }, toLeader: -560, rank: 8 },
-];
-
-export const DEFAULT_EVENTS: FairEvent[] = [
-  {
-    id: "event-volleyball",
-    season_id: DEFAULT_SEASON.id,
-    category_id: "cat-1",
-    name: "Volleyball",
-    match_type: "head_to_head",
-    venue: "Main Court",
-    match_format: "Best of 3",
-    start_at: "2026-11-17T14:00:00Z",
-    end_at: "2026-11-17T16:00:00Z",
-    status_override: "ongoing",
-    is_highlighted: true,
-    is_archived: false,
-    team_a_id: DEFAULT_TEAMS[0].id,
-    team_b_id: DEFAULT_TEAMS[1].id,
-    winner_team_id: null,
-    result_note: "",
-    categories: { id: "cat-1", name: "Sports", slug: "sports" },
-    team_a: { id: DEFAULT_TEAMS[0].id, name: DEFAULT_TEAMS[0].name, slug: DEFAULT_TEAMS[0].slug, color_hex: DEFAULT_TEAMS[0].color_hex },
-    team_b: { id: DEFAULT_TEAMS[1].id, name: DEFAULT_TEAMS[1].name, slug: DEFAULT_TEAMS[1].slug, color_hex: DEFAULT_TEAMS[1].color_hex },
-    winner_team: null,
-    created_at: NOW,
-    updated_at: NOW,
-  },
-  {
-    id: "event-debate",
-    season_id: DEFAULT_SEASON.id,
-    category_id: "cat-7",
-    name: "Debate & Oratorical",
-    match_type: "all_teams",
-    venue: "Conference Hall",
-    match_format: "All eight teams",
-    start_at: "2026-11-18T10:00:00Z",
-    end_at: "2026-11-18T12:00:00Z",
-    status_override: "upcoming",
-    is_highlighted: false,
-    is_archived: false,
-    team_a_id: null,
-    team_b_id: null,
-    winner_team_id: null,
-    result_note: "",
-    categories: { id: "cat-7", name: "Literacy", slug: "literacy" },
-    team_a: null,
-    team_b: null,
-    winner_team: null,
-    created_at: NOW,
-    updated_at: NOW,
-  },
-];
+export const DEFAULT_STANDINGS: StandingRow[] = [];
+export const DEFAULT_EVENTS: FairEvent[] = [];
 
 type Result<T> = { data: T | null; error: { message: string } | null };
 
@@ -164,24 +102,49 @@ export async function getCategories(seasonId?: string): Promise<Category[]> {
   cacheLife("hours");
   cacheTag(tags.season);
 
+  if (!isSupabaseConfigured) return DEFAULT_CATEGORIES;
+
   const season = seasonId ? { id: seasonId } : await getActiveSeason();
-  if (!season) return DEFAULT_CATEGORIES;
+  if (!season) return [];
 
   const data = await query("getCategories", [] as Category[], () =>
     createPublicClient()
       .from("categories")
       .select("*")
       .eq("season_id", season.id)
+      .eq("is_archived", false)
       .order("sort_order"),
   );
 
-  if (data.length) {
-    const existingSlugs = new Set(data.map((c) => c.slug));
-    const missing = DEFAULT_CATEGORIES.filter((c) => !existingSlugs.has(c.slug));
-    return [...data, ...missing].sort((a, b) => a.sort_order - b.sort_order);
-  }
+  return data;
+}
 
-  return DEFAULT_CATEGORIES;
+export async function getCompetitions(opts?: {
+  seasonId?: string;
+  categoryId?: string;
+  includeArchived?: boolean;
+}): Promise<Competition[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(tags.season);
+
+  if (!isSupabaseConfigured) return DEFAULT_COMPETITIONS;
+
+  const season = opts?.seasonId ? { id: opts.seasonId } : await getActiveSeason();
+  if (!season) return [];
+
+  const data = await query("getCompetitions", [] as Competition[], () => {
+    let q = createPublicClient()
+      .from("competitions")
+      .select("*")
+      .eq("season_id", season.id)
+      .order("sort_order");
+    if (opts?.categoryId) q = q.eq("category_id", opts.categoryId);
+    if (!opts?.includeArchived) q = q.eq("is_archived", false);
+    return q;
+  });
+
+  return data;
 }
 
 export async function getTeams(seasonId?: string): Promise<CompetitionTeam[]> {
@@ -213,8 +176,10 @@ function mapEventJoins(
   event: Tables<"events">,
   catById: Map<string, Category>,
   teamById: Map<string, CompetitionTeam>,
+  compById?: Map<string, Competition>,
 ): FairEvent {
   const cat = catById.get(event.category_id);
+  const comp = compById?.get(event.competition_id);
   const teamA = event.team_a_id ? teamById.get(event.team_a_id) : null;
   const teamB = event.team_b_id ? teamById.get(event.team_b_id) : null;
   const winner = event.winner_team_id ? teamById.get(event.winner_team_id) : null;
@@ -224,6 +189,7 @@ function mapEventJoins(
   return {
     ...event,
     categories: cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null,
+    competitions: comp ? { id: comp.id, name: comp.name, slug: comp.slug } : null,
     team_a: toTeam(teamA),
     team_b: toTeam(teamB),
     winner_team: toTeam(winner),
@@ -242,8 +208,9 @@ export async function getEvents(filters?: {
   const season = await getActiveSeason();
   if (!season) return [];
 
-  const [categories, teams, rawEvents] = await Promise.all([
+  const [categories, competitions, teams, rawEvents] = await Promise.all([
     getCategories(season.id),
+    getCompetitions({ seasonId: season.id }),
     getTeams(season.id),
     query("getEventsRaw", [] as Tables<"events">[], () =>
       createPublicClient()
@@ -255,12 +222,12 @@ export async function getEvents(filters?: {
     ),
   ]);
 
-  // Live project: never swap in sample fixtures — guests must see admin events.
   const catById = new Map(categories.map((c) => [c.id, c]));
+  const compById = new Map(competitions.map((c) => [c.id, c]));
   const teamById = new Map(teams.map((t) => [t.id, t]));
 
   let rows: FairEvent[] = rawEvents.map((event) =>
-    mapEventJoins(event, catById, teamById),
+    mapEventJoins(event, catById, teamById, compById),
   );
 
   if (filters?.categorySlug) {
@@ -292,13 +259,15 @@ export async function getEvent(id: string): Promise<FairEvent | null> {
   );
   if (!event) return null;
 
-  const [categories, teams] = await Promise.all([
+  const [categories, competitions, teams] = await Promise.all([
     getCategories(season.id),
+    getCompetitions({ seasonId: season.id }),
     getTeams(season.id),
   ]);
   const catById = new Map(categories.map((c) => [c.id, c]));
+  const compById = new Map(competitions.map((c) => [c.id, c]));
   const teamById = new Map(teams.map((t) => [t.id, t]));
-  return mapEventJoins(event, catById, teamById);
+  return mapEventJoins(event, catById, teamById, compById);
 }
 
 export async function getEventsForTeam(teamId: string): Promise<FairEvent[]> {
@@ -315,36 +284,28 @@ export async function getEventsForTeam(teamId: string): Promise<FairEvent[]> {
 
 export type PublicDataSource = "live" | "sample";
 
-function sampleStandingsForCategory(categorySlug?: string): StandingRow[] {
-  if (!categorySlug) return DEFAULT_STANDINGS;
-  return DEFAULT_STANDINGS.map((row) => ({
-    ...row,
-    total: row.byCategory[categorySlug] ?? 0,
-  }))
-    .sort((a, b) => b.total - a.total)
-    .map((row, i, arr) => ({
-      ...row,
-      rank: i + 1,
-      toLeader: row.total - (arr[0]?.total ?? 0),
-    }));
-}
-
 export async function getStandings(categorySlug?: string): Promise<{
   categories: Category[];
+  competitions: Competition[];
   rows: StandingRow[];
   source: PublicDataSource;
 }> {
   "use cache";
   cacheLife({ stale: 60, revalidate: 60, expire: 300 });
-  cacheTag(tags.scores, tags.teams);
+  cacheTag(tags.scores, tags.teams, tags.season);
 
-  const [categories, teams] = await Promise.all([getCategories(), getTeams()]);
-  if (!isSupabaseConfigured || !teams.length) {
-    return {
-      categories,
-      rows: sampleStandingsForCategory(categorySlug),
-      source: "sample",
-    };
+  const [categories, competitions, teams] = await Promise.all([
+    getCategories(),
+    getCompetitions(),
+    getTeams(),
+  ]);
+
+  if (!isSupabaseConfigured) {
+    return { categories, competitions, rows: [], source: "sample" };
+  }
+
+  if (!teams.length) {
+    return { categories, competitions, rows: [], source: "live" };
   }
 
   const scores = await query(
@@ -360,35 +321,30 @@ export async function getStandings(categorySlug?: string): Promise<{
         ),
   );
 
-  if (!scores.length) {
-    return {
-      categories,
-      rows: sampleStandingsForCategory(categorySlug),
-      source: "sample",
-    };
-  }
-
-  const categoryIds = new Set(categories.map((c) => c.id));
   const filterCategory = categorySlug
     ? categories.find((c) => c.slug === categorySlug)
     : null;
+  const catById = new Map(categories.map((c) => [c.id, c]));
 
   const rows: StandingRow[] = teams.map((team) => {
     const byCategory: Record<string, number> = {};
+    const byCompetition: Record<string, number> = {};
     for (const cat of categories) byCategory[cat.slug] = 0;
+    for (const comp of competitions) byCompetition[comp.id] = 0;
 
     for (const score of scores) {
-      if (score.team_id !== team.id || !categoryIds.has(score.category_id)) continue;
-      const cat = categories.find((c) => c.id === score.category_id);
-      if (!cat) continue;
-      byCategory[cat.slug] = score.points;
+      if (score.team_id !== team.id) continue;
+      byCompetition[score.competition_id] =
+        (byCompetition[score.competition_id] ?? 0) + score.points;
+      const cat = catById.get(score.category_id);
+      if (cat) byCategory[cat.slug] = (byCategory[cat.slug] ?? 0) + score.points;
     }
 
     const total = filterCategory
       ? byCategory[filterCategory.slug] ?? 0
       : Object.values(byCategory).reduce((a, b) => a + b, 0);
 
-    return { team, total, byCategory, toLeader: 0, rank: 0 };
+    return { team, total, byCategory, byCompetition, toLeader: 0, rank: 0 };
   });
 
   rows.sort((a, b) => b.total - a.total || a.team.sort_order - b.team.sort_order);
@@ -398,5 +354,5 @@ export async function getStandings(categorySlug?: string): Promise<{
     row.toLeader = row.total - leader;
   });
 
-  return { categories, rows, source: "live" };
+  return { categories, competitions, rows, source: "live" };
 }

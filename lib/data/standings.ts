@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getActiveSeason,
   getCategories,
+  getCompetitions,
   getStandings,
   getTeams,
   type StandingRow,
@@ -25,6 +26,7 @@ export type DraftDiff = {
   draft: Tables<"score_drafts">;
   team: Tables<"competition_teams">;
   category: Tables<"categories">;
+  competition: Tables<"competitions">;
   publishedPoints: number;
   delta: number;
   preparedBy: DraftPreparer | null;
@@ -59,16 +61,16 @@ export async function getScoreMatrix() {
   const user = await requireStaff("/admin/leaderboards");
 
   const season = await getActiveSeason();
-  const [{ categories, rows }, drafts] = await Promise.all([
+  const [{ categories, competitions, rows }, drafts] = await Promise.all([
     getStandings(),
     getDrafts(),
   ]);
 
   const draftMap = new Map(
-    drafts.map((d) => [`${d.team_id}:${d.category_id}` as `${string}:${string}`, d]),
+    drafts.map((d) => [`${d.team_id}:${d.competition_id}` as `${string}:${string}`, d]),
   );
 
-  return { season, categories, rows, drafts, draftMap, user };
+  return { season, categories, competitions, rows, drafts, draftMap, user };
 }
 
 export async function getDrafts(): Promise<Tables<"score_drafts">[]> {
@@ -105,33 +107,34 @@ async function getPreparersById(
 }
 
 export async function getDraftDiffs(): Promise<DraftDiff[]> {
-  const [drafts, teams, categories, { rows }] = await Promise.all([
+  const [drafts, teams, categories, competitions, { rows }] = await Promise.all([
     getDrafts(),
     getTeams(),
     getCategories(),
+    getCompetitions({ includeArchived: true }),
     getStandings(),
   ]);
   const preparers = await getPreparersById(drafts);
 
   const teamById = new Map(teams.map((t) => [t.id, t]));
   const catById = new Map(categories.map((c) => [c.id, c]));
-  const publishedByKey = new Map<string, number>();
-  for (const row of rows) {
-    for (const cat of categories) {
-      publishedByKey.set(`${row.team.id}:${cat.id}`, row.byCategory[cat.slug] ?? 0);
-    }
-  }
+  const compById = new Map(competitions.map((c) => [c.id, c]));
 
   return drafts.flatMap((draft) => {
     const team = teamById.get(draft.team_id);
-    const category = catById.get(draft.category_id);
-    if (!team || !category) return [];
-    const publishedPoints = publishedByKey.get(`${draft.team_id}:${draft.category_id}`) ?? 0;
+    const competition = compById.get(draft.competition_id);
+    const category =
+      (competition ? catById.get(competition.category_id) : undefined) ??
+      catById.get(draft.category_id);
+    if (!team || !competition || !category) return [];
+    const publishedRow = rows.find((r) => r.team.id === draft.team_id);
+    const publishedPoints = publishedRow?.byCompetition[draft.competition_id] ?? 0;
     return [
       {
         draft,
         team,
         category,
+        competition,
         publishedPoints,
         delta: draft.draft_points - publishedPoints,
         preparedBy: draft.saved_by ? (preparers.get(draft.saved_by) ?? null) : null,
@@ -141,27 +144,44 @@ export async function getDraftDiffs(): Promise<DraftDiff[]> {
 }
 
 export async function getProjectedStandings(diffs: DraftDiff[]): Promise<ProjectedStandingRow[]> {
-  const { rows, categories } = await getStandings();
+  const { rows, categories, competitions } = await getStandings();
   const override = new Map(
-    diffs.map((d) => [`${d.team.id}:${d.category.slug}`, d.draft.draft_points]),
+    diffs.map((d) => [`${d.team.id}:${d.competition.id}`, d.draft.draft_points]),
   );
   const affectedTeams = new Set(diffs.map((d) => d.team.id));
+  const compsByCategory = new Map<string, typeof competitions>();
+  for (const comp of competitions) {
+    const list = compsByCategory.get(comp.category_id) ?? [];
+    list.push(comp);
+    compsByCategory.set(comp.category_id, list);
+  }
 
   const publishedByRank = new Map(rows.map((row) => [row.team.id, row.rank]));
   const publishedByTotal = new Map(rows.map((row) => [row.team.id, row.total]));
 
   const projected = rows.map((row) => {
-    const byCategory = { ...row.byCategory };
-    for (const cat of categories) {
-      const key = `${row.team.id}:${cat.slug}`;
-      if (override.has(key)) byCategory[cat.slug] = override.get(key)!;
+    const byCompetition = { ...row.byCompetition };
+    for (const comp of competitions) {
+      const key = `${row.team.id}:${comp.id}`;
+      if (override.has(key)) byCompetition[comp.id] = override.get(key)!;
     }
+
+    const byCategory: Record<string, number> = {};
+    for (const cat of categories) {
+      const comps = compsByCategory.get(cat.id) ?? [];
+      byCategory[cat.slug] = comps.reduce(
+        (sum, c) => sum + (byCompetition[c.id] ?? 0),
+        0,
+      );
+    }
+
     const projectedTotal = Object.values(byCategory).reduce((a, b) => a + b, 0);
     const publishedTotal = publishedByTotal.get(row.team.id) ?? row.total;
     const publishedRank = publishedByRank.get(row.team.id) ?? row.rank;
     return {
       ...row,
       byCategory,
+      byCompetition,
       total: projectedTotal,
       projectedTotal,
       publishedTotal,
@@ -195,7 +215,9 @@ export function getReviewSummary(
   projected: ProjectedStandingRow[],
 ): ReviewSummary {
   const scoreChangeCount = diffs.length;
-  const affectedCategories = [...new Set(diffs.map((d) => d.category.name))];
+  const affectedCategories = [
+    ...new Set(diffs.map((d) => `${d.category.name} · ${d.competition.name}`)),
+  ];
   const teamMap = new Map<string, { name: string; affiliation: string }>();
   for (const d of diffs) {
     teamMap.set(d.team.id, { name: d.team.name, affiliation: d.team.affiliation });
@@ -218,7 +240,7 @@ export function getReviewSummary(
 
   for (const d of diffs) {
     changeLines.push({
-      label: `${d.team.name} · ${d.category.name}`,
+      label: `${d.team.name} · ${d.category.name} · ${d.competition.name}`,
       detail: `${d.publishedPoints.toLocaleString("en-US")} → ${d.draft.draft_points.toLocaleString("en-US")} (${formatSigned(d.delta)})`,
     });
   }

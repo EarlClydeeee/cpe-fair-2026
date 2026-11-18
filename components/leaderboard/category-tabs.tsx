@@ -20,22 +20,6 @@ export function CategoryTabs({
   showSampleBadge?: boolean;
   basePath?: string;
 }) {
-  const hasLiteracy = categories.some((c) => c.slug === "literacy");
-  const tabList = hasLiteracy
-    ? categories
-    : [
-        ...categories,
-        {
-          id: "cat-7",
-          season_id: "default",
-          slug: "literacy",
-          name: "Literacy",
-          sort_order: 7,
-          created_at: "",
-          updated_at: "",
-        },
-      ];
-
   return (
     <div className="space-y-2">
       <div className="-mx-4 scroll-rail-edge px-4 sm:mx-0 sm:px-0">
@@ -43,7 +27,7 @@ export function CategoryTabs({
           <Link href={basePath} className={tabClass(!activeSlug)}>
             Overall
           </Link>
-          {tabList.map((cat) => (
+          {categories.map((cat) => (
             <Link
               key={cat.id}
               href={`${basePath}?category=${cat.slug}`}
