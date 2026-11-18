@@ -21,7 +21,15 @@ function applySecurityHeaders(response: NextResponse) {
     }
   })();
 
-  const connectSrc = ["'self'", supabaseHost, "https://*.supabase.co"]
+  // Allow both HTTPS API and WSS realtime; Safari/WebKit enforce connect-src by scheme.
+  const supabaseWss = supabaseHost.replace(/^https:/i, "wss:");
+  const connectSrc = [
+    "'self'",
+    supabaseHost,
+    supabaseWss,
+    "https://*.supabase.co",
+    "wss://*.supabase.co",
+  ]
     .filter(Boolean)
     .join(" ");
 
