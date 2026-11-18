@@ -9,6 +9,7 @@
 | `migrations/0008_realtime.sql` | Realtime publication for live page updates |
 | `migrations/0010_competitions.sql` | Competitions table; scores/events keyed by `competition_id` |
 | `migrations/0014_clear_season_content.sql` | RPC to wipe fair content (keeps schema / seasons / profiles) |
+| `migrations/0015_service_role_scoring.sql` | Allow access-code admin (service_role) to save/publish drafts |
 | `seed.sql` | Active season only — categories/competitions/scores/events via admin |
 
 ## Apply
