@@ -3,6 +3,7 @@ import type { z } from "zod";
 export type ActionState = {
   ok?: boolean;
   message?: string;
+  id?: string;
   errors?: Record<string, string[] | undefined>;
 };
 

@@ -47,13 +47,19 @@ export async function saveCategory(
   if (id) {
     const { error } = await supabase.from("categories").update(row).eq("id", id);
     if (error) return { ok: false, message: error.message };
-  } else {
-    const { error } = await supabase.from("categories").insert(row);
-    if (error) return { ok: false, message: error.message };
+    revalidateCategoryPaths();
+    return { ok: true, message: "Category saved.", id };
   }
 
+  const { data, error } = await supabase
+    .from("categories")
+    .insert(row)
+    .select("id")
+    .single();
+  if (error) return { ok: false, message: error.message };
+
   revalidateCategoryPaths();
-  return { ok: true, message: id ? "Category saved." : "Category created." };
+  return { ok: true, message: "Category created.", id: data.id };
 }
 
 export async function archiveCategory(
@@ -124,13 +130,19 @@ export async function saveCompetition(
   if (id) {
     const { error } = await supabase.from("competitions").update(row).eq("id", id);
     if (error) return { ok: false, message: error.message };
-  } else {
-    const { error } = await supabase.from("competitions").insert(row);
-    if (error) return { ok: false, message: error.message };
+    revalidateCategoryPaths();
+    return { ok: true, message: "Competition saved.", id };
   }
 
+  const { data, error } = await supabase
+    .from("competitions")
+    .insert(row)
+    .select("id")
+    .single();
+  if (error) return { ok: false, message: error.message };
+
   revalidateCategoryPaths();
-  return { ok: true, message: id ? "Competition saved." : "Competition created." };
+  return { ok: true, message: "Competition created.", id: data.id };
 }
 
 export async function archiveCompetition(

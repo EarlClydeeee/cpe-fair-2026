@@ -55,7 +55,8 @@ export function CategoryManager({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
     categories[0]?.id ?? NEW,
   );
-  const [selectedCompetitionId, setSelectedCompetitionId] = useState<string>(NEW);
+  const [selectedCompetitionId, setSelectedCompetitionId] =
+    useState<string>(NEW);
   const [catName, setCatName] = useState("");
   const [catSlug, setCatSlug] = useState("");
   const [compName, setCompName] = useState("");
@@ -98,19 +99,22 @@ export function CategoryManager({
     setSelectedCompetitionId(NEW);
     setCompName("");
     setCompSlug("");
-  }, [selectedCategory?.id, selectedCategory?.name, selectedCategory?.slug]);
+  }, [selectedCategoryId]);
 
   useEffect(() => {
     if (selectedCompetition) {
       setCompName(selectedCompetition.name);
       setCompSlug(selectedCompetition.slug);
-    } else {
+    } else if (isCreatingCompetition) {
       setCompName("");
       setCompSlug("");
     }
-  }, [selectedCompetition?.id, selectedCompetition?.name, selectedCompetition?.slug]);
+  }, [selectedCompetitionId, selectedCompetition, isCreatingCompetition]);
 
-  const [catSaveState, catSaveAction] = useActionState(saveCategory, initialActionState);
+  const [catSaveState, catSaveAction] = useActionState(
+    saveCategory,
+    initialActionState,
+  );
   const [catArchiveState, catArchiveAction] = useActionState(
     archiveCategory,
     initialActionState,
@@ -125,25 +129,60 @@ export function CategoryManager({
   );
 
   useEffect(() => {
-    if (
-      catSaveState.ok ||
-      catArchiveState.ok ||
-      compSaveState.ok ||
-      compArchiveState.ok
-    ) {
+    if (selectedCategoryId !== NEW && !categories.some((c) => c.id === selectedCategoryId)) {
+      setSelectedCategoryId(categories[0]?.id ?? NEW);
+    }
+  }, [categories, selectedCategoryId]);
+
+  useEffect(() => {
+    if (catSaveState.ok) {
+      if (catSaveState.id) setSelectedCategoryId(catSaveState.id);
       router.refresh();
     }
-  }, [
-    catSaveState.ok,
-    catSaveState.message,
-    catArchiveState.ok,
-    catArchiveState.message,
-    compSaveState.ok,
-    compSaveState.message,
-    compArchiveState.ok,
-    compArchiveState.message,
-    router,
-  ]);
+  }, [catSaveState.ok, catSaveState.id, catSaveState.message, router]);
+
+  useEffect(() => {
+    if (catArchiveState.ok) {
+      setSelectedCategoryId(NEW);
+      router.refresh();
+    }
+  }, [catArchiveState.ok, catArchiveState.message, router]);
+
+  useEffect(() => {
+    if (compSaveState.ok) {
+      // Stay in create mode so another competition can be added immediately.
+      setSelectedCompetitionId(NEW);
+      setCompName("");
+      setCompSlug("");
+      router.refresh();
+    }
+  }, [compSaveState.ok, compSaveState.id, compSaveState.message, router]);
+
+  useEffect(() => {
+    if (compArchiveState.ok) {
+      setSelectedCompetitionId(NEW);
+      router.refresh();
+    }
+  }, [compArchiveState.ok, compArchiveState.message, router]);
+
+  function startNewCategory() {
+    setSelectedCategoryId(NEW);
+    setCatName("");
+    setCatSlug("");
+    setSelectedCompetitionId(NEW);
+    setCompName("");
+    setCompSlug("");
+  }
+
+  function startNewCompetition() {
+    setSelectedCompetitionId(NEW);
+    setCompName("");
+    setCompSlug("");
+  }
+
+  function selectCategory(id: string) {
+    setSelectedCategoryId(id);
+  }
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.1fr_1.1fr_0.9fr]">
@@ -152,49 +191,63 @@ export function CategoryManager({
           <h2 className="font-display text-xl">Categories</h2>
           <button
             type="button"
-            onClick={() => setSelectedCategoryId(NEW)}
+            onClick={startNewCategory}
             className={`rounded-lg border px-3 py-2 text-sm ${
               isCreatingCategory
-                ? "border-accent bg-accent-soft"
+                ? "border-accent bg-accent-soft text-accent"
                 : "border-border bg-surface-2"
             }`}
           >
             + Add
           </button>
         </div>
-        {categories.length === 0 ? (
-          <p className="text-sm text-muted">No categories yet. Create the first one.</p>
-        ) : (
-          <ul className="space-y-1">
-            {categories.map((c) => (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedCategoryId(c.id)}
-                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm ${
-                    selectedCategory?.id === c.id
-                      ? "bg-accent-soft text-foreground"
-                      : "hover:bg-surface-2"
-                  }`}
-                >
-                  <span className="font-medium">{c.name}</span>
-                  <span className="font-mono text-[10px] text-muted">{c.slug}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
 
-        <form action={catSaveAction} className="space-y-3 border-t border-border pt-4">
+        <div className="overflow-hidden rounded-xl border border-border">
+          <div className="grid grid-cols-[1fr_auto] gap-2 border-b border-border bg-surface-2 px-3 py-2 text-[10px] tracking-wide text-muted uppercase">
+            <span>Name</span>
+            <span>Slug</span>
+          </div>
+          {categories.length === 0 ? (
+            <p className="px-3 py-4 text-sm text-muted">
+              No categories yet. Use + Add to create one.
+            </p>
+          ) : (
+            <ul>
+              {categories.map((c) => (
+                <li key={c.id} className="border-b border-border/60 last:border-0">
+                  <button
+                    type="button"
+                    onClick={() => selectCategory(c.id)}
+                    className={`grid w-full grid-cols-[1fr_auto] items-center gap-2 px-3 py-2.5 text-left text-sm ${
+                      selectedCategory?.id === c.id
+                        ? "bg-accent-soft text-foreground"
+                        : "hover:bg-surface-2"
+                    }`}
+                  >
+                    <span className="font-medium">{c.name}</span>
+                    <span className="font-mono text-[10px] text-muted">{c.slug}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <form
+          key={isCreatingCategory ? "new-category" : selectedCategoryId}
+          action={catSaveAction}
+          className="space-y-3 border-t border-border pt-4"
+        >
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-muted uppercase">
+            {isCreatingCategory ? "New category" : "Edit category"}
+          </p>
           {selectedCategory ? (
             <input type="hidden" name="id" value={selectedCategory.id} />
           ) : null}
           <input
             type="hidden"
             name="sort_order"
-            value={
-              selectedCategory?.sort_order ?? nextSort(categories)
-            }
+            value={selectedCategory?.sort_order ?? nextSort(categories)}
           />
           <TextField
             label="Category name"
@@ -203,9 +256,10 @@ export function CategoryManager({
             required
             error={catSaveState.errors?.name?.[0]}
             onChange={(e) => {
-              setCatName(e.target.value);
+              const next = e.target.value;
+              setCatName(next);
               if (isCreatingCategory || catSlug === slugify(catName)) {
-                setCatSlug(slugify(e.target.value));
+                setCatSlug(slugify(next));
               }
             }}
           />
@@ -219,7 +273,18 @@ export function CategoryManager({
           />
           <FormMessage state={catSaveState} />
           <div className="flex flex-wrap gap-2">
-            <SubmitButton>{isCreatingCategory ? "Create category" : "Save category"}</SubmitButton>
+            <SubmitButton>
+              {isCreatingCategory ? "Create category" : "Save category"}
+            </SubmitButton>
+            {!isCreatingCategory ? (
+              <button
+                type="button"
+                onClick={startNewCategory}
+                className="rounded-lg border border-border px-3 py-2 text-sm text-muted hover:text-foreground"
+              >
+                New category
+              </button>
+            ) : null}
           </div>
         </form>
         {selectedCategory ? (
@@ -238,49 +303,68 @@ export function CategoryManager({
 
       <section className="space-y-3 rounded-2xl border border-border bg-surface p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="font-display text-xl">Competitions</h2>
+          <div>
+            <h2 className="font-display text-xl">Competitions</h2>
+            <p className="mt-0.5 text-xs text-muted">
+              {selectedCategory
+                ? `In ${selectedCategory.name}`
+                : "Select a category to view competitions"}
+            </p>
+          </div>
           <button
             type="button"
             disabled={!selectedCategory}
-            onClick={() => {
-              setSelectedCompetitionId(NEW);
-              setCompName("");
-              setCompSlug("");
-            }}
+            onClick={startNewCompetition}
             className={`rounded-lg border px-3 py-2 text-sm disabled:opacity-40 ${
               isCreatingCompetition && selectedCategory
-                ? "border-accent bg-accent-soft"
+                ? "border-accent bg-accent-soft text-accent"
                 : "border-border bg-surface-2"
             }`}
           >
             + Add
           </button>
         </div>
+
         {!selectedCategory ? (
-          <p className="text-sm text-muted">Select or create a category first.</p>
-        ) : categoryCompetitions.length === 0 ? (
-          <p className="text-sm text-muted">
-            No competitions in {selectedCategory.name} yet.
-          </p>
+          <div className="overflow-hidden rounded-xl border border-dashed border-border px-3 py-8 text-center text-sm text-muted">
+            Click a category on the left to see its competitions here.
+          </div>
         ) : (
-          <ul className="space-y-1">
-            {categoryCompetitions.map((c) => (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedCompetitionId(c.id)}
-                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm ${
-                    selectedCompetition?.id === c.id
-                      ? "bg-accent-soft text-foreground"
-                      : "hover:bg-surface-2"
-                  }`}
-                >
-                  <span className="font-medium">{c.name}</span>
-                  <span className="font-mono text-[10px] text-muted">{c.slug}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-hidden rounded-xl border border-border">
+            <div className="grid grid-cols-[1fr_auto] gap-2 border-b border-border bg-surface-2 px-3 py-2 text-[10px] tracking-wide text-muted uppercase">
+              <span>Competition</span>
+              <span>Slug</span>
+            </div>
+            {categoryCompetitions.length === 0 ? (
+              <p className="px-3 py-6 text-sm text-muted">
+                No competitions in this category yet. Use + Add to create one.
+              </p>
+            ) : (
+              <ul>
+                {categoryCompetitions.map((c) => (
+                  <li
+                    key={c.id}
+                    className="border-b border-border/60 last:border-0"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCompetitionId(c.id)}
+                      className={`grid w-full grid-cols-[1fr_auto] items-center gap-2 px-3 py-2.5 text-left text-sm ${
+                        selectedCompetition?.id === c.id
+                          ? "bg-accent-soft text-foreground"
+                          : "hover:bg-surface-2"
+                      }`}
+                    >
+                      <span className="font-medium">{c.name}</span>
+                      <span className="font-mono text-[10px] text-muted">
+                        {c.slug}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
       </section>
 
@@ -289,9 +373,15 @@ export function CategoryManager({
           {isCreatingCompetition ? "New competition" : "Edit competition"}
         </h2>
         {!selectedCategory ? (
-          <p className="mt-3 text-sm text-muted">Pick a category to manage competitions.</p>
+          <p className="mt-3 text-sm text-muted">
+            Pick a category to manage competitions.
+          </p>
         ) : (
-          <form action={compSaveAction} className="mt-4 space-y-3">
+          <form
+            key={`${selectedCategory.id}:${selectedCompetitionId}:${compSaveState.ok ? compSaveState.id : "form"}`}
+            action={compSaveAction}
+            className="mt-4 space-y-3"
+          >
             {selectedCompetition ? (
               <input type="hidden" name="id" value={selectedCompetition.id} />
             ) : null}
@@ -300,7 +390,8 @@ export function CategoryManager({
               type="hidden"
               name="sort_order"
               value={
-                selectedCompetition?.sort_order ?? nextSort(categoryCompetitions)
+                selectedCompetition?.sort_order ??
+                nextSort(categoryCompetitions)
               }
             />
             <TextField
@@ -327,8 +418,19 @@ export function CategoryManager({
             <FormMessage state={compSaveState} />
             <div className="flex flex-wrap gap-2">
               <SubmitButton>
-                {isCreatingCompetition ? "Create competition" : "Save competition"}
+                {isCreatingCompetition
+                  ? "Create competition"
+                  : "Save competition"}
               </SubmitButton>
+              {!isCreatingCompetition ? (
+                <button
+                  type="button"
+                  onClick={startNewCompetition}
+                  className="rounded-lg border border-border px-3 py-2 text-sm text-muted hover:text-foreground"
+                >
+                  New competition
+                </button>
+              ) : null}
             </div>
           </form>
         )}
