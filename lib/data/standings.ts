@@ -61,10 +61,18 @@ export async function getScoreMatrix() {
   const user = await requireStaff("/admin/leaderboards");
 
   const season = await getActiveSeason();
-  const [{ categories, competitions, rows }, drafts] = await Promise.all([
+  const [{ categories, competitions, rows }, rawDrafts, teams] = await Promise.all([
     getStandings(),
     getDrafts(),
+    getTeams(),
   ]);
+
+  // Only count drafts that can actually be reviewed (valid team + competition).
+  const teamIds = new Set(teams.map((t) => t.id));
+  const competitionIds = new Set(competitions.map((c) => c.id));
+  const drafts = rawDrafts.filter(
+    (d) => teamIds.has(d.team_id) && competitionIds.has(d.competition_id),
+  );
 
   const draftMap = new Map(
     drafts.map((d) => [`${d.team_id}:${d.competition_id}` as `${string}:${string}`, d]),
@@ -111,7 +119,8 @@ export async function getDraftDiffs(): Promise<DraftDiff[]> {
     getDrafts(),
     getTeams(),
     getCategories(),
-    getCompetitions({ includeArchived: true }),
+    // Match score matrix: only active competitions count toward review.
+    getCompetitions(),
     getStandings(),
   ]);
   const preparers = await getPreparersById(drafts);

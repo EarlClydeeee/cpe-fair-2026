@@ -213,19 +213,25 @@ async function LeaderboardsContent({ searchParams }: Props) {
                         {row.team.name}
                       </td>
                       {categories.map((c) => {
-                        const firstComp = competitions.find(
+                        const compsInCategory = competitions.filter(
                           (comp) => comp.category_id === c.id,
                         );
-                        const hasDraft = competitions
-                          .filter((comp) => comp.category_id === c.id)
-                          .some((comp) =>
+                        const draftComp =
+                          compsInCategory.find((comp) =>
                             draftMap.has(
                               `${row.team.id}:${comp.id}` as `${string}:${string}`,
                             ),
-                          );
+                          ) ?? compsInCategory[0];
+                        const hasDraft = Boolean(
+                          compsInCategory.find((comp) =>
+                            draftMap.has(
+                              `${row.team.id}:${comp.id}` as `${string}:${string}`,
+                            ),
+                          ),
+                        );
                         const points = row.byCategory[c.slug] ?? 0;
-                        const href = firstComp
-                          ? `/admin/leaderboards?team=${row.team.id}&category=${c.id}&competition=${firstComp.id}`
+                        const href = draftComp
+                          ? `/admin/leaderboards?team=${row.team.id}&category=${c.id}&competition=${draftComp.id}`
                           : `/admin/categories`;
                         return (
                           <td key={c.id} className="px-3 py-3">

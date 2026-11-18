@@ -35,38 +35,72 @@ export function DraftDiffCard({
   selected?: boolean;
   onSelectedChange?: (selected: boolean) => void;
 }) {
-  const [discardState, discardAction] = useActionState(discardDraft, initialActionState);
+  const [discardState, discardAction] = useActionState(
+    discardDraft,
+    initialActionState,
+  );
   const preparedLabel = preparedByName
     ? `${preparedByName}${preparedByRole ? ` · ${roleLabel(preparedByRole)}` : ""}`
     : "Unknown admin";
 
+  function toggleSelected() {
+    onSelectedChange?.(!selected);
+  }
+
   return (
     <div
-      className={`rounded-2xl border bg-surface p-5 transition ${
+      role="button"
+      tabIndex={0}
+      aria-pressed={selected}
+      onClick={toggleSelected}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleSelected();
+        }
+      }}
+      className={`w-full cursor-pointer rounded-2xl border bg-surface p-5 text-left transition ${
         selected
-          ? "border-accent/40 shadow-[0_0_0_1px_rgba(255,107,33,0.12)]"
-          : "border-border opacity-70"
+          ? "border-accent/50 shadow-[0_0_0_1px_rgba(255,107,33,0.16)]"
+          : "border-border opacity-75 hover:border-border hover:opacity-100"
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <label className="flex min-w-0 cursor-pointer items-start gap-3">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={(e) => onSelectedChange?.(e.target.checked)}
-            className="mt-0.5 size-4 shrink-0 accent-accent"
-            aria-label={`Include ${teamName} ${competitionName} in publish`}
-          />
+        <div className="flex min-w-0 items-start gap-3">
+          <span
+            className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border ${
+              selected
+                ? "border-accent bg-accent text-black"
+                : "border-border bg-surface-2 text-transparent"
+            }`}
+            aria-hidden
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M5 12l5 5L20 7"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
           <span className="min-w-0">
             <span className="block text-xs text-muted">
               {teamName} / {categoryName} / {competitionName} / Saved draft
             </span>
             <span className="mt-1 block text-[10px] font-semibold tracking-wide text-accent uppercase">
-              {selected ? "Included in publish" : "Skipped for now"}
+              {selected
+                ? "Selected · will publish"
+                : "Not selected · click to include"}
             </span>
           </span>
-        </label>
-        <form action={discardAction}>
+        </div>
+        <form
+          action={discardAction}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
           <input type="hidden" name="draft_id" value={draftId} />
           <SubmitButton variant="ghost" className="h-8 px-2 text-xs">
             Discard
@@ -76,12 +110,18 @@ export function DraftDiffCard({
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-border bg-surface-2 p-4">
-          <p className="text-[10px] tracking-wide text-muted uppercase">Published</p>
-          <p className="mt-2 font-display text-4xl">{formatPoints(publishedPoints)}</p>
+          <p className="text-[10px] tracking-wide text-muted uppercase">
+            Published
+          </p>
+          <p className="mt-2 font-display text-4xl">
+            {formatPoints(publishedPoints)}
+          </p>
         </div>
         <div className="rounded-xl border border-accent/40 bg-accent-soft p-4">
           <p className="text-[10px] tracking-wide text-accent uppercase">Draft</p>
-          <p className="mt-2 font-display text-4xl text-accent">{formatPoints(draftPoints)}</p>
+          <p className="mt-2 font-display text-4xl text-accent">
+            {formatPoints(draftPoints)}
+          </p>
           <p className="mt-1 text-xs text-accent">
             {delta >= 0 ? "+" : ""}
             {formatPoints(delta)} points
@@ -90,7 +130,9 @@ export function DraftDiffCard({
       </div>
 
       <div className="mt-4">
-        <p className="text-[10px] tracking-wide text-muted uppercase">Reason for change</p>
+        <p className="text-[10px] tracking-wide text-muted uppercase">
+          Reason for change
+        </p>
         <p className="mt-1 text-sm">{reason || "No reason recorded."}</p>
       </div>
 
@@ -99,7 +141,8 @@ export function DraftDiffCard({
           Prepared by <span className="text-foreground">{preparedLabel}</span>
         </p>
         <p>
-          State <span className="text-foreground">Saved draft · Not public yet</span>
+          State{" "}
+          <span className="text-foreground">Saved draft · Not public yet</span>
         </p>
       </div>
 
