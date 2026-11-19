@@ -55,6 +55,9 @@ export async function PublicFooter() {
             <Link href="/events" className="block py-0.5 text-foreground/90 transition-colors hover:text-accent">
               Events
             </Link>
+            <Link href="/mvp" className="block py-0.5 text-foreground/90 transition-colors hover:text-accent">
+              MVP list
+            </Link>
             <Link href="/teams" className="block py-0.5 text-foreground/90 transition-colors hover:text-accent">
               Teams
             </Link>

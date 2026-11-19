@@ -63,17 +63,10 @@ export function EventManager({
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<
-    | "all"
-    | "upcoming"
-    | "ongoing"
-    | "ended"
-    | "needs_winner"
-    | "needs_mvp"
-    | "mvp_list"
+    "all" | "upcoming" | "ongoing" | "ended" | "needs_winner" | "needs_mvp"
   >(
     initialStatusFilter === "needs_winner" ||
       initialStatusFilter === "needs_mvp" ||
-      initialStatusFilter === "mvp_list" ||
       initialStatusFilter === "upcoming" ||
       initialStatusFilter === "ongoing" ||
       initialStatusFilter === "ended"
@@ -199,10 +192,6 @@ export function EventManager({
     ).length;
   }, [events]);
 
-  const mvpListCount = useMemo(() => {
-    return events.filter((e) => Boolean(e.mvp_title?.trim())).length;
-  }, [events]);
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return events.filter((event) => {
@@ -217,10 +206,6 @@ export function EventManager({
         }
       } else if (statusFilter === "needs_mvp") {
         if (!(event.status_override === "ended" && !event.mvp_title?.trim())) {
-          return false;
-        }
-      } else if (statusFilter === "mvp_list") {
-        if (!event.mvp_title?.trim()) {
           return false;
         }
       } else if (statusFilter !== "all" && status !== statusFilter) {
@@ -298,11 +283,6 @@ export function EventManager({
               id: "needs_mvp" as const,
               label: `Needs MVP${needsMvpCount > 0 ? ` (${needsMvpCount})` : ""}`,
               highlight: needsMvpCount > 0,
-            },
-            {
-              id: "mvp_list" as const,
-              label: `MVP list${mvpListCount > 0 ? ` (${mvpListCount})` : ""}`,
-              highlight: mvpListCount > 0,
             },
           ].map((tab) => (
             <button
