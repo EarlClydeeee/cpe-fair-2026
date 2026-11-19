@@ -28,15 +28,12 @@ function getBannerStyle(hex: string) {
   const ng = Math.round(rgb.g * 0.45);
   const nb = Math.round(rgb.b * 0.45);
 
-  const lum = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-  const isLight = lum > 0.52 && hex.toLowerCase() !== "#a855f7";
-
   return {
     baseColor: hex,
     gradient: `linear-gradient(90deg, rgb(${lr}, ${lg}, ${lb}) 0%, ${hex} 55%, rgb(${dr}, ${dg}, ${db}) 100%)`,
     notchColor: `rgb(${nr}, ${ng}, ${nb})`,
-    textColor: isLight ? "#000000" : "#ffffff",
-    subColor: isLight ? "rgba(0, 0, 0, 0.78)" : "rgba(255, 255, 255, 0.82)",
+    textColor: "#000000",
+    subColor: "rgba(0, 0, 0, 0.82)",
   };
 }
 
