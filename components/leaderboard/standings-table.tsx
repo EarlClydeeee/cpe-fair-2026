@@ -49,9 +49,17 @@ export function StandingsTable({ rows }: { rows: StandingRow[] }) {
             Overall points across all competition categories
           </p>
         </div>
-        <p className="text-xs font-bold tracking-[0.18em] text-neutral-400 uppercase">
-          {rows.length} {rows.length === 1 ? "team" : "teams"}
-        </p>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <p className="text-xs font-bold tracking-[0.18em] text-neutral-400 uppercase">
+            {rows.length} {rows.length === 1 ? "team" : "teams"}
+          </p>
+          <Link
+            href="/mvp"
+            className="inline-flex min-h-9 items-center rounded-lg border border-accent/40 bg-accent/10 px-3 text-[11px] font-bold tracking-[0.14em] text-accent uppercase transition-colors duration-200 hover:bg-accent/20"
+          >
+            MVP list →
+          </Link>
+        </div>
       </div>
 
       {/* Desktop column labels */}
