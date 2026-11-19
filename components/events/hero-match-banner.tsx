@@ -5,6 +5,7 @@ import type { FairEvent } from "@/lib/data/public";
 import {
   eventFormat,
   eventMatchupLabel,
+  eventMvpTitle,
   eventStatusDisplay,
   eventStatusTone,
   eventWinnerLabel,
@@ -26,6 +27,7 @@ export function HeroMatchBanner({
   const matchup = eventMatchupLabel(event);
   const format = eventFormat(event);
   const winner = eventWinnerLabel(event);
+  const mvp = eventMvpTitle(event);
   const hasTeams = Boolean(event.team_a || event.team_b);
 
   return (
@@ -77,6 +79,13 @@ export function HeroMatchBanner({
         {winner ? <p className="mt-2 text-sm font-medium">{winner}</p> : null}
         {event.result_note ? (
           <p className="mt-1 text-sm text-black/70">{event.result_note}</p>
+        ) : null}
+        {mvp ? (
+          <p className="mt-1 text-sm text-black/80">
+            <span className="font-semibold uppercase tracking-wide">MVP</span>
+            {" · "}
+            {mvp}
+          </p>
         ) : null}
 
         <p className="mt-4 text-sm text-black/80">

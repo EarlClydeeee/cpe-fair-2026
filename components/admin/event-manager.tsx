@@ -63,9 +63,10 @@ export function EventManager({
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "upcoming" | "ongoing" | "ended" | "needs_winner"
+    "all" | "upcoming" | "ongoing" | "ended" | "needs_winner" | "needs_mvp"
   >(
     initialStatusFilter === "needs_winner" ||
+      initialStatusFilter === "needs_mvp" ||
       initialStatusFilter === "upcoming" ||
       initialStatusFilter === "ongoing" ||
       initialStatusFilter === "ended"
@@ -107,6 +108,7 @@ export function EventManager({
   );
   const [winnerTeamId, setWinnerTeamId] = useState("");
   const [resultNote, setResultNote] = useState("");
+  const [mvpTitle, setMvpTitle] = useState("");
 
   // Populate controlled state whenever selected event changes
   useEffect(() => {
@@ -145,6 +147,7 @@ export function EventManager({
       );
       setWinnerTeamId(selected.winner_team_id ?? "");
       setResultNote(selected.result_note ?? "");
+      setMvpTitle(selected.mvp_title ?? "");
     } else {
       const nextCategoryId = categories[0]?.id ?? "";
       setName("");
@@ -168,6 +171,7 @@ export function EventManager({
       setStatusMode("upcoming");
       setWinnerTeamId("");
       setResultNote("");
+      setMvpTitle("");
     }
   }, [selectedId, selected, categories, competitions, teams]);
 
@@ -182,6 +186,12 @@ export function EventManager({
     ).length;
   }, [events]);
 
+  const needsMvpCount = useMemo(() => {
+    return events.filter(
+      (e) => e.status_override === "ended" && !e.mvp_title?.trim(),
+    ).length;
+  }, [events]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return events.filter((event) => {
@@ -192,6 +202,10 @@ export function EventManager({
       }
       if (statusFilter === "needs_winner") {
         if (!(event.status_override === "ended" && !event.winner_team_id)) {
+          return false;
+        }
+      } else if (statusFilter === "needs_mvp") {
+        if (!(event.status_override === "ended" && !event.mvp_title?.trim())) {
           return false;
         }
       } else if (statusFilter !== "all" && status !== statusFilter) {
@@ -262,6 +276,11 @@ export function EventManager({
               id: "needs_winner" as const,
               label: `Needs Winner${needsWinnerCount > 0 ? ` (${needsWinnerCount})` : ""}`,
               highlight: needsWinnerCount > 0,
+            },
+            {
+              id: "needs_mvp" as const,
+              label: `Needs MVP${needsMvpCount > 0 ? ` (${needsMvpCount})` : ""}`,
+              highlight: needsMvpCount > 0,
             },
           ].map((tab) => (
             <button
@@ -358,6 +377,9 @@ export function EventManager({
               const needsWinner = isSelected
                 ? statusMode === "ended" && !winnerTeamId
                 : event.status_override === "ended" && !event.winner_team_id;
+              const needsMvp = isSelected
+                ? statusMode === "ended" && !mvpTitle.trim()
+                : event.status_override === "ended" && !event.mvp_title?.trim();
               const matchup = isSelected
                 ? matchType === "head_to_head" && teamA && teamB
                   ? `${teamA.name} vs ${teamB.name}`
@@ -406,6 +428,7 @@ export function EventManager({
                     </Badge>
                     {spotlight ? <Badge tone="accent">Spotlight</Badge> : null}
                     {needsWinner ? <Badge tone="info">Needs winner</Badge> : null}
+                    {needsMvp ? <Badge tone="info">Needs MVP</Badge> : null}
                   </span>
                 </button>
               );
@@ -826,6 +849,14 @@ export function EventManager({
               placeholder="e.g. 2-1 or 25-21, 25-19"
               onChange={(e) => setResultNote(e.target.value)}
               hint="Optional score details or notes."
+            />
+            <TextField
+              label="MVP title"
+              name="mvp_title"
+              value={mvpTitle}
+              placeholder="e.g. Best Spiker · Juan Dela Cruz"
+              onChange={(e) => setMvpTitle(e.target.value)}
+              hint="Optional. Leave blank if this game has no MVP award."
             />
           </section>
 

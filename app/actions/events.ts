@@ -123,6 +123,7 @@ export async function saveEvent(
     venue: data.venue,
     match_format: data.match_format,
     result_note: data.result_note,
+    mvp_title: data.mvp_title,
     is_highlighted: data.is_highlighted,
     status_override,
     winner_team_id,

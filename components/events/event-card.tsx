@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import type { FairEvent } from "@/lib/data/public";
 import {
+  eventMvpTitle,
   eventPrimaryCta,
   eventStatusDisplay,
   eventStatusTone,
@@ -26,6 +27,7 @@ export function EventCard({
   const status = getComputedEventStatus(event, now);
   const cta = eventPrimaryCta(status);
   const winner = eventWinnerLabel(event);
+  const mvp = eventMvpTitle(event);
   const isFinal = status === "ended";
   const isOngoing = status === "ongoing";
 
@@ -143,6 +145,15 @@ export function EventCard({
                 </span>
               ) : null}
             </div>
+          ) : null}
+          {mvp ? (
+            <p className="mt-2 text-[11px] tracking-wide text-muted">
+              <span className="font-semibold text-foreground/80 uppercase">
+                MVP
+              </span>
+              <span className="mx-1.5 text-border">·</span>
+              <span className="text-foreground">{mvp}</span>
+            </p>
           ) : null}
         </div>
 

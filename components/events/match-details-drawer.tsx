@@ -8,6 +8,7 @@ import type { FairEvent } from "@/lib/data/public";
 import {
   eventFormat,
   eventMatchupLabel,
+  eventMvpTitle,
   eventPrimaryCta,
   eventStatusDisplay,
   eventStatusTone,
@@ -58,6 +59,7 @@ export function MatchDetailsDrawer({
   const isOngoing = status === "ongoing";
   const format = eventFormat(event);
   const winner = eventWinnerLabel(event);
+  const mvp = eventMvpTitle(event);
   const cta = eventPrimaryCta(status);
   const resultsHref = event.categories?.slug
     ? `/leaderboard?category=${event.categories.slug}`
@@ -238,6 +240,17 @@ export function MatchDetailsDrawer({
                   </p>
                   <p className="mt-1.5 text-base font-semibold text-foreground">
                     {event.result_note}
+                  </p>
+                </div>
+              ) : null}
+
+              {mvp ? (
+                <div className="rounded-xl border border-border bg-surface p-4">
+                  <p className="text-[10px] font-bold tracking-[0.16em] text-muted uppercase">
+                    MVP
+                  </p>
+                  <p className="mt-1.5 text-base font-semibold text-foreground">
+                    {mvp}
                   </p>
                 </div>
               ) : null}

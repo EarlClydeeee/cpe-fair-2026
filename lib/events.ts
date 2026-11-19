@@ -162,3 +162,8 @@ export function eventWinnerLabel(event: FairEvent): string | null {
   if (!event.winner_team) return null;
   return `Winner: ${event.winner_team.name}`;
 }
+
+export function eventMvpTitle(event: FairEvent): string | null {
+  const title = event.mvp_title?.trim();
+  return title ? title : null;
+}

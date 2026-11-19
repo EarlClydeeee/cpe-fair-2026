@@ -138,6 +138,7 @@ export type Database = {
           match_format: string;
           winner_team_id: string | null;
           result_note: string;
+          mvp_title: string;
           is_highlighted: boolean;
           status_override: Database["public"]["Enums"]["event_status_override"];
           is_archived: boolean;
@@ -157,6 +158,7 @@ export type Database = {
           match_format?: string;
           winner_team_id?: string | null;
           result_note?: string;
+          mvp_title?: string;
           is_highlighted?: boolean;
           status_override?: Database["public"]["Enums"]["event_status_override"];
           is_archived?: boolean;

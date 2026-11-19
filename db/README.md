@@ -34,9 +34,10 @@ Apply **in order**, skip superseded files:
 | 10 | `migrations/0015_service_role_scoring.sql` | Canonical scoring RPCs |
 | 11 | `migrations/0016_admin_login_audit.sql` | `admin_login` audit enum |
 | 12 | `migrations/0017_category_include_in_scoring.sql` | Category scoring flag + RPC guard |
-| 13 | `seed.sql` | Ensure active season |
+| 13 | `migrations/0018_event_mvp_title.sql` | Optional MVP title on events |
+| 14 | `seed.sql` | Ensure active season |
 
-Already applied projects: only run migrations you have **not** run yet (usually `0016` / `0017`).
+Already applied projects: only run migrations you have **not** run yet (usually `0017` / `0018`).
 
 ---
 

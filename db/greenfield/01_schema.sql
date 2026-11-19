@@ -121,6 +121,7 @@ create table public.events (
   match_format text not null default '',
   winner_team_id uuid references public.competition_teams (id) on delete set null,
   result_note text not null default '',
+  mvp_title text not null default '',
   is_highlighted boolean not null default false,
   status_override public.event_status_override not null default 'auto',
   is_archived boolean not null default false,
