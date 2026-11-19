@@ -86,7 +86,10 @@ export async function getActiveSeason(): Promise<Season | null> {
   );
 }
 
-export async function getCategories(seasonId?: string): Promise<Category[]> {
+export async function getCategories(
+  seasonId?: string,
+  opts?: { scoringOnly?: boolean },
+): Promise<Category[]> {
   "use cache";
   cacheLife("hours");
   cacheTag(tags.season);
@@ -105,6 +108,9 @@ export async function getCategories(seasonId?: string): Promise<Category[]> {
       .order("sort_order"),
   );
 
+  if (opts?.scoringOnly) {
+    return data.filter((c) => c.include_in_scoring);
+  }
   return data;
 }
 
@@ -329,9 +335,11 @@ export async function getStandings(categorySlug?: string): Promise<{
       if (cat) byCategory[cat.slug] = (byCategory[cat.slug] ?? 0) + score.points;
     }
 
+    // Overall totals exclude categories marked out of scoring; per-tab views still show them.
+    const scoringCategories = categories.filter((c) => c.include_in_scoring);
     const total = filterCategory
       ? byCategory[filterCategory.slug] ?? 0
-      : Object.values(byCategory).reduce((a, b) => a + b, 0);
+      : scoringCategories.reduce((sum, c) => sum + (byCategory[c.slug] ?? 0), 0);
 
     return { team, total, byCategory, byCompetition, toLeader: 0, rank: 0 };
   });

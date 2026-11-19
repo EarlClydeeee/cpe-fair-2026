@@ -52,6 +52,10 @@ export const categorySchema = z.object({
     .max(80)
     .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, { error: "Use lowercase-hyphen slugs." }),
   sort_order: z.coerce.number().int().default(0),
+  include_in_scoring: z
+    .union([z.literal("on"), z.literal("true"), z.literal("false"), z.literal("")])
+    .optional()
+    .transform((v) => v === "on" || v === "true"),
 });
 
 export const competitionSchema = z.object({

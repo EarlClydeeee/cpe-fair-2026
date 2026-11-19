@@ -117,12 +117,16 @@ begin
     raise exception 'Not allowed to edit scores';
   end if;
 
-  select category_id, season_id into cat_id, season
-  from public.competitions
-  where id = p_competition_id and is_archived = false;
+  select c.category_id, c.season_id into cat_id, season
+  from public.competitions c
+  join public.categories cat on cat.id = c.category_id
+  where c.id = p_competition_id
+    and c.is_archived = false
+    and cat.is_archived = false
+    and cat.include_in_scoring = true;
 
   if cat_id is null then
-    raise exception 'Competition not found';
+    raise exception 'Competition not found or category not included in scoring';
   end if;
 
   select points into published_points

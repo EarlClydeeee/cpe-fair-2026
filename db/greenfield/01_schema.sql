@@ -65,6 +65,7 @@ create table public.categories (
   name text not null,
   sort_order integer not null default 0,
   is_archived boolean not null default false,
+  include_in_scoring boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (season_id, slug)

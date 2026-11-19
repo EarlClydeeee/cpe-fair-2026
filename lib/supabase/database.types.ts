@@ -60,6 +60,7 @@ export type Database = {
           name: string;
           sort_order: number;
           is_archived: boolean;
+          include_in_scoring: boolean;
         } & Timestamps;
         Insert: {
           id?: string;
@@ -68,6 +69,7 @@ export type Database = {
           name: string;
           sort_order?: number;
           is_archived?: boolean;
+          include_in_scoring?: boolean;
         };
         Update: Partial<Database["public"]["Tables"]["categories"]["Insert"]>;
         Relationships: [];

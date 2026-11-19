@@ -19,7 +19,8 @@ async function CategoriesContent() {
         </h1>
         <p className="mt-2 text-sm text-muted">
           Create categories, then nest competitions under each. Scores and events attach
-          to a competition.
+          to a competition. Uncheck “Include in scoring” to keep a category for events
+          only (hidden from score entry and overall standings).
         </p>
       </div>
       <CategoryManager categories={categories} competitions={competitions} />

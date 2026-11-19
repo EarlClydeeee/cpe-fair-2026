@@ -18,6 +18,7 @@ type CategoryRow = {
   name: string;
   slug: string;
   sort_order: number;
+  include_in_scoring: boolean;
 };
 
 type CompetitionRow = {
@@ -59,6 +60,7 @@ export function CategoryManager({
     useState<string>(NEW);
   const [catName, setCatName] = useState("");
   const [catSlug, setCatSlug] = useState("");
+  const [includeInScoring, setIncludeInScoring] = useState(true);
   const [compName, setCompName] = useState("");
   const [compSlug, setCompSlug] = useState("");
 
@@ -92,14 +94,16 @@ export function CategoryManager({
     if (selectedCategory) {
       setCatName(selectedCategory.name);
       setCatSlug(selectedCategory.slug);
+      setIncludeInScoring(selectedCategory.include_in_scoring);
     } else {
       setCatName("");
       setCatSlug("");
+      setIncludeInScoring(true);
     }
     setSelectedCompetitionId(NEW);
     setCompName("");
     setCompSlug("");
-  }, [selectedCategoryId]);
+  }, [selectedCategoryId, selectedCategory]);
 
   useEffect(() => {
     if (selectedCompetition) {
@@ -169,6 +173,7 @@ export function CategoryManager({
     setSelectedCategoryId(NEW);
     setCatName("");
     setCatSlug("");
+    setIncludeInScoring(true);
     setSelectedCompetitionId(NEW);
     setCompName("");
     setCompSlug("");
@@ -224,7 +229,14 @@ export function CategoryManager({
                         : "hover:bg-surface-2"
                     }`}
                   >
-                    <span className="font-medium">{c.name}</span>
+                    <span className="font-medium">
+                      {c.name}
+                      {!c.include_in_scoring ? (
+                        <span className="ml-2 text-[10px] font-normal tracking-wide text-muted uppercase">
+                          events only
+                        </span>
+                      ) : null}
+                    </span>
                     <span className="font-mono text-[10px] text-muted">{c.slug}</span>
                   </button>
                 </li>
@@ -271,6 +283,20 @@ export function CategoryManager({
             error={catSaveState.errors?.slug?.[0]}
             onChange={(e) => setCatSlug(slugify(e.target.value))}
           />
+          <label className="inline-flex items-center gap-2 text-sm text-muted">
+            <input
+              type="checkbox"
+              name="include_in_scoring"
+              checked={includeInScoring}
+              onChange={(e) => setIncludeInScoring(e.target.checked)}
+              className="size-4 rounded border-border accent-accent"
+            />
+            Include in scoring
+          </label>
+          <p className="text-xs text-muted">
+            When off, this category stays available for events but is hidden from
+            score entry, the score matrix, and overall standings.
+          </p>
           <FormMessage state={catSaveState} />
           <div className="flex flex-wrap gap-2">
             <SubmitButton>
