@@ -63,10 +63,17 @@ export function EventManager({
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "upcoming" | "ongoing" | "ended" | "needs_winner" | "needs_mvp"
+    | "all"
+    | "upcoming"
+    | "ongoing"
+    | "ended"
+    | "needs_winner"
+    | "needs_mvp"
+    | "mvp_list"
   >(
     initialStatusFilter === "needs_winner" ||
       initialStatusFilter === "needs_mvp" ||
+      initialStatusFilter === "mvp_list" ||
       initialStatusFilter === "upcoming" ||
       initialStatusFilter === "ongoing" ||
       initialStatusFilter === "ended"
@@ -192,6 +199,10 @@ export function EventManager({
     ).length;
   }, [events]);
 
+  const mvpListCount = useMemo(() => {
+    return events.filter((e) => Boolean(e.mvp_title?.trim())).length;
+  }, [events]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return events.filter((event) => {
@@ -208,6 +219,10 @@ export function EventManager({
         if (!(event.status_override === "ended" && !event.mvp_title?.trim())) {
           return false;
         }
+      } else if (statusFilter === "mvp_list") {
+        if (!event.mvp_title?.trim()) {
+          return false;
+        }
       } else if (statusFilter !== "all" && status !== statusFilter) {
         return false;
       }
@@ -215,6 +230,8 @@ export function EventManager({
       const haystack = [
         event.name,
         event.categories?.name,
+        event.competitions?.name,
+        event.mvp_title,
         event.team_a?.name,
         event.team_b?.name,
         event.winner_team?.name,
@@ -281,6 +298,11 @@ export function EventManager({
               id: "needs_mvp" as const,
               label: `Needs MVP${needsMvpCount > 0 ? ` (${needsMvpCount})` : ""}`,
               highlight: needsMvpCount > 0,
+            },
+            {
+              id: "mvp_list" as const,
+              label: `MVP list${mvpListCount > 0 ? ` (${mvpListCount})` : ""}`,
+              highlight: mvpListCount > 0,
             },
           ].map((tab) => (
             <button
@@ -357,6 +379,10 @@ export function EventManager({
               const displayCategory = isSelected
                 ? (currentCategory?.name ?? "Category")
                 : event.categories?.name;
+              const displayCompetition = isSelected
+                ? (formCompetitions.find((c) => c.id === formCompetitionId)
+                    ?.name ?? null)
+                : (event.competitions?.name ?? null);
               const displayVenue = isSelected
                 ? venue.trim() || "—"
                 : event.venue || "—";
@@ -391,6 +417,9 @@ export function EventManager({
                   ? `Winner: ${winnerTeam.name}`
                   : null
                 : eventWinnerLabel(event);
+              const mvpLabel = isSelected
+                ? mvpTitle.trim() || null
+                : event.mvp_title?.trim() || null;
 
               return (
                 <button
@@ -412,11 +441,17 @@ export function EventManager({
                     </span>
                     <span className="mt-0.5 block truncate text-xs text-muted">
                       {displayCategory}
+                      {displayCompetition ? ` · ${displayCompetition}` : ""}
                       {matchup ? ` · ${matchup}` : ""}
                     </span>
                     {winner ? (
                       <span className="mt-1 block text-xs font-semibold text-info">
                         {winner}
+                      </span>
+                    ) : null}
+                    {mvpLabel ? (
+                      <span className="mt-1 block text-xs font-semibold text-accent">
+                        MVP: {mvpLabel}
                       </span>
                     ) : null}
                   </span>
