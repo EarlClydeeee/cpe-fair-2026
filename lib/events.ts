@@ -167,3 +167,11 @@ export function eventMvpTitle(event: FairEvent): string | null {
   const title = event.mvp_title?.trim();
   return title ? title : null;
 }
+
+export function eventFinalScore(event: FairEvent): string | null {
+  const score = event.final_score?.trim();
+  if (score) return score;
+  // Legacy rows may still store the score in result_note.
+  const note = event.result_note?.trim();
+  return note ? note : null;
+}

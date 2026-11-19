@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import type { FairEvent } from "@/lib/data/public";
 import {
+  eventFinalScore,
   eventFormat,
   eventMatchupLabel,
   eventMvpTitle,
@@ -27,6 +28,7 @@ export function HeroMatchBanner({
   const matchup = eventMatchupLabel(event);
   const format = eventFormat(event);
   const winner = eventWinnerLabel(event);
+  const finalScore = eventFinalScore(event);
   const mvp = eventMvpTitle(event);
   const hasTeams = Boolean(event.team_a || event.team_b);
 
@@ -77,8 +79,8 @@ export function HeroMatchBanner({
         ) : null}
 
         {winner ? <p className="mt-2 text-sm font-medium">{winner}</p> : null}
-        {event.result_note ? (
-          <p className="mt-1 text-sm text-black/70">{event.result_note}</p>
+        {finalScore ? (
+          <p className="mt-1 font-mono text-sm text-black/70">{finalScore}</p>
         ) : null}
         {mvp ? (
           <p className="mt-1 text-sm text-black/80">

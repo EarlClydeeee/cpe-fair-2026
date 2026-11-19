@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import type { FairEvent } from "@/lib/data/public";
 import {
+  eventFinalScore,
   eventMvpTitle,
   eventPrimaryCta,
   eventStatusDisplay,
@@ -27,6 +28,7 @@ export function EventCard({
   const status = getComputedEventStatus(event, now);
   const cta = eventPrimaryCta(status);
   const winner = eventWinnerLabel(event);
+  const finalScore = eventFinalScore(event);
   const mvp = eventMvpTitle(event);
   const isFinal = status === "ended";
   const isOngoing = status === "ongoing";
@@ -139,9 +141,9 @@ export function EventCard({
               <span className="font-bold text-foreground truncate">
                 {event.winner_team.name}
               </span>
-              {event.result_note ? (
+              {finalScore ? (
                 <span className="ml-auto text-[11px] font-mono text-muted shrink-0">
-                  {event.result_note}
+                  {finalScore}
                 </span>
               ) : null}
             </div>

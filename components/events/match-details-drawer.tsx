@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { Badge } from "@/components/ui/badge";
 import type { FairEvent } from "@/lib/data/public";
 import {
+  eventFinalScore,
   eventFormat,
   eventMatchupLabel,
   eventMvpTitle,
@@ -59,6 +60,11 @@ export function MatchDetailsDrawer({
   const isOngoing = status === "ongoing";
   const format = eventFormat(event);
   const winner = eventWinnerLabel(event);
+  const storedScore = event.final_score?.trim() || null;
+  const storedNote = event.result_note?.trim() || null;
+  const finalScore = eventFinalScore(event);
+  const resultNote =
+    storedScore && storedNote && storedNote !== storedScore ? storedNote : null;
   const mvp = eventMvpTitle(event);
   const cta = eventPrimaryCta(status);
   const resultsHref = event.categories?.slug
@@ -232,14 +238,24 @@ export function MatchDetailsDrawer({
                 </div>
               ) : null}
 
-              {/* Score / Result Notes */}
-              {event.result_note ? (
+              {finalScore ? (
                 <div className="rounded-xl border border-border bg-surface p-4">
                   <p className="text-[10px] font-bold tracking-[0.16em] text-muted uppercase">
-                    Score / Match Summary
+                    Final score
+                  </p>
+                  <p className="mt-1.5 font-mono text-base font-semibold text-foreground">
+                    {finalScore}
+                  </p>
+                </div>
+              ) : null}
+
+              {resultNote ? (
+                <div className="rounded-xl border border-border bg-surface p-4">
+                  <p className="text-[10px] font-bold tracking-[0.16em] text-muted uppercase">
+                    Result note
                   </p>
                   <p className="mt-1.5 text-base font-semibold text-foreground">
-                    {event.result_note}
+                    {resultNote}
                   </p>
                 </div>
               ) : null}

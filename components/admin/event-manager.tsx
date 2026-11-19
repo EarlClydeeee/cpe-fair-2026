@@ -108,6 +108,7 @@ export function EventManager({
   );
   const [winnerTeamId, setWinnerTeamId] = useState("");
   const [resultNote, setResultNote] = useState("");
+  const [finalScore, setFinalScore] = useState("");
   const [mvpTitle, setMvpTitle] = useState("");
 
   // Populate controlled state whenever selected event changes
@@ -147,6 +148,7 @@ export function EventManager({
       );
       setWinnerTeamId(selected.winner_team_id ?? "");
       setResultNote(selected.result_note ?? "");
+      setFinalScore(selected.final_score ?? "");
       setMvpTitle(selected.mvp_title ?? "");
     } else {
       const nextCategoryId = categories[0]?.id ?? "";
@@ -171,6 +173,7 @@ export function EventManager({
       setStatusMode("upcoming");
       setWinnerTeamId("");
       setResultNote("");
+      setFinalScore("");
       setMvpTitle("");
     }
   }, [selectedId, selected, categories, competitions, teams]);
@@ -857,13 +860,25 @@ export function EventManager({
               </div>
             )}
 
+            {canSetWinner ? (
+              <TextField
+                label="Final score"
+                name="final_score"
+                value={finalScore}
+                placeholder="e.g. 2-1 or 25-21, 25-19"
+                onChange={(e) => setFinalScore(e.target.value)}
+                hint="Optional. Shown on the public schedule for ended matches."
+              />
+            ) : (
+              <input type="hidden" name="final_score" value={finalScore} />
+            )}
             <TextField
-              label="Score / Result note"
+              label="Result note"
               name="result_note"
               value={resultNote}
-              placeholder="e.g. 2-1 or 25-21, 25-19"
+              placeholder="Optional extra note"
               onChange={(e) => setResultNote(e.target.value)}
-              hint="Optional score details or notes."
+              hint="Optional. Extra context beyond the final score."
             />
             <TextField
               label="MVP title"

@@ -126,6 +126,7 @@ export const eventSchema = z
     status_override: z.enum(["auto", "upcoming", "ongoing", "ended"]),
     winner_team_id: optionalUuid,
     result_note: z.string().trim().max(500).default(""),
+    final_score: z.string().trim().max(80).default(""),
     mvp_title: z.string().trim().max(160).default(""),
   })
   .superRefine((data, ctx) => {
