@@ -48,10 +48,10 @@ async function LeaderboardsContent({ searchParams }: Props) {
           return [c.slug, points];
         }),
       ) as Record<string, number>;
-      const total = categories.reduce(
-        (sum, c) => sum + (byCategory[c.slug] ?? 0),
-        0,
-      );
+      // Matrix "Total" matches public Overall: exclude non-scoring categories.
+      const total = categories
+        .filter((c) => c.include_in_scoring)
+        .reduce((sum, c) => sum + (byCategory[c.slug] ?? 0), 0);
       return { ...row, byCategory, total };
     })
     .sort((a, b) => b.total - a.total || a.team.sort_order - b.team.sort_order)
@@ -183,9 +183,19 @@ async function LeaderboardsContent({ searchParams }: Props) {
                   {categories.map((c) => (
                     <th key={c.id} className="whitespace-nowrap px-3 py-3">
                       {c.name}
+                      {!c.include_in_scoring ? (
+                        <span className="mt-0.5 block text-[9px] font-normal tracking-wide text-muted normal-case">
+                          filter only
+                        </span>
+                      ) : null}
                     </th>
                   ))}
-                  <th className="px-3 py-3">Total</th>
+                  <th className="px-3 py-3">
+                    Overall
+                    <span className="mt-0.5 block text-[9px] font-normal tracking-wide text-muted normal-case">
+                      scoring cats
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody>

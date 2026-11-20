@@ -356,7 +356,8 @@ export async function getStandings(categorySlug?: string): Promise<{
       if (cat) byCategory[cat.slug] = (byCategory[cat.slug] ?? 0) + score.points;
     }
 
-    // Overall totals exclude categories marked out of scoring; per-tab views still show them.
+    // Overall: only categories with include_in_scoring.
+    // Category filter: rank by that category alone (even if filter-only).
     const scoringCategories = categories.filter((c) => c.include_in_scoring);
     const total = filterCategory
       ? byCategory[filterCategory.slug] ?? 0

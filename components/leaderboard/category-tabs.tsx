@@ -35,8 +35,18 @@ export function CategoryTabs({
             key={cat.id}
             href={`${basePath}?category=${cat.slug}`}
             className={tabClass(activeSlug === cat.slug)}
+            title={
+              cat.include_in_scoring
+                ? undefined
+                : "Ranked in this filter only — not counted in Overall"
+            }
           >
             {cat.name}
+            {!cat.include_in_scoring ? (
+              <span className="ml-1.5 text-[9px] font-semibold tracking-wide opacity-70">
+                · filter
+              </span>
+            ) : null}
           </Link>
         ))}
       </div>

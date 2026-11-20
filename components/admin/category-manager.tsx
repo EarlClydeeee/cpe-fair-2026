@@ -233,7 +233,7 @@ export function CategoryManager({
                       {c.name}
                       {!c.include_in_scoring ? (
                         <span className="ml-2 text-[10px] font-normal tracking-wide text-muted uppercase">
-                          events only
+                          filter only
                         </span>
                       ) : null}
                     </span>
@@ -291,11 +291,11 @@ export function CategoryManager({
               onChange={(e) => setIncludeInScoring(e.target.checked)}
               className="size-4 rounded border-border accent-accent"
             />
-            Include in scoring
+            Include in overall scoring
           </label>
           <p className="text-xs text-muted">
-            When off, this category stays available for events but is hidden from
-            score entry, the score matrix, and overall standings.
+            When off, teams can still be scored and ranked in this category&apos;s
+            leaderboard filter, but those points are not added to Overall totals.
           </p>
           <FormMessage state={catSaveState} />
           <div className="flex flex-wrap gap-2">

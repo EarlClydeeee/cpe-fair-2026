@@ -82,7 +82,11 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           {rows.length ? (
             <>
               <Podium rows={rows} />
-              <StandingsTable rows={rows} />
+              <StandingsTable
+                rows={rows}
+                categoryName={activeCategory?.name}
+                countsTowardOverall={activeCategory?.include_in_scoring ?? true}
+              />
             </>
           ) : (
             <div className="rounded-xl border border-dashed border-border bg-surface p-6 sm:p-8">
