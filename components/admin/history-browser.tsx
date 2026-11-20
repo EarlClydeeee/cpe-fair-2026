@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RevertScoreForm } from "@/components/admin/revert-score-form";
 import { Badge } from "@/components/ui/badge";
 import { LinkButton } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/format";
@@ -13,27 +14,44 @@ export type HistoryRow = {
   summary: string;
   actor_id: string | null;
   created_at: string;
+  before_json?: Record<string, unknown> | null;
+  after_json?: Record<string, unknown> | null;
 };
 
 const ACTIONS = [
   { value: "all", label: "All actions" },
   { value: "draft_saved", label: "Draft saved" },
   { value: "published", label: "Published" },
+  { value: "score_reverted", label: "Score reverted" },
   { value: "event_updated", label: "Event updated" },
   { value: "team_updated", label: "Team updated" },
   { value: "admin_login", label: "Admin login" },
 ];
+
+function pointsLabel(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "removed";
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return "removed";
+  return `${n.toLocaleString("en-US")} pts`;
+}
+
+function jsonPoints(payload: Record<string, unknown> | null | undefined) {
+  if (!payload) return null;
+  return payload.points ?? null;
+}
 
 export function HistoryBrowser({
   rows,
   initialQuery = "",
   initialAction = "all",
   initialId,
+  canRevert = false,
 }: {
   rows: HistoryRow[];
   initialQuery?: string;
   initialAction?: string;
   initialId?: string;
+  canRevert?: boolean;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [action, setAction] = useState(initialAction);
@@ -54,6 +72,11 @@ export function HistoryBrowser({
   }, [rows, query, action]);
 
   const selected = rows.find((row) => row.id === selectedId) ?? filtered[0];
+  const canRevertSelected =
+    canRevert &&
+    selected?.action === "published" &&
+    selected.entity_type === "score" &&
+    Boolean(selected.after_json);
 
   function remember(nextQuery: string, nextAction: string, nextId: string) {
     const params = new URLSearchParams();
@@ -118,7 +141,15 @@ export function HistoryBrowser({
                   }`}
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge tone={row.action === "published" ? "success" : "accent"}>
+                    <Badge
+                      tone={
+                        row.action === "published"
+                          ? "success"
+                          : row.action === "score_reverted"
+                            ? "danger"
+                            : "accent"
+                      }
+                    >
                       {row.action.replaceAll("_", " ")}
                     </Badge>
                     <span className="text-xs text-muted">{formatDateTime(row.created_at)}</span>
@@ -149,6 +180,23 @@ export function HistoryBrowser({
             </p>
             <h2 className="mt-2 font-display text-3xl">Change details</h2>
             <p className="mt-3 text-sm leading-6">{selected.summary}</p>
+            {(selected.before_json || selected.after_json) &&
+            (selected.action === "published" || selected.action === "score_reverted") ? (
+              <dl className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-surface-2 px-3 py-3 text-sm">
+                <div>
+                  <dt className="text-[10px] tracking-wide text-muted uppercase">Before</dt>
+                  <dd className="mt-1 font-semibold">
+                    {pointsLabel(jsonPoints(selected.before_json))}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[10px] tracking-wide text-muted uppercase">After</dt>
+                  <dd className="mt-1 font-semibold">
+                    {pointsLabel(jsonPoints(selected.after_json))}
+                  </dd>
+                </div>
+              </dl>
+            ) : null}
             <dl className="mt-6 space-y-3 text-sm">
               <div className="flex justify-between gap-3">
                 <dt className="text-muted">Actor</dt>
@@ -175,6 +223,18 @@ export function HistoryBrowser({
               <LinkButton href="/admin/teams" className="mt-6 w-full">
                 Open teams
               </LinkButton>
+            ) : null}
+            {canRevertSelected ? (
+              <RevertScoreForm
+                auditId={selected.id}
+                fromLabel={pointsLabel(jsonPoints(selected.after_json))}
+                toLabel={pointsLabel(jsonPoints(selected.before_json))}
+              />
+            ) : null}
+            {selected.action === "published" && selected.entity_type === "score" && !canRevert ? (
+              <p className="mt-6 text-xs text-muted">
+                Scoring admin or owner role required to revert publishes.
+              </p>
             ) : null}
           </aside>
         ) : null}

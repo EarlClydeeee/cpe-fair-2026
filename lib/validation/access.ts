@@ -87,6 +87,11 @@ export const publishDraftsSchema = z.object({
   confirm_access_code: z.string().min(1, { error: "Re-enter the access code." }),
 });
 
+export const revertPublishedScoreSchema = z.object({
+  audit_id: uuidSchema,
+  confirm_access_code: z.string().min(1, { error: "Re-enter the access code." }),
+});
+
 const optionalUuid = z
   .union([z.literal(""), uuidSchema])
   .optional()

@@ -38,12 +38,16 @@ grant execute on function public.clear_season_content() to service_role;
 
 revoke all on function public.save_score_draft(uuid, uuid, integer, text) from public;
 revoke all on function public.publish_score_drafts(uuid[]) from public;
+revoke all on function public.revert_published_score(uuid) from public;
 grant execute on function public.save_score_draft(uuid, uuid, integer, text)
   to authenticated, service_role;
 grant execute on function public.publish_score_drafts(uuid[])
   to authenticated, service_role;
+grant execute on function public.revert_published_score(uuid)
+  to authenticated, service_role;
 revoke execute on function public.save_score_draft(uuid, uuid, integer, text) from anon;
 revoke execute on function public.publish_score_drafts(uuid[]) from anon;
+revoke execute on function public.revert_published_score(uuid) from anon;
 
 grant execute on function
   public.current_role(),

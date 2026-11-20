@@ -19,11 +19,13 @@ create type public.invitation_status as enum ('pending', 'accepted', 'revoked');
 create type public.audit_action as enum (
   'draft_saved',
   'published',
+  'score_reverted',
   'event_updated',
   'team_updated',
   'admin_invited',
   'role_changed',
-  'invitation_revoked'
+  'invitation_revoked',
+  'admin_login'
 );
 
 create type public.event_match_type as enum ('head_to_head', 'all_teams');

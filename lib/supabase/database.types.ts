@@ -303,6 +303,10 @@ export type Database = {
         Args: { p_draft_ids: string[] };
         Returns: number;
       };
+      revert_published_score: {
+        Args: { p_audit_id: string };
+        Returns: Database["public"]["Tables"]["published_scores"]["Row"];
+      };
       clear_season_content: {
         Args: Record<string, never>;
         Returns: undefined;
@@ -317,6 +321,7 @@ export type Database = {
       audit_action:
         | "draft_saved"
         | "published"
+        | "score_reverted"
         | "event_updated"
         | "team_updated"
         | "admin_invited"

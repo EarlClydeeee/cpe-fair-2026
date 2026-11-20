@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { HistoryBrowser } from "@/components/admin/history-browser";
 import { LeaderboardNav } from "@/components/admin/leaderboard-nav";
 import { LinkButton } from "@/components/ui/button";
+import { canScore, requireStaff } from "@/lib/auth";
 import { getAuditLog } from "@/lib/data/admin";
 
 export const metadata: Metadata = { title: "History" };
@@ -11,8 +12,14 @@ export const instant = false;
 
 type Props = { searchParams: Promise<{ q?: string; action?: string; id?: string }> };
 
+function asJsonRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
 async function HistoryContent({ searchParams }: Props) {
   await connection();
+  const user = await requireStaff("/admin/leaderboards/history");
   const { q, action = "all", id } = await searchParams;
   const rows = await getAuditLog();
 
@@ -25,7 +32,7 @@ async function HistoryContent({ searchParams }: Props) {
           </p>
           <h1 className="mt-2 font-display text-3xl leading-none sm:text-5xl">History</h1>
           <p className="mt-2 text-sm text-muted">
-            Search filters the list immediately. Open a record to read who changed what.
+            Search filters the list immediately. Open a published score to revert it when needed.
           </p>
         </div>
         <LinkButton href="/api/admin/history/export" variant="secondary">
@@ -44,10 +51,13 @@ async function HistoryContent({ searchParams }: Props) {
           summary: row.summary,
           actor_id: row.actor_id,
           created_at: row.created_at,
+          before_json: asJsonRecord(row.before_json),
+          after_json: asJsonRecord(row.after_json),
         }))}
         initialQuery={q ?? ""}
         initialAction={action}
         initialId={id}
+        canRevert={canScore(user.role)}
       />
     </div>
   );

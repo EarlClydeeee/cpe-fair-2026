@@ -10,6 +10,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import {
   discardDraftSchema,
   publishDraftsSchema,
+  revertPublishedScoreSchema,
   scoreDraftSchema,
 } from "@/lib/validation/access";
 
@@ -139,4 +140,48 @@ export async function publishDrafts(
   formData: FormData,
 ): Promise<ActionState> {
   return publishPendingScoreDrafts(prev, formData);
+}
+
+/** Restore the previous published points from a history `published` audit row. */
+export async function revertPublishedScore(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireStaff("/admin/leaderboards/history");
+  if (!canScore(user.role)) return { ok: false, message: "Scoring role required." };
+
+  const parsed = revertPublishedScoreSchema.safeParse(formObject(formData));
+  if (!parsed.success) return fieldErrors(parsed.error);
+
+  if (!confirmAccessCode(parsed.data.confirm_access_code)) {
+    return {
+      ok: false,
+      message: "Access code incorrect.",
+      errors: { confirm_access_code: ["Access code incorrect."] },
+    };
+  }
+
+  try {
+    const supabase = scoringClient();
+    const { error } = await supabase.rpc("revert_published_score", {
+      p_audit_id: parsed.data.audit_id,
+    });
+    if (error) return { ok: false, message: error.message };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "Could not revert score.",
+    };
+  }
+
+  updateTag(tags.scores);
+  updateTag(tags.drafts);
+  updateTag(tags.audit);
+  revalidatePath("/admin");
+  revalidatePath("/admin/leaderboards");
+  revalidatePath("/admin/leaderboards/review");
+  revalidatePath("/admin/leaderboards/history");
+  revalidatePath("/leaderboard");
+  revalidatePath("/teams");
+  return { ok: true, message: "Published score reverted." };
 }
