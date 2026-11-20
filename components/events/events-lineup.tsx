@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { EventCard } from "@/components/events/event-card";
+import { EventsCalendar } from "@/components/events/events-calendar";
 import { HeroMatchBanner } from "@/components/events/hero-match-banner";
 import { MatchDetailsDrawer } from "@/components/events/match-details-drawer";
 import type { Category, FairEvent } from "@/lib/data/public";
+import { isValidDateKey } from "@/lib/calendar";
 import { pickFeaturedEvent } from "@/lib/events";
-import { dayLabel, manilaDateKey } from "@/lib/format";
+import { manilaDateKey } from "@/lib/format";
 import { useNow } from "@/lib/hooks/use-now";
 
 function tabClass(active: boolean) {
@@ -18,51 +20,37 @@ function tabClass(active: boolean) {
   }`;
 }
 
-function dayClass(active: boolean) {
-  return `whitespace-nowrap rounded-lg border px-3 py-2.5 text-[11px] uppercase transition-colors duration-200 sm:text-xs ${
-    active
-      ? "border-accent text-accent"
-      : "border-border text-muted hover:text-foreground"
-  }`;
-}
-
 export function EventsLineup({
   categories,
   events,
   categorySlug,
-  day,
+  date,
 }: {
   categories: Category[];
   events: FairEvent[];
   categorySlug?: string;
-  day?: number;
+  date?: string;
 }) {
   const now = useNow(30_000);
   const [selectedEvent, setSelectedEvent] = useState<FairEvent | null>(null);
+  const selectedDate = isValidDateKey(date) ? date : undefined;
 
   const featured = useMemo(
     () => pickFeaturedEvent(events, now),
     [events, now],
   );
 
-  const dayDates = useMemo(() => {
-    const keys = Array.from(
-      new Set(events.map((e) => manilaDateKey(e.start_at))),
-    ).sort();
-    return keys.length ? keys : [];
-  }, [events]);
+  const categoryEvents = useMemo(() => {
+    if (!categorySlug) return events;
+    return events.filter((e) => e.categories?.slug === categorySlug);
+  }, [events, categorySlug]);
 
   const filtered = useMemo(() => {
-    let rows = events;
-    if (categorySlug) {
-      rows = rows.filter((e) => e.categories?.slug === categorySlug);
-    }
-    if (day && dayDates[day - 1]) {
-      const key = dayDates[day - 1];
-      rows = rows.filter((e) => manilaDateKey(e.start_at) === key);
-    }
-    return rows;
-  }, [events, categorySlug, day, dayDates]);
+    if (!selectedDate) return categoryEvents;
+    return categoryEvents.filter(
+      (e) => manilaDateKey(e.start_at) === selectedDate,
+    );
+  }, [categoryEvents, selectedDate]);
 
   const openDetails = useCallback((event: FairEvent) => {
     setSelectedEvent(event);
@@ -80,11 +68,13 @@ export function EventsLineup({
         <p className="text-muted">Events appear after the database is seeded.</p>
       )}
 
-      <div className="mt-7 space-y-2.5 sm:mt-10 sm:space-y-3">
+      <div className="mt-7 sm:mt-10">
         <div className="-mx-4 scroll-rail-edge px-4 sm:mx-0 sm:px-0">
           <div className="scroll-rail flex-nowrap" aria-label="Event categories">
             <Link
-              href={day ? `/events?day=${day}` : "/events"}
+              href={
+                selectedDate ? `/events?date=${selectedDate}` : "/events"
+              }
               className={tabClass(!categorySlug)}
             >
               All events
@@ -92,7 +82,11 @@ export function EventsLineup({
             {categories.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/events?category=${cat.slug}${day ? `&day=${day}` : ""}`}
+                href={
+                  selectedDate
+                    ? `/events?category=${cat.slug}&date=${selectedDate}`
+                    : `/events?category=${cat.slug}`
+                }
                 className={tabClass(categorySlug === cat.slug)}
               >
                 {cat.name}
@@ -100,32 +94,23 @@ export function EventsLineup({
             ))}
           </div>
         </div>
-        <div className="-mx-4 scroll-rail-edge px-4 sm:mx-0 sm:px-0">
-          <div className="scroll-rail flex-nowrap" aria-label="Competition days">
-            <Link
-              href={`/events${categorySlug ? `?category=${categorySlug}` : ""}`}
-              className={dayClass(!day)}
-            >
-              All dates
-            </Link>
-            {dayDates.map((_, index) => {
-              const d = index + 1;
-              return (
-                <Link
-                  key={dayDates[index]}
-                  href={`/events?day=${d}${categorySlug ? `&category=${categorySlug}` : ""}`}
-                  className={dayClass(day === d)}
-                >
-                  {dayLabel(d)}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+      </div>
+
+      <div className="mt-7 sm:mt-10">
+        <EventsCalendar
+          events={categoryEvents}
+          selectedDate={selectedDate}
+          categorySlug={categorySlug}
+        />
       </div>
 
       <h2 className="mt-8 font-display text-2xl leading-none sm:mt-10 sm:text-3xl">
         The Competition Schedule
+        {selectedDate ? (
+          <span className="mt-2 block font-sans text-sm font-normal tracking-normal text-muted normal-case">
+            Showing {selectedDate}
+          </span>
+        ) : null}
       </h2>
 
       {filtered.length ? (
