@@ -202,7 +202,25 @@ export const assignWinnerSchema = z.object({
 const facebookUrlField = z
   .string()
   .trim()
-  .max(2000)
+  .max(4000)
+  .transform((value) => {
+    // Lazy import avoided: keep validation self-contained for server actions.
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    const iframeSrc = trimmed.match(
+      /src=["'](https?:\/\/(?:www\.)?facebook\.com\/plugins\/video\.php[^"']+)["']/i,
+    );
+    if (iframeSrc?.[1]) {
+      try {
+        const href = new URL(iframeSrc[1]).searchParams.get("href");
+        if (href) return decodeURIComponent(href);
+      } catch {
+        /* keep trimmed */
+      }
+    }
+    const firstUrl = trimmed.match(/https?:\/\/[^\s"'<>]+/i);
+    return firstUrl?.[0] ?? trimmed;
+  })
   .refine(
     (value) => {
       if (!value) return true;
@@ -224,7 +242,7 @@ const facebookUrlField = z
         return false;
       }
     },
-    { error: "Paste a Facebook or fb.watch URL." },
+    { error: "Paste a Facebook URL or Facebook embed iframe code." },
   );
 
 export const liveBroadcastSchema = z

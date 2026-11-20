@@ -67,15 +67,25 @@ export function LiveBroadcastManager({
         />
 
         <TextField
-          label="Facebook URL"
+          label="Facebook URL or embed code"
           name="facebook_url"
-          type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://www.facebook.com/YourPage/videos/… or /live"
+          placeholder="Video URL, /live link, or Facebook’s iframe embed code"
           error={state.errors?.facebook_url?.[0]}
-          hint="Paste a public Facebook Live, video, or page /live link. Video must be public to embed."
+          hint="Must be Public. For Live: Live Producer → Settings → Stream → enable Embed Live video → Get embed code."
         />
+
+        <div className="rounded-xl border border-border/80 bg-surface-2 px-4 py-3 text-xs leading-5 text-muted">
+          <p className="font-medium tracking-wide text-foreground uppercase">
+            If the player says Video Unavailable
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-4">
+            <li>Set the post audience to Public (Friends-only will not embed).</li>
+            <li>Enable Embed Live video before/during the stream, then re-copy the URL or embed code.</li>
+            <li>Ended lives sometimes stop embedding — paste the new VOD/embed link after the stream.</li>
+          </ul>
+        </div>
 
         <label className="flex items-start gap-3 rounded-xl border border-border bg-surface-2 px-4 py-3">
           <input
