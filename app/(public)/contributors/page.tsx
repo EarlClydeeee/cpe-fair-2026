@@ -7,16 +7,34 @@ import path from "node:path";
 export const metadata: Metadata = { title: "Contributors" };
 export const instant = false;
 
-const CONTRIBUTORS = [
+/**
+ * Bio note template — fill in role, affiliation, and bio for each person.
+ * Keep bio to 1–3 short sentences about what they built or led.
+ */
+type Contributor = {
+  name: string;
+  fileStem: string;
+  role: string;
+  affiliation: string;
+  bio: string;
+};
+
+const CONTRIBUTORS: Contributor[] = [
   {
-    name: "Charles Zachary DG Nudalo",
+    name: "Engr. Charles Zachary DG Nudalo",
     fileStem: "charles-zachary-dg-nudalo",
+    role: "Designer / Developer",
+    affiliation: "BS Computer Engineering",
+    bio: "Helped shape the look and feel of ACCESS CPE Fair 2026 — from layout and visuals to the public experience on the court.",
   },
   {
     name: "Earl Clyde M. Bañez",
     fileStem: "earl-clyde-m-banez",
+    role: "Developer / Builder",
+    affiliation: "BS Computer Engineering | AI and Privacy Governance Intern @ Globe Telecom",
+    bio: "Built and wired the live site — schedules, standings, scoring, and the tools that keep the fair running in real time.",
   },
-] as const;
+];
 
 const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif"] as const;
 
@@ -54,7 +72,7 @@ export default function ContributorsPage() {
           website.
         </p>
 
-        <ul className="mt-12 grid gap-8 sm:grid-cols-2">
+        <ul className="mt-12 grid gap-10 sm:grid-cols-2 sm:gap-8">
           {people.map((person, index) => (
             <li key={person.fileStem} className="space-y-4">
               <div className="relative aspect-[4/5] overflow-hidden bg-surface-2">
@@ -81,13 +99,28 @@ export default function ContributorsPage() {
                   </div>
                 )}
               </div>
-              <div className="flex items-baseline gap-3">
-                <span className="font-mono text-[10px] tracking-[0.16em] text-muted">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <h2 className="font-display text-2xl leading-none tracking-wide sm:text-3xl">
-                  {person.name}
-                </h2>
+
+              <div className="space-y-3 border-t border-border/70 pt-4">
+                <div className="flex items-baseline gap-3">
+                  <span className="font-mono text-[10px] tracking-[0.16em] text-muted">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h2 className="font-display text-2xl leading-none tracking-wide sm:text-3xl">
+                    {person.name}
+                  </h2>
+                </div>
+
+                <div className="space-y-1.5 pl-7">
+                  <p className="text-[11px] font-semibold tracking-[0.16em] text-accent uppercase">
+                    {person.role}
+                  </p>
+                  <p className="text-xs tracking-wide text-muted">
+                    {person.affiliation}
+                  </p>
+                  <p className="pt-1 text-sm leading-6 text-foreground/85">
+                    {person.bio}
+                  </p>
+                </div>
               </div>
             </li>
           ))}
