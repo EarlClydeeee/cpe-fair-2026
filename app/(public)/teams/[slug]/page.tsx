@@ -15,6 +15,7 @@ import { formatDateManila, formatPoints, formatTime } from "@/lib/format";
 
 type Props = { params: Promise<{ slug: string }> };
 
+
 export const instant = false;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
