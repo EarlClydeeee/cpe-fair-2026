@@ -31,7 +31,7 @@ export function ScorePanel({
   onLiveScore,
 }: {
   teams: { id: string; name: string }[];
-  categories: { id: string; name: string }[];
+  categories: { id: string; name: string; include_in_scoring?: boolean }[];
   competitions: CompetitionOption[];
   selectedTeamId?: string;
   selectedCategoryId?: string;
@@ -93,9 +93,16 @@ export function ScorePanel({
   }, [accumulatedInput]);
 
   const draftScore = publishedPoints + accumulated;
+  const selectedCategory = useMemo(
+    () => categories.find((c) => c.id === selectedCategoryId),
+    [categories, selectedCategoryId],
+  );
+  const isEventOnly = selectedCategory?.include_in_scoring === false;
+  // EVENT ONLY scores never touch Overall — keep preview total unchanged.
   const previewTotal = useMemo(
-    () => teamTotal - publishedPoints + draftScore,
-    [teamTotal, publishedPoints, draftScore],
+    () =>
+      isEventOnly ? teamTotal : teamTotal - publishedPoints + draftScore,
+    [isEventOnly, teamTotal, publishedPoints, draftScore],
   );
   const delta = previewTotal - teamTotal;
 
@@ -182,6 +189,11 @@ export function ScorePanel({
             value={selectedCategoryId}
             required
             error={saveState.errors?.category_id?.[0]}
+            hint={
+              isEventOnly
+                ? "EVENT ONLY — scored & ranked in its own leaderboard filter; not added to Overall."
+                : undefined
+            }
             onChange={(e) => {
               if (!selectedTeamId) return;
               const nextCat = e.target.value;
@@ -192,10 +204,20 @@ export function ScorePanel({
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {c.include_in_scoring === false
+                  ? `${c.name} (EVENT ONLY)`
+                  : c.name}
               </option>
             ))}
           </SelectField>
+
+          {isEventOnly ? (
+            <p className="rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs leading-5 text-accent">
+              EVENT ONLY — {selectedCategory?.name ?? "This category"} keeps its
+              own leaderboard tab and can still be scored. Points are not counted
+              in Overall.
+            </p>
+          ) : null}
 
           <SelectField
             label="Competition"

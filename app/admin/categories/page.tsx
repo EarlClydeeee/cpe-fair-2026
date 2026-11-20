@@ -19,8 +19,8 @@ async function CategoriesContent() {
         </h1>
         <p className="mt-2 text-sm text-muted">
           Create categories, then nest competitions under each. Scores and events attach
-          to a competition. Uncheck “Include in overall scoring” to rank that category in
-          its own filter without adding points to Overall.
+          to a competition. Uncheck “Include in overall scoring” for EVENT ONLY categories —
+          they keep their own leaderboard tab and remain scoreable, but do not add to Overall.
         </p>
       </div>
       <CategoryManager categories={categories} competitions={competitions} />

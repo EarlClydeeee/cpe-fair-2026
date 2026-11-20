@@ -233,7 +233,7 @@ export function CategoryManager({
                       {c.name}
                       {!c.include_in_scoring ? (
                         <span className="ml-2 text-[10px] font-normal tracking-wide text-muted uppercase">
-                          filter only
+                          EVENT ONLY
                         </span>
                       ) : null}
                     </span>
@@ -294,8 +294,8 @@ export function CategoryManager({
             Include in overall scoring
           </label>
           <p className="text-xs text-muted">
-            When off, teams can still be scored and ranked in this category&apos;s
-            leaderboard filter, but those points are not added to Overall totals.
+            When off (EVENT ONLY), teams can still be scored and ranked on that
+            category&apos;s leaderboard tab, but points are not added to Overall.
           </p>
           <FormMessage state={catSaveState} />
           <div className="flex flex-wrap gap-2">

@@ -48,7 +48,7 @@ async function LeaderboardsContent({ searchParams }: Props) {
           return [c.slug, points];
         }),
       ) as Record<string, number>;
-      // Matrix "Total" matches public Overall: exclude non-scoring categories.
+      // Overall column matches public Overall (scoring categories only).
       const total = categories
         .filter((c) => c.include_in_scoring)
         .reduce((sum, c) => sum + (byCategory[c.slug] ?? 0), 0);
@@ -143,7 +143,11 @@ async function LeaderboardsContent({ searchParams }: Props) {
                 id: r.team.id,
                 name: r.team.name,
               }))}
-              categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+              categories={categories.map((c) => ({
+                id: c.id,
+                name: c.name,
+                include_in_scoring: c.include_in_scoring,
+              }))}
               competitions={competitions.map((c) => ({
                 id: c.id,
                 name: c.name,
@@ -185,7 +189,7 @@ async function LeaderboardsContent({ searchParams }: Props) {
                       {c.name}
                       {!c.include_in_scoring ? (
                         <span className="mt-0.5 block text-[9px] font-normal tracking-wide text-muted normal-case">
-                          filter only
+                          EVENT ONLY
                         </span>
                       ) : null}
                     </th>

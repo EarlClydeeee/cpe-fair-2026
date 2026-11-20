@@ -64,8 +64,8 @@ export async function getScoreMatrix() {
   const [{ categories, competitions, rows }, rawDrafts, teams] =
     await Promise.all([getStandings(), getDrafts(), getTeams()]);
 
-  // All active categories can be scored and ranked in their own filter.
-  // Overall totals still exclude include_in_scoring = false in getStandings.
+  // EVENT ONLY categories (include_in_scoring = false) stay scoreable and
+  // get their own leaderboard filter; Overall totals still exclude them.
 
   // Only count drafts that can actually be reviewed (valid team + competition).
   const teamIds = new Set(teams.map((t) => t.id));

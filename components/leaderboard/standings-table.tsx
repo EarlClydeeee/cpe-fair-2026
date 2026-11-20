@@ -44,13 +44,13 @@ export function StandingsTable({
 }: {
   rows: StandingRow[];
   categoryName?: string;
-  /** False when viewing a category excluded from Overall scoring. */
+  /** False for EVENT ONLY category filters. */
   countsTowardOverall?: boolean;
 }) {
   const subtitle = categoryName
     ? countsTowardOverall
       ? `Rankings for ${categoryName}`
-      : `${categoryName} rankings — not added to Overall`
+      : `${categoryName} — EVENT ONLY leaderboard (not added to Overall)`
     : "Overall points from categories included in scoring";
 
   return (
