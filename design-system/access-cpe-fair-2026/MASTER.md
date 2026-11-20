@@ -1,7 +1,7 @@
 # Design System Master File — ACCESS CPE Fair 2026
 
 > Figma source of truth (screenshots). ui-ux-pro-max style = Dark OLED + competitive esports.
-> CTA is **orange `#FF6B21`**, not the skill default green.
+> CTA is **orange `#FF6B21`**, not the skill default green/indigo.
 
 **Project:** ACCESS CPE Fair 2026  
 **Slogan:** Fly high. Play as one.

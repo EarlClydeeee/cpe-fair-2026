@@ -135,16 +135,25 @@ export function EventCard({
             </p>
           )}
 
-          {/* Winner banner for completed matches */}
-          {winner && event.winner_team ? (
-            <div className="mt-2.5 flex items-center gap-2 rounded-lg bg-accent/10 border border-accent/20 px-2.5 py-1.5 text-xs">
-              <span className="font-bold text-foreground truncate">
-                {event.winner_team.name}
-              </span>
+          {/* Winner and/or Final score banner for completed matches */}
+          {(winner && event.winner_team) || finalScore ? (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-accent/10 border border-accent/25 px-3 py-2 text-xs">
+              {winner && event.winner_team ? (
+                <div className="flex items-center gap-1.5 font-bold text-foreground min-w-0">
+                  <span className="truncate">Winner: {event.winner_team.name}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 font-semibold text-accent min-w-0 text-xs">
+                  <span>Match Result</span>
+                </div>
+              )}
               {finalScore ? (
-                <span className="ml-auto text-[11px] font-mono text-muted shrink-0">
-                  {finalScore}
-                </span>
+                <div className="inline-flex items-center gap-1.5 rounded-md bg-background/90 px-2.5 py-1 font-mono text-xs font-bold text-accent border border-accent/30 shadow-xs">
+                  <span className="text-[9px] uppercase tracking-wider text-muted font-sans font-medium">
+                    Score
+                  </span>
+                  <span>{finalScore}</span>
+                </div>
               ) : null}
             </div>
           ) : null}

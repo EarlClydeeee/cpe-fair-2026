@@ -192,6 +192,7 @@ export const deleteByIdSchema = z.object({
 export const assignWinnerSchema = z.object({
   id: uuidSchema,
   winner_team_id: uuidSchema,
+  final_score: z.string().trim().max(80).optional(),
   /** Preview Final step may force Final so a winner can be saved. */
   force_final: z
     .union([z.literal("on"), z.literal("true"), z.literal("false"), z.literal("")])
