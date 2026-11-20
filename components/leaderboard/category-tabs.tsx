@@ -2,10 +2,10 @@ import Link from "next/link";
 import type { Category } from "@/lib/data/public";
 
 function tabClass(active: boolean) {
-  return `inline-flex flex-1 items-center justify-center rounded-lg px-2 py-2.5 text-center text-[10px] tracking-[0.1em] uppercase font-semibold transition-colors duration-200 sm:px-3 sm:text-[11px] md:text-xs md:tracking-[0.12em] ${
+  return `inline-flex items-center justify-center rounded-full px-4 py-2 text-center font-sans text-xs font-bold tracking-[0.14em] uppercase whitespace-nowrap transition-all duration-200 select-none sm:px-5 sm:py-2.5 sm:text-[13px] ${
     active
-      ? "bg-[#ff6a00] text-black shadow-[0_2px_12px_rgba(255,106,0,0.25)]"
-      : "bg-[#18191c] border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700"
+      ? "bg-[#ff6a00] text-black shadow-[0_2px_14px_rgba(255,106,0,0.3)] ring-1 ring-[#ff6a00]"
+      : "bg-[#18191c] border border-neutral-800/90 text-neutral-300 hover:border-neutral-700 hover:bg-[#202227] hover:text-white"
   }`;
 }
 
@@ -21,9 +21,9 @@ export function CategoryTabs({
   basePath?: string;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div
-        className="flex w-full gap-1.5 sm:gap-2"
+        className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5"
         role="tablist"
         aria-label="Categories"
       >
@@ -41,7 +41,7 @@ export function CategoryTabs({
         ))}
       </div>
       {showSampleBadge ? (
-        <p className="text-[10px] font-bold tracking-[0.16em] text-neutral-500 uppercase">
+        <p className="text-center text-[10px] font-bold tracking-[0.16em] text-neutral-500 uppercase">
           Preview / sample scores
         </p>
       ) : null}

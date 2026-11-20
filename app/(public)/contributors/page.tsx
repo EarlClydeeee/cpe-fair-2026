@@ -21,7 +21,7 @@ type Contributor = {
 
 const CONTRIBUTORS: Contributor[] = [
   {
-    name: "Engr. Charles Zachary DG Nudalo",
+    name: "Engr. Zachary Ralf Crescel Charles DG Nudalo",
     fileStem: "charles-zachary-dg-nudalo",
     role: "Designer / Developer",
     affiliation: "BS Computer Engineering",
