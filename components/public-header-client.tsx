@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 const nav = [
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/events", label: "Events" },
-  { href: "/mvp", label: "MVP" },
   { href: "/teams", label: "Teams" },
 ];
 
