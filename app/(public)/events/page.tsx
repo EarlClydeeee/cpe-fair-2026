@@ -1,21 +1,37 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EventsLineup } from "@/components/events/events-lineup";
+import { isValidDateKey } from "@/lib/calendar";
 import { getCategories, getEvents } from "@/lib/data/public";
 import { eventMvpTitle } from "@/lib/events";
+import { manilaDateKey } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Events" };
 export const instant = false;
 
-type Props = { searchParams: Promise<{ category?: string; date?: string }> };
+type Props = {
+  searchParams: Promise<{ category?: string; date?: string; day?: string }>;
+};
 
 export default async function EventsPage({ searchParams }: Props) {
-  const { category, date } = await searchParams;
-  const [categories, events] = await Promise.all([getCategories(), getEvents()]);
+  const { category, date, day } = await searchParams;
+  const [categories, events] = await Promise.all([
+    getCategories(),
+    getEvents(),
+  ]);
   const mvpCount = events.filter((event) => Boolean(eventMvpTitle(event))).length;
 
-  const selectedDate =
-    date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;
+  let selectedDate = isValidDateKey(date) ? date : undefined;
+  // Legacy ?day=1 maps to the Nth distinct event date (old Day tabs).
+  if (!selectedDate && day) {
+    const dayNum = Number(day);
+    if (Number.isFinite(dayNum) && dayNum >= 1) {
+      const dayDates = Array.from(
+        new Set(events.map((e) => manilaDateKey(e.start_at))),
+      ).sort();
+      selectedDate = dayDates[dayNum - 1];
+    }
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
@@ -45,7 +61,7 @@ export default async function EventsPage({ searchParams }: Props) {
         categories={categories}
         events={events}
         categorySlug={category}
-        selectedDate={selectedDate}
+        date={selectedDate}
       />
     </div>
   );

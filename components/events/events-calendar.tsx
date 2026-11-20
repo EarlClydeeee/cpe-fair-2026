@@ -177,7 +177,7 @@ export function EventsCalendar({
                 className={`${base} cursor-pointer ${
                   selected
                     ? "bg-accent font-semibold text-black"
-                    : "bg-accent-soft text-foreground hover:border-accent/60 hover:bg-accent/20 border border-transparent"
+                    : "border border-transparent bg-accent-soft text-foreground hover:border-accent/60 hover:bg-accent/20"
                 } ${isToday && !selected ? "ring-1 ring-accent/50" : ""}`}
               >
                 <span className="leading-none">{cell.day}</span>

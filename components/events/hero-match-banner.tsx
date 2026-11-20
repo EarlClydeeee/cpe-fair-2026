@@ -80,7 +80,10 @@ export function HeroMatchBanner({
 
         {winner ? <p className="mt-2 text-sm font-medium">{winner}</p> : null}
         {finalScore ? (
-          <p className="mt-1 font-mono text-sm text-black/70">{finalScore}</p>
+          <p className="mt-1 font-mono text-sm font-semibold text-black/90">
+            <span className="font-sans text-xs uppercase tracking-wider text-black/60 font-bold mr-1.5">Score:</span>
+            {finalScore}
+          </p>
         ) : null}
         {mvp ? (
           <p className="mt-1 text-sm text-black/80">

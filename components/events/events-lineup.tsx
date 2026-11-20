@@ -7,6 +7,7 @@ import { EventsCalendar } from "@/components/events/events-calendar";
 import { HeroMatchBanner } from "@/components/events/hero-match-banner";
 import { MatchDetailsDrawer } from "@/components/events/match-details-drawer";
 import type { Category, FairEvent } from "@/lib/data/public";
+import { isValidDateKey } from "@/lib/calendar";
 import { pickFeaturedEvent } from "@/lib/events";
 import { manilaDateKey } from "@/lib/format";
 import { useNow } from "@/lib/hooks/use-now";
@@ -23,31 +24,33 @@ export function EventsLineup({
   categories,
   events,
   categorySlug,
-  selectedDate,
+  date,
 }: {
   categories: Category[];
   events: FairEvent[];
   categorySlug?: string;
-  selectedDate?: string;
+  date?: string;
 }) {
   const now = useNow(30_000);
   const [selectedEvent, setSelectedEvent] = useState<FairEvent | null>(null);
+  const selectedDate = isValidDateKey(date) ? date : undefined;
 
   const featured = useMemo(
     () => pickFeaturedEvent(events, now),
     [events, now],
   );
 
+  const categoryEvents = useMemo(() => {
+    if (!categorySlug) return events;
+    return events.filter((e) => e.categories?.slug === categorySlug);
+  }, [events, categorySlug]);
+
   const filtered = useMemo(() => {
-    let rows = events;
-    if (categorySlug) {
-      rows = rows.filter((e) => e.categories?.slug === categorySlug);
-    }
-    if (selectedDate) {
-      rows = rows.filter((e) => manilaDateKey(e.start_at) === selectedDate);
-    }
-    return rows;
-  }, [events, categorySlug, selectedDate]);
+    if (!selectedDate) return categoryEvents;
+    return categoryEvents.filter(
+      (e) => manilaDateKey(e.start_at) === selectedDate,
+    );
+  }, [categoryEvents, selectedDate]);
 
   const openDetails = useCallback((event: FairEvent) => {
     setSelectedEvent(event);
@@ -95,7 +98,7 @@ export function EventsLineup({
       {/* Tablet / phone: calendar under filters */}
       <div className="mt-6 lg:hidden">
         <EventsCalendar
-          events={events}
+          events={categoryEvents}
           categorySlug={categorySlug}
           selectedDate={selectedDate}
         />
@@ -106,6 +109,11 @@ export function EventsLineup({
         <div className="min-w-0">
           <h2 className="font-display text-2xl leading-none sm:text-3xl">
             The Competition Schedule
+            {selectedDate ? (
+              <span className="mt-2 block font-sans text-sm font-normal tracking-normal text-muted normal-case">
+                Showing {selectedDate}
+              </span>
+            ) : null}
           </h2>
 
           {filtered.length ? (
@@ -128,7 +136,7 @@ export function EventsLineup({
         <aside className="hidden lg:block">
           <div className="lg:sticky lg:top-24">
             <EventsCalendar
-              events={events}
+              events={categoryEvents}
               categorySlug={categorySlug}
               selectedDate={selectedDate}
             />

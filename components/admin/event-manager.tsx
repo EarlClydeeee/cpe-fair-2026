@@ -427,10 +427,19 @@ export function EventManager({
                       {displayCompetition ? ` · ${displayCompetition}` : ""}
                       {matchup ? ` · ${matchup}` : ""}
                     </span>
-                    {winner ? (
-                      <span className="mt-1 block text-xs font-semibold text-info">
-                        {winner}
-                      </span>
+                    {winner || (isSelected ? finalScore.trim() : event.final_score?.trim()) ? (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {winner ? (
+                          <span className="text-xs font-semibold text-info">
+                            {winner}
+                          </span>
+                        ) : null}
+                        {(isSelected ? finalScore.trim() : event.final_score?.trim()) ? (
+                          <span className="rounded bg-surface-2 border border-border px-1.5 py-0.5 font-mono text-[10px] font-bold text-accent">
+                            Score: {isSelected ? finalScore.trim() : event.final_score?.trim()}
+                          </span>
+                        ) : null}
+                      </div>
                     ) : null}
                     {mvpLabel ? (
                       <span className="mt-1 block text-xs font-semibold text-accent">
@@ -509,14 +518,21 @@ export function EventManager({
           </p>
 
           {canSetWinner ? (
-            <div className="mt-3 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs">
-              <span className="font-semibold text-info">
-                {winnerTeam
-                  ? `Winner: ${winnerTeam.name}`
-                  : "Winner: Not yet announced"}
-              </span>
+            <div className="mt-3 space-y-1.5 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold text-info">
+                  {winnerTeam
+                    ? `Winner: ${winnerTeam.name}`
+                    : "Winner: Not yet announced"}
+                </span>
+                {finalScore.trim() ? (
+                  <span className="rounded bg-background/80 px-2 py-0.5 font-mono text-[11px] font-bold text-accent border border-accent/25">
+                    Score: {finalScore.trim()}
+                  </span>
+                ) : null}
+              </div>
               {resultNote ? (
-                <span className="ml-2 text-muted">({resultNote})</span>
+                <span className="block text-muted">Note: {resultNote}</span>
               ) : null}
             </div>
           ) : null}
@@ -862,12 +878,12 @@ export function EventManager({
 
             {canSetWinner ? (
               <TextField
-                label="Final score"
+                label="Final score (Optional)"
                 name="final_score"
                 value={finalScore}
-                placeholder="e.g. 2-1 or 25-21, 25-19"
+                placeholder="e.g. 2 - 1, 25-21, 25-19, or 88 - 76 (optional)"
                 onChange={(e) => setFinalScore(e.target.value)}
-                hint="Optional. Shown on the public schedule for ended matches."
+                hint="Optional. Leave blank if this game has no scoring system. Shown on the public match card."
               />
             ) : (
               <input type="hidden" name="final_score" value={finalScore} />
@@ -931,7 +947,12 @@ export function EventManager({
           teams={teams}
           open={previewOpen}
           onClose={() => setPreviewOpen(false)}
-          onWinnerSaved={() => {
+          onWinnerSaved={(winnerId, savedScore) => {
+            setWinnerTeamId(winnerId);
+            if (savedScore !== undefined) {
+              setFinalScore(savedScore);
+            }
+            setStatusMode("ended");
             setPreviewOpen(false);
             router.refresh();
           }}
