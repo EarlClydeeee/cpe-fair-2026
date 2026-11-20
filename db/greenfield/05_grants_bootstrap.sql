@@ -8,7 +8,8 @@ grant select on
   public.competitions,
   public.competition_teams,
   public.events,
-  public.published_scores
+  public.published_scores,
+  public.live_broadcasts
 to anon, authenticated;
 
 grant select on public.audit_log to authenticated;
@@ -24,7 +25,8 @@ grant select, insert, update, delete on
   public.published_scores,
   public.score_drafts,
   public.admin_invitations,
-  public.audit_log
+  public.audit_log,
+  public.live_broadcasts
 to authenticated;
 
 grant all on all tables in schema public to service_role;

@@ -42,6 +42,8 @@ function applySecurityHeaders(response: NextResponse) {
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       `connect-src ${connectSrc}`,
+      "frame-src https://www.facebook.com https://web.facebook.com https://m.facebook.com https://facebook.com",
+      "child-src https://www.facebook.com https://web.facebook.com https://m.facebook.com https://facebook.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

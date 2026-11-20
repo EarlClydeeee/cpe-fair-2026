@@ -260,6 +260,24 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["audit_log"]["Insert"]>;
         Relationships: [];
       };
+      live_broadcasts: {
+        Row: {
+          id: string;
+          season_id: string;
+          title: string;
+          facebook_url: string;
+          is_active: boolean;
+        } & Timestamps;
+        Insert: {
+          id?: string;
+          season_id: string;
+          title?: string;
+          facebook_url?: string;
+          is_active?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["live_broadcasts"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

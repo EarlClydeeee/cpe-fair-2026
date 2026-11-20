@@ -13,6 +13,7 @@ const LIVE_TABLES = [
   "score_drafts",
   "events",
   "competition_teams",
+  "live_broadcasts",
 ] as const;
 
 /** Keep open pages in sync when fair data changes — no manual refresh. */

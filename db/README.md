@@ -36,7 +36,8 @@ Apply **in order**, skip superseded files:
 | 12 | `migrations/0017_category_include_in_scoring.sql` | Category scoring flag + RPC guard |
 | 13 | `migrations/0018_event_mvp_title.sql` | Optional MVP title on events |
 | 14 | `migrations/0019_event_final_score.sql` | Optional final score on events |
-| 15 | `seed.sql` | Ensure active season |
+| 15 | `migrations/0020_live_broadcasts.sql` | Facebook Live URL + public `/live` |
+| 16 | `seed.sql` | Ensure active season |
 
 Already applied projects: only run migrations you have **not** run yet (usually `0018` / `0019`).
 

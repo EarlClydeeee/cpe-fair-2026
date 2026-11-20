@@ -80,9 +80,21 @@ const links = [
     ),
   },
   {
+    href: "/admin/live",
+    label: "Live",
+    n: "06",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14" />
+        <rect width="12" height="12" x="2" y="6" rx="2" />
+        <circle cx="8" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/access",
     label: "Admin access",
-    n: "06",
+    n: "07",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
@@ -120,6 +132,8 @@ function getBreadcrumbs(pathname: string) {
     crumbs.push({ label: "Categories" });
   } else if (pathname === "/admin/teams") {
     crumbs.push({ label: "Teams" });
+  } else if (pathname === "/admin/live") {
+    crumbs.push({ label: "Live" });
   } else if (pathname === "/admin/access") {
     crumbs.push({ label: "Admin Access" });
   } else {

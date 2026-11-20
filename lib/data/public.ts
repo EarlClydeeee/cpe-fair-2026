@@ -277,6 +277,27 @@ export async function getEventsForTeam(teamId: string): Promise<FairEvent[]> {
     .sort((a, b) => a.start_at.localeCompare(b.start_at));
 }
 
+export type LiveBroadcast = Tables<"live_broadcasts">;
+
+export async function getLiveBroadcast(): Promise<LiveBroadcast | null> {
+  "use cache";
+  cacheLife({ stale: 30, revalidate: 30, expire: 120 });
+  cacheTag(tags.live, tags.season);
+
+  if (!isSupabaseConfigured) return null;
+
+  const season = await getActiveSeason();
+  if (!season) return null;
+
+  return query("getLiveBroadcast", null, () =>
+    createPublicClient()
+      .from("live_broadcasts")
+      .select("*")
+      .eq("season_id", season.id)
+      .maybeSingle(),
+  );
+}
+
 export type PublicDataSource = "live" | "sample";
 
 export async function getStandings(categorySlug?: string): Promise<{

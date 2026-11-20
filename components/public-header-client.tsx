@@ -9,6 +9,7 @@ const nav = [
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/events", label: "Events" },
   { href: "/teams", label: "Teams" },
+  { href: "/live", label: "Live" },
 ];
 
 function useClientPathname() {

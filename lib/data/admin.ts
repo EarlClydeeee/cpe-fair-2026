@@ -164,6 +164,52 @@ export async function getAuditLog(filters?: { action?: string; q?: string }) {
   return rows.map((row) => ({ ...row, profiles: null as null }));
 }
 
+export async function getAdminLiveBroadcast() {
+  await requireStaff("/admin/live");
+  if (!isSupabaseConfigured) {
+    return {
+      id: null as string | null,
+      title: "Live now",
+      facebook_url: "",
+      is_active: false,
+    };
+  }
+
+  const supabase = await createClient();
+  const season = (await ensureActiveSeason(supabase)) ?? (await getActiveSeason());
+  if (!season) {
+    return {
+      id: null as string | null,
+      title: "Live now",
+      facebook_url: "",
+      is_active: false,
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("live_broadcasts")
+    .select("id, title, facebook_url, is_active")
+    .eq("season_id", season.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[data] getAdminLiveBroadcast:", error.message);
+    return {
+      id: null as string | null,
+      title: "Live now",
+      facebook_url: "",
+      is_active: false,
+    };
+  }
+
+  return {
+    id: data?.id ?? null,
+    title: data?.title ?? "Live now",
+    facebook_url: data?.facebook_url ?? "",
+    is_active: data?.is_active ?? false,
+  };
+}
+
 export async function requireOwnerAccess() {
   return requireOwner();
 }

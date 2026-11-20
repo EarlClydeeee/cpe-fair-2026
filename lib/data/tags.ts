@@ -6,4 +6,5 @@ export const tags = {
   drafts: "drafts",
   audit: "audit",
   access: "access",
+  live: "live",
 } as const;

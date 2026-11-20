@@ -143,3 +143,12 @@ create policy "audit: staff read" on public.audit_log
   for select to authenticated using ((select public.is_staff()));
 create policy "audit: staff insert" on public.audit_log
   for insert to authenticated with check ((select public.is_staff()));
+
+alter table public.live_broadcasts enable row level security;
+
+create policy "live_broadcasts: public read" on public.live_broadcasts
+  for select to anon, authenticated using (true);
+create policy "live_broadcasts: content write" on public.live_broadcasts
+  for all to authenticated
+  using ((select public.can_manage_content()))
+  with check ((select public.can_manage_content()));

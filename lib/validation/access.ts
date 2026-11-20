@@ -198,3 +198,51 @@ export const assignWinnerSchema = z.object({
     .optional()
     .transform((v) => v === "on" || v === "true"),
 });
+
+const facebookUrlField = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine(
+    (value) => {
+      if (!value) return true;
+      try {
+        const url = new URL(value);
+        if (url.protocol !== "http:" && url.protocol !== "https:") return false;
+        const host = url.hostname.toLowerCase();
+        return (
+          host === "facebook.com" ||
+          host === "www.facebook.com" ||
+          host === "m.facebook.com" ||
+          host === "web.facebook.com" ||
+          host === "fb.watch" ||
+          host === "www.fb.watch" ||
+          host === "fb.com" ||
+          host === "www.fb.com"
+        );
+      } catch {
+        return false;
+      }
+    },
+    { error: "Paste a Facebook or fb.watch URL." },
+  );
+
+export const liveBroadcastSchema = z
+  .object({
+    id: uuidSchema.optional(),
+    title: z.string().trim().min(2).max(120).default("Live now"),
+    facebook_url: facebookUrlField.default(""),
+    is_active: z
+      .union([z.literal("on"), z.literal("true"), z.literal("false"), z.literal("")])
+      .optional()
+      .transform((v) => v === "on" || v === "true"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.is_active && !data.facebook_url) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Add a Facebook URL before going live.",
+        path: ["facebook_url"],
+      });
+    }
+  });

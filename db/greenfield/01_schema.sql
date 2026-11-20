@@ -205,3 +205,20 @@ create table public.audit_log (
 
 create index audit_log_created_at_idx on public.audit_log (created_at desc);
 create index audit_log_season_id_idx on public.audit_log (season_id);
+
+-- Facebook Live broadcast (one row per season) ------------------------------
+
+create table public.live_broadcasts (
+  id uuid primary key default gen_random_uuid(),
+  season_id uuid not null references public.seasons (id) on delete cascade,
+  title text not null default 'Live now',
+  facebook_url text not null default '',
+  is_active boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint live_broadcasts_season_unique unique (season_id)
+);
+
+create index live_broadcasts_active_idx
+  on public.live_broadcasts (is_active)
+  where is_active = true;

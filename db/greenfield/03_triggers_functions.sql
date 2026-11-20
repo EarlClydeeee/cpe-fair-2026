@@ -16,7 +16,8 @@ declare t text;
 begin
   foreach t in array array[
     'profiles', 'seasons', 'categories', 'competitions', 'competition_teams',
-    'events', 'published_scores', 'score_drafts', 'admin_invitations'
+    'events', 'published_scores', 'score_drafts', 'admin_invitations',
+    'live_broadcasts'
   ] loop
     execute format(
       'create trigger set_updated_at before update on public.%I
@@ -282,6 +283,7 @@ set search_path = public
 as $$
 begin
   truncate table
+    public.live_broadcasts,
     public.score_drafts,
     public.published_scores,
     public.events,
