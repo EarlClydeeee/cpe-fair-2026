@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { AdminShell } from "@/components/admin-shell";
 import { requireStaff } from "@/lib/auth";
 import { ensureActiveSeason } from "@/lib/data/season";
+import { getDrafts } from "@/lib/data/standings";
 import { createClient } from "@/lib/supabase/server";
 
 export const instant = false;
@@ -25,10 +26,17 @@ async function AdminAuthenticatedShell({ children }: { children: React.ReactNode
   await connection();
   const user = await requireStaff();
   const supabase = await createClient();
-  const season = await ensureActiveSeason(supabase);
+  const [season, drafts] = await Promise.all([
+    ensureActiveSeason(supabase),
+    getDrafts(),
+  ]);
 
   return (
-    <AdminShell role={user.role} seasonName={season?.name ?? "CPE Fair 2026"}>
+    <AdminShell
+      role={user.role}
+      seasonName={season?.name ?? "CPE Fair 2026"}
+      reviewDraftCount={drafts.length}
+    >
       {children}
     </AdminShell>
   );

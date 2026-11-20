@@ -157,12 +157,32 @@ function BreadcrumbBar({ pathname }: { pathname: string }) {
   );
 }
 
+function ReviewBadge({
+  count,
+  className = "",
+}: {
+  count: number;
+  className?: string;
+}) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className={`inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold leading-none text-black ${className}`}
+      aria-label={`${count} draft${count === 1 ? "" : "s"} waiting for review`}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 function NavLinks({
   pathname,
   onNavigate,
+  reviewDraftCount = 0,
 }: {
   pathname: string;
   onNavigate?: () => void;
+  reviewDraftCount?: number;
 }) {
   return (
     <nav className="space-y-1.5" aria-label="Admin workspace">
@@ -174,11 +194,16 @@ function NavLinks({
 
         const showSubLinks =
           Boolean(link.subLinks) && pathname.startsWith(link.href);
+        const isLeaderboards = link.href === "/admin/leaderboards";
 
         return (
           <div key={link.href} className="space-y-1">
             <Link
-              href={link.href}
+              href={
+                isLeaderboards && reviewDraftCount > 0
+                  ? "/admin/leaderboards/review"
+                  : link.href
+              }
               onClick={onNavigate}
               className={`flex min-h-10 items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 ${
                 isActive
@@ -191,6 +216,9 @@ function NavLinks({
                   {link.icon}
                 </span>
                 <span>{link.label}</span>
+                {isLeaderboards ? (
+                  <ReviewBadge count={reviewDraftCount} />
+                ) : null}
               </div>
               <span className="font-mono text-[10px] opacity-60">{link.n}</span>
             </Link>
@@ -201,18 +229,20 @@ function NavLinks({
                   const isSubActive = sub.exact
                     ? pathname === sub.href
                     : pathname.startsWith(sub.href);
+                  const isReview = sub.href.endsWith("/review");
                   return (
                     <Link
                       key={sub.href}
                       href={sub.href}
                       onClick={onNavigate}
-                      className={`block rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+                      className={`flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-xs transition-colors ${
                         isSubActive
                           ? "bg-surface-2 font-semibold text-accent"
                           : "text-muted hover:bg-surface-2 hover:text-foreground"
                       }`}
                     >
-                      {sub.label}
+                      <span>{sub.label}</span>
+                      {isReview ? <ReviewBadge count={reviewDraftCount} /> : null}
                     </Link>
                   );
                 })}
@@ -230,11 +260,13 @@ function SidebarChrome({
   seasonName,
   pathname,
   onNavigate,
+  reviewDraftCount = 0,
 }: {
   role: AdminRole;
   seasonName: string;
   pathname: string;
   onNavigate?: () => void;
+  reviewDraftCount?: number;
 }) {
   return (
     <>
@@ -263,7 +295,11 @@ function SidebarChrome({
         Workspace Navigation
       </p>
       <div className="mt-2.5">
-        <NavLinks pathname={pathname} onNavigate={onNavigate} />
+        <NavLinks
+          pathname={pathname}
+          onNavigate={onNavigate}
+          reviewDraftCount={reviewDraftCount}
+        />
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-surface-2 p-3 md:mt-8">
@@ -302,10 +338,12 @@ function SidebarChrome({
 export function AdminShell({
   role,
   seasonName,
+  reviewDraftCount = 0,
   children,
 }: {
   role: AdminRole;
   seasonName: string;
+  reviewDraftCount?: number;
   children: React.ReactNode;
 }) {
   const pathname = useClientPathname();
@@ -333,7 +371,12 @@ export function AdminShell({
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border bg-surface px-4 py-6 md:flex">
-        <SidebarChrome role={role} seasonName={seasonName} pathname={pathname} />
+        <SidebarChrome
+          role={role}
+          seasonName={seasonName}
+          pathname={pathname}
+          reviewDraftCount={reviewDraftCount}
+        />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -361,7 +404,7 @@ export function AdminShell({
               </span>
               <button
                 type="button"
-                className="inline-flex size-10 items-center justify-center rounded-md border border-border text-muted transition-colors duration-200 hover:text-foreground"
+                className="relative inline-flex size-10 items-center justify-center rounded-md border border-border text-muted transition-colors duration-200 hover:text-foreground"
                 aria-expanded={open}
                 aria-controls={drawerId}
                 onClick={() => setOpen((v) => !v)}
@@ -382,6 +425,12 @@ export function AdminShell({
                     />
                   )}
                 </svg>
+                {!open ? (
+                  <ReviewBadge
+                    count={reviewDraftCount}
+                    className="absolute -top-1 -right-1"
+                  />
+                ) : null}
               </button>
             </div>
           </div>
@@ -404,6 +453,7 @@ export function AdminShell({
                 seasonName={seasonName}
                 pathname={pathname}
                 onNavigate={() => setOpen(false)}
+                reviewDraftCount={reviewDraftCount}
               />
             </aside>
           </div>
