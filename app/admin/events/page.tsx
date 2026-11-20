@@ -12,13 +12,14 @@ type Props = { searchParams: Promise<{ status?: string; id?: string }> };
 
 async function EventsContent({ searchParams }: Props) {
   await connection();
-  const { status, id } = (await searchParams) ?? {};
-  const [events, categories, competitions, teams] = await Promise.all([
-    getAdminEvents(),
-    getCategories(),
-    getCompetitions(),
-    getTeams(),
-  ]);
+  const [{ status, id }, events, categories, competitions, teams] =
+    await Promise.all([
+      searchParams,
+      getAdminEvents(),
+      getCategories(),
+      getCompetitions(),
+      getTeams(),
+    ]);
 
   return (
     <div className="space-y-6">

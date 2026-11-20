@@ -79,6 +79,17 @@ export async function updateSession(request: NextRequest) {
     return response;
   }
 
+  // Public pages with no Supabase auth cookie skip getClaims — saves a round trip.
+  const hasSupabaseAuthCookie = request.cookies
+    .getAll()
+    .some(
+      (cookie) =>
+        cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"),
+    );
+  if (!needsAuth && pathname !== "/login" && !hasSupabaseAuthCookie) {
+    return response;
+  }
+
   const supabase = createServerClient<Database>(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {

@@ -5,7 +5,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 
 export const metadata: Metadata = { title: "Contributors" };
-export const instant = false;
+export const instant = true;
 
 /**
  * Bio note template — fill in role, affiliation, and bio for each person.

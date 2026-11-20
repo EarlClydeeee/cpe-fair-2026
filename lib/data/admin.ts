@@ -4,7 +4,6 @@ import { requireOwner, requireStaff } from "@/lib/auth";
 import { getComputedEventStatus } from "@/lib/events";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
-import type { Tables } from "@/lib/supabase/database.types";
 import {
   getActiveSeason,
   getCategories,
@@ -15,16 +14,9 @@ import {
   type Category,
   type Competition,
   type FairEvent,
-  type FairEventTeam,
 } from "./public";
 import { ensureActiveSeason } from "./season";
 import { getDraftDiffs } from "./standings";
-
-function toTeam(
-  t: Tables<"competition_teams"> | null | undefined,
-): FairEventTeam | null {
-  return t ? { id: t.id, name: t.name, slug: t.slug, color_hex: t.color_hex } : null;
-}
 
 export async function getOverview() {
   // Page segment prerender is separate from layout; opt into request time before Date/auth.
@@ -76,41 +68,9 @@ export async function getOverview() {
 
 export async function getAdminEvents(): Promise<FairEvent[]> {
   await requireStaff("/admin/events");
-  const supabase = await createClient();
-  const season = (await ensureActiveSeason(supabase)) ?? (await getActiveSeason());
-  if (!season) return [];
-
-  const [categories, competitions, teams, { data, error }] = await Promise.all([
-    getCategories(season.id),
-    getCompetitions({ seasonId: season.id }),
-    getTeams(season.id),
-    supabase
-      .from("events")
-      .select("*")
-      .eq("season_id", season.id)
-      .eq("is_archived", false)
-      .order("start_at", { ascending: false }),
-  ]);
-  if (error) throw new Error(error.message);
-
-  const catById = new Map(categories.map((c) => [c.id, c]));
-  const compById = new Map(competitions.map((c) => [c.id, c]));
-  const teamById = new Map(teams.map((t) => [t.id, t]));
-
-  return (data ?? []).map((event) => {
-    const cat = catById.get(event.category_id);
-    const comp = compById.get(event.competition_id);
-    return {
-      ...event,
-      categories: cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null,
-      competitions: comp ? { id: comp.id, name: comp.name, slug: comp.slug } : null,
-      team_a: toTeam(event.team_a_id ? teamById.get(event.team_a_id) : null),
-      team_b: toTeam(event.team_b_id ? teamById.get(event.team_b_id) : null),
-      winner_team: toTeam(
-        event.winner_team_id ? teamById.get(event.winner_team_id) : null,
-      ),
-    };
-  });
+  // Reuse the public events cache; admin saves already revalidate tags.events.
+  const events = await getEvents();
+  return [...events].sort((a, b) => b.start_at.localeCompare(a.start_at));
 }
 
 export async function getAdminCategories(): Promise<{

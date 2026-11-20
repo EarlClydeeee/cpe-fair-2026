@@ -195,8 +195,8 @@ export async function getEvents(filters?: {
   categorySlug?: string;
 }): Promise<FairEvent[]> {
   "use cache";
-  // Short TTL so guest pages pick up admin creates/edits quickly.
-  cacheLife({ stale: 0, revalidate: 15, expire: 60 });
+  // Prefer warm cache for fast navigations; admin saves still bust via tags.events.
+  cacheLife({ stale: 30, revalidate: 60, expire: 300 });
   cacheTag(tags.events);
 
   if (!isSupabaseConfigured) return DEFAULT_EVENTS;
@@ -233,7 +233,7 @@ export async function getEvents(filters?: {
 
 export async function getEvent(id: string): Promise<FairEvent | null> {
   "use cache";
-  cacheLife({ stale: 0, revalidate: 15, expire: 60 });
+  cacheLife({ stale: 30, revalidate: 60, expire: 300 });
   cacheTag(tags.events);
 
   if (!isSupabaseConfigured) {
