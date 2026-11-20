@@ -249,6 +249,7 @@ export async function assignEventWinner(
   }
 
   const winnerId = parsed.data.winner_team_id;
+  const finalScore = parsed.data.final_score !== undefined ? parsed.data.final_score : undefined;
   if (existing.match_type === "head_to_head") {
     if (
       winnerId !== existing.team_a_id &&
@@ -270,12 +271,21 @@ export async function assignEventWinner(
     }
   }
 
+  const updateData: {
+    winner_team_id: string;
+    status_override: "ended";
+    final_score?: string;
+  } = {
+    winner_team_id: winnerId,
+    status_override: "ended",
+  };
+  if (finalScore !== undefined) {
+    updateData.final_score = finalScore;
+  }
+
   const { error } = await supabase
     .from("events")
-    .update({
-      winner_team_id: winnerId,
-      status_override: "ended",
-    })
+    .update(updateData)
     .eq("id", existing.id);
   if (error) return { ok: false, message: error.message };
 
@@ -285,16 +295,22 @@ export async function assignEventWinner(
     .eq("id", winnerId)
     .maybeSingle();
 
+  const auditSummary = [
+    `Assigned winner ${winnerTeam?.name ?? winnerId} for ${existing.name}`,
+    finalScore ? `(Score: ${finalScore})` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   await supabase.from("audit_log").insert({
     season_id: existing.season_id,
     actor_id: user.id,
     action: "event_updated",
     entity_type: "event",
     entity_id: existing.id,
-    summary: `Assigned winner ${winnerTeam?.name ?? winnerId} for ${existing.name}`,
+    summary: auditSummary,
     after_json: {
-      winner_team_id: winnerId,
-      status_override: "ended",
+      ...updateData,
     } as never,
   });
 

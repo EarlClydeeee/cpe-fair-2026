@@ -184,7 +184,7 @@ export function MatchDetailsDrawer({
                       </div>
                       {event.winner_team_id === event.team_a.id ? (
                         <span className="inline-flex items-center gap-1 rounded bg-accent px-2 py-0.5 text-[10px] font-bold text-black uppercase">
-                          🏆 Winner
+                          Winner
                         </span>
                       ) : null}
                     </div>
