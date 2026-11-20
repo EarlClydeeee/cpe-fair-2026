@@ -1,7 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { archiveTeam, saveTeam } from "@/app/actions/teams";
+import {
+  archiveTeam,
+  deleteTeamPermanently,
+  saveTeam,
+} from "@/app/actions/teams";
 import { initialActionState } from "@/lib/action-state";
 import { TeamBanner } from "../team-banner";
 import { FormMessage } from "../ui/form-message";
@@ -45,6 +50,15 @@ function slugify(text: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
+function matchesQuery(team: TeamRow, query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    team.name.toLowerCase().includes(q) ||
+    team.affiliation.toLowerCase().includes(q)
+  );
+}
+
 export function TeamManager({
   teams,
   totals,
@@ -52,9 +66,9 @@ export function TeamManager({
   teams: TeamRow[];
   totals: Record<string, number>;
 }) {
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState<string>(teams[0]?.id ?? NEW_TEAM);
   const [query, setQuery] = useState("");
-  const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "archived">("all");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [focus, setFocus] = useState<"list" | "editor">("list");
 
@@ -64,7 +78,6 @@ export function TeamManager({
     [teams, selectedId, isCreating],
   );
 
-  // Real-time controlled form state
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
@@ -73,7 +86,6 @@ export function TeamManager({
   const [visibility, setVisibility] = useState("active");
   const [sortOrder, setSortOrder] = useState<number>(1);
 
-  // Reset/sync form values when selected team changes
   useEffect(() => {
     if (selected) {
       setName(selected.name);
@@ -102,35 +114,68 @@ export function TeamManager({
   }, [previewUrl]);
 
   const [saveState, saveAction] = useActionState(saveTeam, initialActionState);
-  const [archiveState, archiveAction] = useActionState(archiveTeam, initialActionState);
+  const [archiveState, archiveAction] = useActionState(
+    archiveTeam,
+    initialActionState,
+  );
+  const [deleteState, deleteAction] = useActionState(
+    deleteTeamPermanently,
+    initialActionState,
+  );
 
-  // Filtered teams list
-  const filtered = useMemo(() => {
-    return teams.filter((t) => {
-      if (t.id === selectedId) return true;
-      const matchesSearch = t.name.toLowerCase().includes(query.toLowerCase()) ||
-        t.affiliation.toLowerCase().includes(query.toLowerCase());
-      if (!matchesSearch) return false;
-      if (visibilityFilter === "all") return true;
-      return t.visibility === visibilityFilter;
-    });
-  }, [teams, query, visibilityFilter]);
+  useEffect(() => {
+    if (saveState.ok || archiveState.ok || deleteState.ok) {
+      if (deleteState.ok) {
+        setSelectedId(NEW_TEAM);
+        setFocus("list");
+      }
+      router.refresh();
+    }
+  }, [
+    saveState.ok,
+    saveState.message,
+    archiveState.ok,
+    archiveState.message,
+    deleteState.ok,
+    deleteState.message,
+    router,
+  ]);
 
-  // Real-time preview values
-  const previewName = name.trim() || (isCreating ? "New team" : (selected?.name ?? "Team"));
+  const activeTeams = useMemo(
+    () =>
+      teams.filter(
+        (t) => t.visibility === "active" && matchesQuery(t, query),
+      ),
+    [teams, query],
+  );
+  const archivedTeams = useMemo(
+    () =>
+      teams.filter(
+        (t) => t.visibility === "archived" && matchesQuery(t, query),
+      ),
+    [teams, query],
+  );
+
+  const previewName =
+    name.trim() || (isCreating ? "New team" : (selected?.name ?? "Team"));
   const previewColor = colorHex || "#FF6B21";
   const previewArtwork = previewUrl ?? selected?.artwork_url ?? null;
+  const isArchivedSelected = selected?.visibility === "archived";
 
   function openTeam(id: string) {
     setSelectedId(id);
     setFocus("editor");
   }
 
+  function confirmPermanentDelete(teamName: string) {
+    return window.confirm(
+      `Permanently delete "${teamName}"?\n\nThis removes the team from the database. Scores for this team are deleted. Event matchups keep the fixture but clear this team reference. This cannot be undone.`,
+    );
+  }
+
   return (
     <div className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
-      {/* Left Column: Team Directory & Filters */}
       <div className={`space-y-4 ${focus === "editor" ? "hidden xl:block" : ""}`}>
-        {/* Search, Filter Tabs & Add Team Button */}
         <div className="flex flex-wrap items-center gap-2">
           <input
             value={query}
@@ -138,24 +183,6 @@ export function TeamManager({
             placeholder="Search team or affiliation..."
             className="min-w-[12rem] flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-muted/60"
           />
-
-          <div className="flex rounded-lg border border-border bg-surface-2 p-0.5 text-xs">
-            {(["all", "active", "archived"] as const).map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={() => setVisibilityFilter(filter)}
-                className={`rounded-md px-2.5 py-1 font-medium capitalize transition ${
-                  visibilityFilter === filter
-                    ? "bg-surface text-accent shadow-xs"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-
           <button
             type="button"
             onClick={() => openTeam(NEW_TEAM)}
@@ -169,73 +196,167 @@ export function TeamManager({
           </button>
         </div>
 
-        {/* Directory List */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-          <div className="grid grid-cols-[1.4fr_1fr_90px_90px] gap-2 border-b border-border px-4 py-3 text-[10px] tracking-wide text-muted uppercase">
-            <span>Team</span>
-            <span>Affiliation</span>
-            <span>Points</span>
-            <span>Visibility</span>
+        <section className="space-y-2">
+          <div className="flex items-end justify-between gap-2 px-0.5">
+            <div>
+              <h2 className="font-display text-xl tracking-wide uppercase">
+                Active teams
+              </h2>
+              <p className="text-xs text-muted">
+                Visible on the public roster and standings.
+              </p>
+            </div>
+            <p className="text-xs font-semibold tracking-wide text-muted uppercase">
+              {activeTeams.length} teams
+            </p>
           </div>
-          {filtered.map((team) => {
-            const isSelected = selected?.id === team.id;
-            // Reflect real-time edits if this is the currently selected team
-            const displayName = isSelected ? previewName : team.name;
-            const displayColor = isSelected ? previewColor : team.color_hex;
-            const displayAffiliation = isSelected ? (affiliation || "—") : (team.affiliation || "—");
-            const displayVisibility = isSelected ? visibility : team.visibility;
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+            <div className="grid grid-cols-[1.4fr_1fr_90px] gap-2 border-b border-border px-4 py-3 text-[10px] tracking-wide text-muted uppercase">
+              <span>Team</span>
+              <span>Affiliation</span>
+              <span>Points</span>
+            </div>
+            {activeTeams.map((team) => {
+              const isSelected = selected?.id === team.id;
+              const displayName = isSelected ? previewName : team.name;
+              const displayColor = isSelected ? previewColor : team.color_hex;
+              const displayAffiliation = isSelected
+                ? affiliation || "—"
+                : team.affiliation || "—";
 
-            return (
-              <button
-                key={team.id}
-                type="button"
-                onClick={() => openTeam(team.id)}
-                className={`grid w-full grid-cols-[1.4fr_1fr_90px_90px] items-center gap-2 border-b border-border/60 px-4 py-3 text-left text-sm transition-colors ${
-                  isSelected ? "bg-accent-soft" : "hover:bg-surface-2"
-                }`}
-              >
-                <span className="flex items-center gap-2.5 font-medium min-w-0">
-                  <span
-                    className="h-6 w-1.5 shrink-0 rounded-full transition-colors"
-                    style={{ background: displayColor }}
-                  />
-                  <span className="truncate">{displayName}</span>
-                  {isSelected ? (
-                    <span className="ml-1 rounded bg-accent/20 px-1.5 py-0.2 text-[9px] font-semibold text-accent uppercase">
-                      Editing
-                    </span>
-                  ) : null}
-                </span>
-                <span className="truncate text-muted">{displayAffiliation}</span>
-                <span className="font-semibold">{totals[team.id] ?? 0}</span>
-                <span
-                  className={`text-xs uppercase font-medium ${
-                    displayVisibility === "active" ? "text-success" : "text-muted"
+              return (
+                <button
+                  key={team.id}
+                  type="button"
+                  onClick={() => openTeam(team.id)}
+                  className={`grid w-full grid-cols-[1.4fr_1fr_90px] items-center gap-2 border-b border-border/60 px-4 py-3 text-left text-sm transition-colors ${
+                    isSelected ? "bg-accent-soft" : "hover:bg-surface-2"
                   }`}
                 >
-                  {displayVisibility}
-                </span>
-              </button>
-            );
-          })}
-          {!filtered.length ? (
-            <p className="px-4 py-6 text-sm text-muted">
-              {teams.length ? "No teams match that search or filter." : "No teams yet. Add the first one."}
-            </p>
-          ) : null}
-        </div>
+                  <span className="flex min-w-0 items-center gap-2.5 font-medium">
+                    <span
+                      className="h-6 w-1.5 shrink-0 rounded-full transition-colors"
+                      style={{ background: displayColor }}
+                    />
+                    <span className="truncate">{displayName}</span>
+                    {isSelected ? (
+                      <span className="ml-1 rounded bg-accent/20 px-1.5 py-0.5 text-[9px] font-semibold text-accent uppercase">
+                        Editing
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="truncate text-muted">{displayAffiliation}</span>
+                  <span className="font-semibold">{totals[team.id] ?? 0}</span>
+                </button>
+              );
+            })}
+            {!activeTeams.length ? (
+              <p className="px-4 py-6 text-sm text-muted">
+                {teams.some((t) => t.visibility === "active")
+                  ? "No active teams match that search."
+                  : "No active teams yet. Add the first one."}
+              </p>
+            ) : null}
+          </div>
+        </section>
 
-        <div className="flex items-center justify-between text-xs text-muted">
-          <span>
-            {teams.filter((t) => t.visibility === "active").length} active ·{" "}
-            {teams.filter((t) => t.visibility === "archived").length} archived
-          </span>
-          <span>Select a team to edit. The row updates as you type.</span>
-        </div>
+        <section className="space-y-2">
+          <div className="flex items-end justify-between gap-2 px-0.5">
+            <div>
+              <h2 className="font-display text-xl tracking-wide uppercase">
+                Archived teams
+              </h2>
+              <p className="text-xs text-muted">
+                Hidden from the public site. Permanently delete when no longer
+                needed.
+              </p>
+            </div>
+            <p className="text-xs font-semibold tracking-wide text-muted uppercase">
+              {archivedTeams.length} archived
+            </p>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+            <div className="grid grid-cols-[1.4fr_1fr_90px_7.5rem] gap-2 border-b border-border px-4 py-3 text-[10px] tracking-wide text-muted uppercase">
+              <span>Team</span>
+              <span>Affiliation</span>
+              <span>Points</span>
+              <span>Actions</span>
+            </div>
+            {archivedTeams.map((team) => {
+              const isSelected = selected?.id === team.id;
+              const displayName = isSelected ? previewName : team.name;
+              const displayColor = isSelected ? previewColor : team.color_hex;
+              const displayAffiliation = isSelected
+                ? affiliation || "—"
+                : team.affiliation || "—";
+
+              return (
+                <div
+                  key={team.id}
+                  className={`grid grid-cols-[1.4fr_1fr_90px_7.5rem] items-center gap-2 border-b border-border/60 px-4 py-3 text-sm ${
+                    isSelected ? "bg-accent-soft" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => openTeam(team.id)}
+                    className="flex min-w-0 items-center gap-2.5 text-left font-medium hover:text-accent"
+                  >
+                    <span
+                      className="h-6 w-1.5 shrink-0 rounded-full"
+                      style={{ background: displayColor }}
+                    />
+                    <span className="truncate">{displayName}</span>
+                    {isSelected ? (
+                      <span className="ml-1 rounded bg-accent/20 px-1.5 py-0.5 text-[9px] font-semibold text-accent uppercase">
+                        Editing
+                      </span>
+                    ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openTeam(team.id)}
+                    className="truncate text-left text-muted hover:text-foreground"
+                  >
+                    {displayAffiliation}
+                  </button>
+                  <span className="font-semibold text-muted">
+                    {totals[team.id] ?? 0}
+                  </span>
+                  <form
+                    action={deleteAction}
+                    onSubmit={(e) => {
+                      if (!confirmPermanentDelete(team.name)) {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    <input type="hidden" name="id" value={team.id} />
+                    <SubmitButton
+                      variant="danger"
+                      className="h-8 w-full px-2 text-[11px]"
+                    >
+                      Delete forever
+                    </SubmitButton>
+                  </form>
+                </div>
+              );
+            })}
+            {!archivedTeams.length ? (
+              <p className="px-4 py-6 text-sm text-muted">
+                {teams.some((t) => t.visibility === "archived")
+                  ? "No archived teams match that search."
+                  : "No archived teams. Archive a team to move it here."}
+              </p>
+            ) : null}
+          </div>
+          <FormMessage state={deleteState} />
+        </section>
       </div>
 
-      {/* Right Column: Live Editor with Real-Time Preview */}
-      <div className={`rounded-2xl border border-border bg-surface p-5 ${focus === "list" ? "hidden xl:block" : ""}`}>
+      <div
+        className={`rounded-2xl border border-border bg-surface p-5 ${focus === "list" ? "hidden xl:block" : ""}`}
+      >
         <button
           type="button"
           onClick={() => setFocus("list")}
@@ -245,19 +366,20 @@ export function TeamManager({
         </button>
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h2 className="font-display text-2xl">{isCreating ? "Add team" : "Edit team"}</h2>
+            <h2 className="font-display text-2xl">
+              {isCreating ? "Add team" : "Edit team"}
+            </h2>
             <p className="text-xs text-muted">
               {isCreating
                 ? "Create a new roster entry for the active season."
                 : `${previewName} · ${affiliation || "No affiliation"}`}
             </p>
           </div>
-          <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted">
+          <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[10px] font-semibold tracking-wider text-muted uppercase">
             Live Preview
           </span>
         </div>
 
-        {/* Real-time Team Banner Preview */}
         <TeamBanner
           name={previewName}
           colorHex={previewColor}
@@ -268,9 +390,12 @@ export function TeamManager({
 
         <form action={saveAction} className="mt-4 space-y-3.5">
           {selected ? <input type="hidden" name="id" value={selected.id} /> : null}
-          <input type="hidden" name="artwork_url" value={selected?.artwork_url ?? ""} />
+          <input
+            type="hidden"
+            name="artwork_url"
+            value={selected?.artwork_url ?? ""}
+          />
 
-          {/* Team Name */}
           <TextField
             label="Team name"
             name="name"
@@ -286,7 +411,6 @@ export function TeamManager({
             }}
           />
 
-          {/* Slug */}
           <TextField
             label="Slug"
             name="slug"
@@ -300,7 +424,6 @@ export function TeamManager({
             }}
           />
 
-          {/* Affiliation */}
           <TextField
             label="Affiliation"
             name="affiliation"
@@ -309,7 +432,6 @@ export function TeamManager({
             onChange={(e) => setAffiliation(e.target.value)}
           />
 
-          {/* Team Color with Real-Time Color Picker */}
           <div className="space-y-1.5">
             <label className="block text-xs font-medium tracking-wide text-muted uppercase">
               Team Color (Hex & Swatch)
@@ -317,7 +439,11 @@ export function TeamManager({
             <div className="flex items-center gap-2">
               <input
                 type="color"
-                value={colorHex.startsWith("#") && colorHex.length === 7 ? colorHex : "#FF6B21"}
+                value={
+                  colorHex.startsWith("#") && colorHex.length === 7
+                    ? colorHex
+                    : "#FF6B21"
+                }
                 onChange={(e) => setColorHex(e.target.value.toUpperCase())}
                 className="size-10 cursor-pointer rounded-lg border border-border bg-surface-2 p-1"
                 title="Pick custom color"
@@ -328,12 +454,13 @@ export function TeamManager({
                 value={colorHex}
                 placeholder="#FF6B21"
                 onChange={(e) => setColorHex(e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-sm font-mono text-foreground outline-none focus:border-accent"
+                className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2.5 font-mono text-sm text-foreground outline-none focus:border-accent"
               />
             </div>
-            {/* Quick Palette */}
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-[10px] text-muted mr-1 font-semibold uppercase">Presets:</span>
+              <span className="mr-1 text-[10px] font-semibold text-muted uppercase">
+                Presets:
+              </span>
               {PRESET_COLORS.map((p) => (
                 <button
                   key={p.name}
@@ -341,14 +468,16 @@ export function TeamManager({
                   onClick={() => setColorHex(p.hex)}
                   className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-0.5 text-xs text-foreground transition hover:border-accent"
                 >
-                  <span className="size-2.5 rounded-full" style={{ background: p.hex }} />
+                  <span
+                    className="size-2.5 rounded-full"
+                    style={{ background: p.hex }}
+                  />
                   <span>{p.name}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Artwork Upload */}
           <label className="block space-y-1.5">
             <span className="text-xs font-medium tracking-wide text-muted uppercase">
               Team artwork
@@ -360,16 +489,17 @@ export function TeamManager({
               className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-accent-soft file:px-3 file:py-1 file:text-xs file:font-semibold file:text-foreground hover:file:bg-accent hover:file:text-black"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
+                if (previewUrl?.startsWith("blob:"))
+                  URL.revokeObjectURL(previewUrl);
                 setPreviewUrl(file ? URL.createObjectURL(file) : null);
               }}
             />
             <span className="block text-[11px] text-muted">
-              JPEG, PNG, WebP, or GIF up to 5MB. Leave empty to retain current court/artwork.
+              JPEG, PNG, WebP, or GIF up to 5MB. Leave empty to retain current
+              court/artwork.
             </span>
           </label>
 
-          {/* Visibility */}
           <SelectField
             label="Public visibility"
             name="visibility"
@@ -380,7 +510,6 @@ export function TeamManager({
             <option value="archived">Archived</option>
           </SelectField>
 
-          {/* Sort Order */}
           <TextField
             label="Sort order"
             name="sort_order"
@@ -404,13 +533,35 @@ export function TeamManager({
           </SubmitButton>
         </form>
 
-        {selected ? (
+        {selected && !isArchivedSelected ? (
           <form action={archiveAction} className="mt-3">
             <input type="hidden" name="id" value={selected.id} />
             <FormMessage state={archiveState} />
             <SubmitButton variant="ghost" className="w-full">
               Archive team
             </SubmitButton>
+          </form>
+        ) : null}
+
+        {selected && isArchivedSelected ? (
+          <form
+            action={deleteAction}
+            className="mt-3 space-y-2"
+            onSubmit={(e) => {
+              if (!confirmPermanentDelete(selected.name)) {
+                e.preventDefault();
+              }
+            }}
+          >
+            <input type="hidden" name="id" value={selected.id} />
+            <FormMessage state={deleteState} />
+            <SubmitButton variant="danger" className="w-full">
+              Permanently delete from database
+            </SubmitButton>
+            <p className="text-[11px] leading-5 text-muted">
+              Only available for archived teams. Scores for this team are
+              removed. This cannot be undone.
+            </p>
           </form>
         ) : null}
       </div>

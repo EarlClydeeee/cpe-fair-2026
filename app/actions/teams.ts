@@ -95,3 +95,75 @@ export async function archiveTeam(
   revalidatePath("/leaderboard");
   return { ok: true, message: "Team archived." };
 }
+
+export async function deleteTeamPermanently(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireStaff("/admin/teams");
+  if (!canManageContent(user.role)) return { ok: false, message: "Content role required." };
+
+  const parsed = deleteByIdSchema.safeParse(formObject(formData));
+  if (!parsed.success) return fieldErrors(parsed.error);
+
+  const supabase = await createClient();
+  const { data: team, error: loadError } = await supabase
+    .from("competition_teams")
+    .select("id, name, slug, visibility, artwork_url, season_id")
+    .eq("id", parsed.data.id)
+    .maybeSingle();
+  if (loadError) return { ok: false, message: loadError.message };
+  if (!team) return { ok: false, message: "Team not found." };
+  if (team.visibility !== "archived") {
+    return {
+      ok: false,
+      message: "Archive the team first. Only archived teams can be permanently deleted.",
+    };
+  }
+
+  // Best-effort artwork cleanup from storage.
+  if (team.artwork_url) {
+    const marker = `/object/public/team-artwork/`;
+    const idx = team.artwork_url.indexOf(marker);
+    if (idx >= 0) {
+      const objectPath = decodeURIComponent(
+        team.artwork_url.slice(idx + marker.length).split("?")[0] ?? "",
+      );
+      if (objectPath) {
+        await supabase.storage.from("team-artwork").remove([objectPath]);
+      }
+    }
+  }
+
+  const { error } = await supabase
+    .from("competition_teams")
+    .delete()
+    .eq("id", team.id)
+    .eq("visibility", "archived");
+  if (error) return { ok: false, message: error.message };
+
+  await supabase.from("audit_log").insert({
+    season_id: team.season_id,
+    actor_id: user.id,
+    action: "team_updated",
+    entity_type: "team",
+    entity_id: team.id,
+    summary: `Permanently deleted archived team ${team.name}`,
+    before_json: {
+      id: team.id,
+      name: team.name,
+      slug: team.slug,
+      visibility: team.visibility,
+    } as never,
+  });
+
+  updateTag(tags.teams);
+  updateTag(tags.scores);
+  updateTag(tags.audit);
+  revalidatePath("/admin/teams");
+  revalidatePath("/teams");
+  revalidatePath(`/teams/${team.slug}`);
+  revalidatePath("/leaderboard");
+  revalidatePath("/admin");
+  return { ok: true, message: `${team.name} permanently deleted.` };
+}
