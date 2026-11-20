@@ -7,13 +7,15 @@ import { eventMvpTitle } from "@/lib/events";
 export const metadata: Metadata = { title: "Events" };
 export const instant = false;
 
-type Props = { searchParams: Promise<{ category?: string; day?: string }> };
+type Props = { searchParams: Promise<{ category?: string; date?: string }> };
 
 export default async function EventsPage({ searchParams }: Props) {
-  const { category, day } = await searchParams;
-  const dayNum = day ? Number(day) : undefined;
+  const { category, date } = await searchParams;
   const [categories, events] = await Promise.all([getCategories(), getEvents()]);
   const mvpCount = events.filter((event) => Boolean(eventMvpTitle(event))).length;
+
+  const selectedDate =
+    date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
@@ -43,7 +45,7 @@ export default async function EventsPage({ searchParams }: Props) {
         categories={categories}
         events={events}
         categorySlug={category}
-        day={Number.isFinite(dayNum) ? dayNum : undefined}
+        selectedDate={selectedDate}
       />
     </div>
   );

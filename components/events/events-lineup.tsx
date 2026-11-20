@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { EventCard } from "@/components/events/event-card";
+import { EventsCalendar } from "@/components/events/events-calendar";
 import { HeroMatchBanner } from "@/components/events/hero-match-banner";
 import { MatchDetailsDrawer } from "@/components/events/match-details-drawer";
 import type { Category, FairEvent } from "@/lib/data/public";
 import { pickFeaturedEvent } from "@/lib/events";
-import { dayLabel, manilaDateKey } from "@/lib/format";
+import { manilaDateKey } from "@/lib/format";
 import { useNow } from "@/lib/hooks/use-now";
 
 function tabClass(active: boolean) {
@@ -18,24 +19,16 @@ function tabClass(active: boolean) {
   }`;
 }
 
-function dayClass(active: boolean) {
-  return `whitespace-nowrap rounded-lg border px-3 py-2.5 text-[11px] uppercase transition-colors duration-200 sm:text-xs ${
-    active
-      ? "border-accent text-accent"
-      : "border-border text-muted hover:text-foreground"
-  }`;
-}
-
 export function EventsLineup({
   categories,
   events,
   categorySlug,
-  day,
+  selectedDate,
 }: {
   categories: Category[];
   events: FairEvent[];
   categorySlug?: string;
-  day?: number;
+  selectedDate?: string;
 }) {
   const now = useNow(30_000);
   const [selectedEvent, setSelectedEvent] = useState<FairEvent | null>(null);
@@ -45,24 +38,16 @@ export function EventsLineup({
     [events, now],
   );
 
-  const dayDates = useMemo(() => {
-    const keys = Array.from(
-      new Set(events.map((e) => manilaDateKey(e.start_at))),
-    ).sort();
-    return keys.length ? keys : [];
-  }, [events]);
-
   const filtered = useMemo(() => {
     let rows = events;
     if (categorySlug) {
       rows = rows.filter((e) => e.categories?.slug === categorySlug);
     }
-    if (day && dayDates[day - 1]) {
-      const key = dayDates[day - 1];
-      rows = rows.filter((e) => manilaDateKey(e.start_at) === key);
+    if (selectedDate) {
+      rows = rows.filter((e) => manilaDateKey(e.start_at) === selectedDate);
     }
     return rows;
-  }, [events, categorySlug, day, dayDates]);
+  }, [events, categorySlug, selectedDate]);
 
   const openDetails = useCallback((event: FairEvent) => {
     setSelectedEvent(event);
@@ -72,6 +57,14 @@ export function EventsLineup({
     setSelectedEvent(null);
   }, []);
 
+  const categoryHref = (slug?: string) => {
+    const params = new URLSearchParams();
+    if (slug) params.set("category", slug);
+    if (selectedDate) params.set("date", selectedDate);
+    const q = params.toString();
+    return q ? `/events?${q}` : "/events";
+  };
+
   return (
     <>
       {featured ? (
@@ -80,19 +73,16 @@ export function EventsLineup({
         <p className="text-muted">Events appear after the database is seeded.</p>
       )}
 
-      <div className="mt-7 space-y-2.5 sm:mt-10 sm:space-y-3">
+      <div className="mt-7 sm:mt-10">
         <div className="-mx-4 scroll-rail-edge px-4 sm:mx-0 sm:px-0">
           <div className="scroll-rail flex-nowrap" aria-label="Event categories">
-            <Link
-              href={day ? `/events?day=${day}` : "/events"}
-              className={tabClass(!categorySlug)}
-            >
+            <Link href={categoryHref()} className={tabClass(!categorySlug)}>
               All events
             </Link>
             {categories.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/events?category=${cat.slug}${day ? `&day=${day}` : ""}`}
+                href={categoryHref(cat.slug)}
                 className={tabClass(categorySlug === cat.slug)}
               >
                 {cat.name}
@@ -100,49 +90,51 @@ export function EventsLineup({
             ))}
           </div>
         </div>
-        <div className="-mx-4 scroll-rail-edge px-4 sm:mx-0 sm:px-0">
-          <div className="scroll-rail flex-nowrap" aria-label="Competition days">
-            <Link
-              href={`/events${categorySlug ? `?category=${categorySlug}` : ""}`}
-              className={dayClass(!day)}
-            >
-              All dates
-            </Link>
-            {dayDates.map((_, index) => {
-              const d = index + 1;
-              return (
-                <Link
-                  key={dayDates[index]}
-                  href={`/events?day=${d}${categorySlug ? `&category=${categorySlug}` : ""}`}
-                  className={dayClass(day === d)}
-                >
-                  {dayLabel(d)}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
-      <h2 className="mt-8 font-display text-2xl leading-none sm:mt-10 sm:text-3xl">
-        The Competition Schedule
-      </h2>
+      {/* Tablet / phone: calendar under filters */}
+      <div className="mt-6 lg:hidden">
+        <EventsCalendar
+          events={events}
+          categorySlug={categorySlug}
+          selectedDate={selectedDate}
+        />
+      </div>
 
-      {filtered.length ? (
-        <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((event, i) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              index={i}
-              now={now}
-              onOpenDetails={openDetails}
-            />
-          ))}
+      {/* Laptop+: schedule left, calendar right */}
+      <div className="mt-8 grid gap-8 lg:mt-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8 xl:grid-cols-[minmax(0,1fr)_22.5rem] xl:gap-10">
+        <div className="min-w-0">
+          <h2 className="font-display text-2xl leading-none sm:text-3xl">
+            The Competition Schedule
+          </h2>
+
+          {filtered.length ? (
+            <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              {filtered.map((event, i) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  index={i}
+                  now={now}
+                  onOpenDetails={openDetails}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-6 text-muted">No events match these filters.</p>
+          )}
         </div>
-      ) : (
-        <p className="mt-6 text-muted">No events match these filters.</p>
-      )}
+
+        <aside className="hidden lg:block">
+          <div className="lg:sticky lg:top-24">
+            <EventsCalendar
+              events={events}
+              categorySlug={categorySlug}
+              selectedDate={selectedDate}
+            />
+          </div>
+        </aside>
+      </div>
 
       <MatchDetailsDrawer
         event={selectedEvent}
