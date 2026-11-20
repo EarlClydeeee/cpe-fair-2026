@@ -20,6 +20,11 @@ export function CategoryTabs({
   showSampleBadge?: boolean;
   basePath?: string;
 }) {
+  const activeCategory = activeSlug
+    ? categories.find((c) => c.slug === activeSlug)
+    : undefined;
+  const activeIsEventOnly = activeCategory?.include_in_scoring === false;
+
   return (
     <div className="space-y-3">
       <div
@@ -35,11 +40,31 @@ export function CategoryTabs({
             key={cat.id}
             href={`${basePath}?category=${cat.slug}`}
             className={tabClass(activeSlug === cat.slug)}
+            title={
+              cat.include_in_scoring
+                ? undefined
+                : "EVENT ONLY — own leaderboard; not counted in Overall"
+            }
           >
             {cat.name}
+            {!cat.include_in_scoring ? (
+              <span className="ml-1.5 text-[9px] font-semibold tracking-wide opacity-70">
+                · EVENT ONLY
+              </span>
+            ) : null}
           </Link>
         ))}
       </div>
+      {activeIsEventOnly ? (
+        <p className="text-center text-[11px] leading-5 text-neutral-400">
+          <span className="font-bold tracking-[0.14em] text-accent uppercase">
+            EVENT ONLY
+          </span>
+          {" — "}
+          {activeCategory?.name} has its own ranking here. Points are not added
+          to Overall.
+        </p>
+      ) : null}
       {showSampleBadge ? (
         <p className="text-center text-[10px] font-bold tracking-[0.16em] text-neutral-500 uppercase">
           Preview / sample scores

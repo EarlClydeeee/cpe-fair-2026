@@ -61,15 +61,11 @@ export async function getScoreMatrix() {
   const user = await requireStaff("/admin/leaderboards");
 
   const season = await getActiveSeason();
-  const [{ categories: allCategories, competitions: allCompetitions, rows }, rawDrafts, teams] =
+  const [{ categories, competitions, rows }, rawDrafts, teams] =
     await Promise.all([getStandings(), getDrafts(), getTeams()]);
 
-  // Score matrix / entry only uses categories included in scoring.
-  const categories = allCategories.filter((c) => c.include_in_scoring);
-  const scoringCategoryIds = new Set(categories.map((c) => c.id));
-  const competitions = allCompetitions.filter((c) =>
-    scoringCategoryIds.has(c.category_id),
-  );
+  // EVENT ONLY categories (include_in_scoring = false) stay scoreable and
+  // get their own leaderboard filter; Overall totals still exclude them.
 
   // Only count drafts that can actually be reviewed (valid team + competition).
   const teamIds = new Set(teams.map((t) => t.id));
@@ -142,7 +138,7 @@ export async function getDraftDiffs(): Promise<DraftDiff[]> {
     const category =
       (competition ? catById.get(competition.category_id) : undefined) ??
       catById.get(draft.category_id);
-    if (!team || !competition || !category || !category.include_in_scoring) {
+    if (!team || !competition || !category) {
       return [];
     }
     const publishedRow = rows.find((r) => r.team.id === draft.team_id);

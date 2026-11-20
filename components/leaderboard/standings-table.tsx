@@ -37,7 +37,22 @@ function getBannerStyle(hex: string) {
   };
 }
 
-export function StandingsTable({ rows }: { rows: StandingRow[] }) {
+export function StandingsTable({
+  rows,
+  categoryName,
+  countsTowardOverall = true,
+}: {
+  rows: StandingRow[];
+  categoryName?: string;
+  /** False for EVENT ONLY category filters. */
+  countsTowardOverall?: boolean;
+}) {
+  const subtitle = categoryName
+    ? countsTowardOverall
+      ? `Rankings for ${categoryName}`
+      : `${categoryName} — EVENT ONLY leaderboard (not added to Overall)`
+    : "Overall points from categories included in scoring";
+
   return (
     <section className="space-y-3.5">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -45,9 +60,7 @@ export function StandingsTable({ rows }: { rows: StandingRow[] }) {
           <h2 className="font-display text-2xl font-black tracking-wide text-white uppercase sm:text-3xl">
             Team Standings
           </h2>
-          <p className="mt-1 text-xs font-medium text-neutral-400">
-            Overall points across all competition categories
-          </p>
+          <p className="mt-1 text-xs font-medium text-neutral-400">{subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <p className="text-xs font-bold tracking-[0.18em] text-neutral-400 uppercase">

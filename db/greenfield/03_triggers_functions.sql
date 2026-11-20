@@ -122,11 +122,10 @@ begin
   join public.categories cat on cat.id = c.category_id
   where c.id = p_competition_id
     and c.is_archived = false
-    and cat.is_archived = false
-    and cat.include_in_scoring = true;
+    and cat.is_archived = false;
 
   if cat_id is null then
-    raise exception 'Competition not found or category not included in scoring';
+    raise exception 'Competition not found or category is archived';
   end if;
 
   select points into published_points
